@@ -1,0 +1,68 @@
+.page { background: #f5f5f7; min-height: 100vh; }
+
+.page-header {
+  background: linear-gradient(135deg, #5B4CDB 0%, #9B8FEC 100%);
+  padding: 40rpx 32rpx 32rpx;
+}
+.header-title { display: block; font-size: 40rpx; font-weight: 700; color: #fff; }
+.header-sub   { display: block; font-size: 24rpx; color: rgba(255,255,255,.8); margin-top: 4rpx; }
+
+.task-list { padding: 16rpx 24rpx; display: flex; flex-direction: column; gap: 16rpx; }
+
+.task-card {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  position: relative;
+  overflow: hidden;
+}
+
+.match-badge {
+  position: absolute; top: 20rpx; right: 20rpx;
+  padding: 4rpx 14rpx; border-radius: 20rpx; border: 1rpx solid;
+}
+.match-score { font-size: 22rpx; font-weight: 700; }
+
+.task-title {
+  display: block; font-size: 30rpx; font-weight: 700;
+  color: #333; margin-bottom: 6rpx; padding-right: 100rpx;
+}
+.task-company { display: block; font-size: 24rpx; color: #aaa; margin-bottom: 14rpx; }
+
+.tag-row { display: flex; flex-wrap: wrap; gap: 8rpx; margin-bottom: 12rpx; }
+.tag {
+  padding: 4rpx 14rpx; border-radius: 20rpx;
+  border: 1rpx solid transparent;
+}
+.tag-text { font-size: 22rpx; }
+.mode-tag   { background: #f0eeff; border-color: #d6cfff; }
+.mode-tag .tag-text { color: #5B4CDB; }
+.budget-tag { background: #fff8e1; border-color: #ffe58f; }
+.budget-tag .tag-text { color: #d48806; }
+.addr-tag   { background: #f6ffed; border-color: #b7eb8f; }
+.addr-tag .tag-text { color: #52c41a; }
+
+.role-row { display: flex; flex-wrap: wrap; gap: 8rpx; margin-bottom: 12rpx; }
+.role-chip { padding: 4rpx 14rpx; background: #f5f5f7; border-radius: 8rpx; }
+.role-text { font-size: 22rpx; color: #555; }
+
+/* 维度条 */
+.dim-row { display: flex; flex-direction: column; gap: 8rpx; margin-bottom: 10rpx; }
+.dim-item { display: flex; align-items: center; gap: 10rpx; }
+.dim-label { font-size: 20rpx; color: #aaa; min-width: 48rpx; }
+.dim-track {
+  flex: 1; height: 8rpx; background: #f0f0f0;
+  border-radius: 4rpx; overflow: hidden;
+}
+.dim-fill  { height: 100%; border-radius: 4rpx; transition: width .3s; }
+.dim-val   { font-size: 20rpx; color: #666; min-width: 40rpx; text-align: right; }
+
+.task-dates { display: block; font-size: 22rpx; color: #aaa; }
+
+.loading-row, .end-row { padding: 24rpx; text-align: center; }
+.loading-text, .end-text { font-size: 24rpx; color: #aaa; }
+
+.empty-box { text-align: center; padding: 100rpx 0; }
+.empty-icon { display: block; font-size: 80rpx; margin-bottom: 16rpx; }
+.empty-text { display: block; font-size: 30rpx; color: #ccc; margin-bottom: 8rpx; }
+.empty-sub  { font-size: 24rpx; color: #ddd; }

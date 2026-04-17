@@ -1,0 +1,181 @@
+.page {
+  background: #f5f5f7;
+  min-height: 100vh;
+}
+
+/* ── 余额卡片 ── */
+.balance-card {
+  background: linear-gradient(135deg, #5B4CDB 0%, #7B6EE8 100%);
+  margin: 24rpx;
+  border-radius: 20rpx;
+  padding: 36rpx 32rpx 28rpx;
+}
+
+.card-label {
+  font-size: 26rpx;
+  color: rgba(255,255,255,0.7);
+  display: block;
+  margin-bottom: 12rpx;
+}
+
+.balance-main {
+  font-size: 64rpx;
+  font-weight: 700;
+  color: #fff;
+  display: block;
+  margin-bottom: 24rpx;
+}
+
+.balance-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 28rpx;
+}
+
+.balance-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.item-label {
+  font-size: 22rpx;
+  color: rgba(255,255,255,0.6);
+}
+
+.item-value {
+  font-size: 28rpx;
+  color: #fff;
+  font-weight: 600;
+}
+
+.item-value.green {
+  color: #b7eb8f;
+}
+
+.withdraw-btn {
+  background: rgba(255,255,255,0.2);
+  border-radius: 50rpx;
+  padding: 16rpx 0;
+  text-align: center;
+}
+
+.withdraw-text {
+  font-size: 28rpx;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ── 提现表单 ── */
+.withdraw-form {
+  background: #fff;
+  margin: 0 24rpx 24rpx;
+  border-radius: 16rpx;
+  padding: 28rpx 24rpx;
+}
+
+.form-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #222;
+  display: block;
+  margin-bottom: 16rpx;
+}
+
+.amount-input {
+  border: 2rpx solid #e8e8e8;
+  border-radius: 10rpx;
+  padding: 16rpx 20rpx;
+  font-size: 32rpx;
+  color: #333;
+  width: 100%;
+  margin-bottom: 20rpx;
+}
+
+.form-actions {
+  display: flex;
+  gap: 16rpx;
+}
+
+.cancel-btn, .confirm-btn {
+  flex: 1;
+  height: 80rpx;
+  border-radius: 10rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cancel-btn {
+  background: #f5f5f5;
+}
+
+.cancel-text {
+  font-size: 28rpx;
+  color: #999;
+}
+
+.confirm-btn {
+  background: #5B4CDB;
+}
+
+.confirm-text {
+  font-size: 28rpx;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ── 流水列表 ── */
+.section-title {
+  padding: 16rpx 32rpx 8rpx;
+}
+
+.section-text {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #333;
+}
+
+.tx-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx 32rpx;
+  background: #fff;
+  border-bottom: 1rpx solid #f5f5f5;
+}
+
+.tx-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.tx-type {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.tx-time {
+  font-size: 22rpx;
+  color: #aaa;
+}
+
+.tx-amount {
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.tx-amount.in  { color: #52c41a; }
+.tx-amount.out { color: #fa8c16; }
+
+.empty {
+  padding: 80rpx 0;
+  text-align: center;
+}
+
+.empty-text {
+  font-size: 26rpx;
+  color: #ccc;
+}

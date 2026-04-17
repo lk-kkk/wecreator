@@ -1,0 +1,137 @@
+/**
+ * WeCreator Design Tokens V1.1
+ * 企业端 PC 后台 · CSS Custom Properties
+ *
+ * V1.1 更新（2026-04-17）：
+ *   - 主品牌色 #2B5BFC → #0858F4（基于画板1496.png精确提取）
+ *   - 新增活力橙辅助色 #FC6400
+ *   - 页面背景 #F5F7FA → #F0F0F0（视觉稿提取，像素占比38%）
+ *   - 全量语义色和中性色更新
+ *   - 新增8级蓝色梯度
+ *   - 新增青绿色 #34B8A8 和紫色 #E04CFC
+ *   - 阴影整体变轻薄
+ */
+
+:root {
+  /* ==================== 品牌色 (Primary) ==================== */
+  --color-primary:          #0858F4;  /* V1.1 ★ 主品牌色，视觉稿提取 */
+  --color-primary-hover:    #2470F8;
+  --color-primary-active:   #0446D0;
+  --color-primary-light:    #4480F8;  /* V1.1 新增：蓝梯度中间值 */
+  --color-primary-lighter:  #80A8F8;  /* V1.1 新增：浅蓝 */
+  --color-primary-bg:       #D0DCFC;  /* V1.1 更新 */
+  --color-primary-bg-soft:  #E4ECF8;  /* V1.1 新增：最浅蓝底 */
+  --color-primary-border:   #A0BCF8;  /* V1.1 更新 */
+
+  /* 品牌蓝 8 级梯度（供图表/渐变使用）*/
+  --blue-900: #0446D0;
+  --blue-700: #0858F4;
+  --blue-600: #2C70F4;
+  --blue-500: #4480F8;
+  --blue-400: #80A8F8;
+  --blue-300: #BCD0F8;
+  --blue-200: #D0E0F8;
+  --blue-100: #E4ECF8;
+
+  /* ==================== 辅助色：活力橙 (Accent) - V1.1 新增 ==================== */
+  --color-accent:       #FC6400;  /* 活力橙，第二品牌色 */
+  --color-accent-light: #FC9854;
+  --color-accent-pale:  #FCB07C;
+  --color-accent-bg:    #FEE8D5;
+
+  /* ==================== 语义色 (Semantic) ==================== */
+  --color-success:      #38D048;  /* V1.1 ★ 更新（原#10B981），更鲜明的绿 */
+  --color-success-mid:  #90E498;  /* V1.1 新增 */
+  --color-success-bg:   #E8FCEC;  /* V1.1 更新 */
+  --color-warning:      #FC8C40;
+  --color-warning-bg:   #FEF0E0;
+  --color-error:        #E8383C;  /* V1.1 ★ 更新（原#EF4444） */
+  --color-error-bg:     #FCE0E0;  /* V1.1 更新 */
+  --color-teal:         #34B8A8;  /* V1.1 新增：青绿（执行中状态） */
+  --color-teal-bg:      #D0F4F0;  /* V1.1 新增 */
+  --color-purple:       #E04CFC;  /* V1.1 新增：紫色（优质零工等级） */
+  --color-purple-bg:    #F8E4FC;  /* V1.1 新增 */
+
+  /* ==================== 中性色 (Neutral) ==================== */
+  --color-text-primary:   #181818;  /* V1.1 ★ 更新（原#111827），近黑非纯黑 */
+  --color-text-secondary: #505050;  /* V1.1 更新（原#4B5563） */
+  --color-text-tertiary:  #888888;  /* V1.1 更新（原#6B7280） */
+  --color-text-disabled:  #C0C0C0;  /* V1.1 更新（原#9CA3AF） */
+  --color-text-white:     #FFFFFF;
+  --color-border:         #E0E0E0;  /* V1.1 更新（原#E5E7EB） */
+  --color-border-light:   #F0F0F0;
+  --color-bg-page:        #F0F0F0;  /* V1.1 ★ 核心更新（原#F5F7FA），视觉稿提取占比38% */
+  --color-bg-card:        #FFFFFF;
+  --color-bg-hover:       #F8F8F8;
+  --color-bg-sidebar:     #FFFFFF;  /* 白色侧边栏 */
+  --color-bg-header:      #FFFFFF;  /* 白色顶栏 */
+  --color-bg-mask:        rgba(0, 0, 0, 0.40);
+
+  /* ==================== 任务状态色 (V1.1 全量更新) ==================== */
+  --status-draft-fg:      #888888;
+  --status-draft-bg:      #F0F0F0;
+  --status-matching-fg:   #0858F4;
+  --status-matching-bg:   #D0DCFC;
+  --status-progress-fg:   #34B8A8;  /* V1.1 改青绿，区分撮合中的蓝 */
+  --status-progress-bg:   #D0F4F0;
+  --status-review-fg:     #FC6400;
+  --status-review-bg:     #FEE8D5;
+  --status-completed-fg:  #38D048;
+  --status-completed-bg:  #E8FCEC;
+  --status-closed-fg:     #888888;
+  --status-closed-bg:     #EEEEEE;
+
+  /* ==================== 金融专用色 ==================== */
+  --color-income:   #38D048;  /* 收入/入账 */
+  --color-expense:  #E8383C;  /* 支出/扣款 */
+  --color-frozen:   #FC6400;  /* 冻结中 */
+
+  /* ==================== 间距 (Spacing) ==================== */
+  --space-0:  0px;
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ==================== 圆角 (Border Radius) ==================== */
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   8px;
+  --radius-xl:   12px;
+  --radius-full: 50%;
+
+  /* ==================== 阴影 (Box Shadow) - V1.1 整体轻薄化 ==================== */
+  --shadow-none: none;
+  --shadow-sm:   0 1px 3px rgba(0, 0, 0, 0.06);  /* V1.1: opacity 0.08→0.06 */
+  --shadow-md:   0 2px 8px  rgba(0, 0, 0, 0.08);
+  --shadow-lg:   0 4px 16px rgba(0, 0, 0, 0.10);
+  --shadow-xl:   0 8px 24px rgba(0, 0, 0, 0.12);
+
+  /* ==================== 字体 (Typography) ==================== */
+  --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+  --font-family-mono: 'DIN Pro', 'DIN Alternate', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* ==================== 动效 (Animation) ==================== */
+  --ease-in-out:  cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out:     cubic-bezier(0, 0, 0.2, 1);
+  --ease-in:      cubic-bezier(0.4, 0, 1, 1);
+  --ease-bounce:  cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-fast:   150ms;
+  --duration-normal: 250ms;
+  --duration-slow:   400ms;
+
+  /* ==================== 布局 (Layout) ==================== */
+  --layout-header-height:          56px;
+  --layout-sider-width:            220px;
+  --layout-sider-collapsed-width:  64px;
+  --layout-content-padding:        24px;
+  --layout-content-max-width:      1200px;
+  --layout-breadcrumb-height:      32px;
+}

@@ -1,0 +1,241 @@
+.page {
+  background: #f5f5f7;
+  min-height: 100vh;
+}
+.page.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.loading-text, .error-text {
+  font-size: 28rpx;
+  color: #aaa;
+}
+
+/* ── 封面 + 头像 ── */
+.cover-area {
+  position: relative;
+  height: 220rpx;
+}
+.cover-bg {
+  width: 100%;
+  height: 200rpx;
+  background: linear-gradient(135deg, #5B4CDB 0%, #9B8FEC 100%);
+}
+.avatar-wrap {
+  position: absolute;
+  bottom: 0;
+  left: 40rpx;
+  display: flex;
+  align-items: flex-end;
+  gap: 12rpx;
+}
+.avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  border: 6rpx solid #fff;
+  background: #e8e8e8;
+}
+.avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #7B6EE8;
+}
+.avatar-initial {
+  font-size: 48rpx;
+  color: #fff;
+  font-weight: 700;
+}
+.level-badge {
+  padding: 6rpx 16rpx;
+  border-radius: 20rpx;
+  margin-bottom: 12rpx;
+}
+.level-text {
+  font-size: 20rpx;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ── 信息卡片 ── */
+.info-card {
+  background: #fff;
+  margin: 12rpx 24rpx;
+  border-radius: 16rpx;
+  padding: 28rpx 24rpx;
+}
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 8rpx;
+}
+.real-name {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #222;
+}
+.verified-badge {
+  background: #e6f7ff;
+  padding: 4rpx 12rpx;
+  border-radius: 6rpx;
+}
+.verified-text {
+  font-size: 20rpx;
+  color: #1677ff;
+}
+.city-text {
+  font-size: 24rpx;
+  color: #999;
+  display: block;
+  margin-bottom: 12rpx;
+}
+.bio-text {
+  font-size: 26rpx;
+  color: #555;
+  line-height: 1.6;
+  display: block;
+  margin-bottom: 24rpx;
+}
+.stats-row {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 20rpx 0;
+  border-top: 1rpx solid #f5f5f5;
+  border-bottom: 1rpx solid #f5f5f5;
+  margin-bottom: 20rpx;
+}
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+}
+.stat-num {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #5B4CDB;
+}
+.stat-label {
+  font-size: 22rpx;
+  color: #aaa;
+}
+.stat-divider {
+  width: 1rpx;
+  height: 50rpx;
+  background: #f0f0f0;
+}
+.action-row {
+  display: flex;
+  gap: 16rpx;
+}
+.action-btn {
+  flex: 1;
+  height: 72rpx;
+  background: #5B4CDB;
+  border-radius: 10rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.action-btn.secondary {
+  background: #f5f5f5;
+}
+.action-text {
+  font-size: 28rpx;
+  color: #fff;
+  font-weight: 600;
+}
+.action-text-sec {
+  font-size: 28rpx;
+  color: #5B4CDB;
+  font-weight: 600;
+}
+
+/* ── 技能 / 作品集 ── */
+.section-card {
+  background: #fff;
+  margin: 16rpx 24rpx;
+  border-radius: 16rpx;
+  padding: 24rpx;
+}
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+.section-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #222;
+  display: block;
+  margin-bottom: 16rpx;
+}
+.section-more {
+  font-size: 24rpx;
+  color: #5B4CDB;
+}
+.role-item {
+  margin-bottom: 20rpx;
+}
+.role-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10rpx;
+}
+.role-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+.role-exp {
+  font-size: 24rpx;
+  color: #aaa;
+}
+.tag-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+}
+.skill-tag {
+  background: #f0eeff;
+  padding: 6rpx 16rpx;
+  border-radius: 6rpx;
+}
+.tag-text {
+  font-size: 22rpx;
+  color: #5B4CDB;
+}
+.portfolio-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12rpx;
+}
+.portfolio-item {
+  height: 160rpx;
+  border-radius: 10rpx;
+  overflow: hidden;
+}
+.portfolio-img {
+  width: 100%;
+  height: 100%;
+}
+.portfolio-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #f5f5f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.portfolio-title {
+  font-size: 24rpx;
+  color: #aaa;
+  padding: 8rpx;
+  text-align: center;
+}
+.bottom-space { height: 40rpx; }

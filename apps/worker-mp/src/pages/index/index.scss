@@ -1,0 +1,154 @@
+/* ── 登录页 ── */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(180deg, #f0edff 0%, #fff 60%);
+  padding: 0 48px;
+}
+.login-brand { text-align: center; margin-bottom: 64px; }
+.brand-name { font-size: 48px; font-weight: 800; color: #5B4CDB; display: block; }
+.brand-desc { font-size: 26px; color: #999; margin-top: 12px; display: block; }
+.login-features {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 80px;
+}
+.feature-item { text-align: center; }
+.feature-icon { font-size: 48px; display: block; margin-bottom: 8px; }
+.feature-text { font-size: 24px; color: #666; }
+.login-actions { width: 100%; }
+.login-btn {
+  width: 100%;
+  height: 88px;
+  background: #5B4CDB;
+  border-radius: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  &.loading { opacity: 0.6; }
+}
+.login-btn-text { color: #fff; font-size: 32px; font-weight: 600; }
+.login-agreement { font-size: 22px; color: #bbb; text-align: center; display: block; margin-top: 24px; }
+
+/* ── 开发调试入口 ── */
+.dev-entry {
+  background: rgba(91,76,219,0.08);
+  border: 1px dashed #5B4CDB;
+  border-radius: 16px;
+  padding: 14px 32px;
+  margin-bottom: 40px;
+  text-align: center;
+}
+.dev-entry-text { font-size: 24px; color: #5B4CDB; }
+
+/* ── 已登录：任务页 ── */
+.page {
+  min-height: 100vh;
+  background: #f5f5f5;
+  display: flex;
+  flex-direction: column;
+}
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 32px 16px;
+  background: #fff;
+}
+.task-title { font-size: 36px; font-weight: 700; color: #333; }
+.recommend-link { font-size: 26px; color: #5B4CDB; }
+.task-tabs {
+  display: flex;
+  background: #fff;
+  padding: 0 32px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 20px 0;
+  position: relative;
+}
+.tab-text { font-size: 28px; color: #999; }
+.tab.active .tab-text { color: #5B4CDB; font-weight: 600; }
+.tab-bar {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 48px;
+  height: 4px;
+  background: #5B4CDB;
+  border-radius: 2px;
+}
+
+/* ── 任务列表 ── */
+.task-list {
+  flex: 1;
+  padding: 16px 24px;
+  height: calc(100vh - 240px);
+}
+.task-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.card-title { font-size: 30px; font-weight: 600; color: #333; flex: 1; margin-right: 12px; }
+.status-tag {
+  padding: 4px 16px;
+  border-radius: 20px;
+}
+.status-text { font-size: 22px; color: #fff; }
+.card-info {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 12px;
+}
+.info-item { flex: 1; }
+.info-label { font-size: 22px; color: #999; display: block; margin-bottom: 4px; }
+.info-value { font-size: 26px; color: #333; display: block; }
+.info-value.price { color: #f5a623; font-weight: 600; }
+
+/* ── 进度条 ── */
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+.progress-bg {
+  flex: 1;
+  height: 12px;
+  background: #f0f0f0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #5B4CDB, #7c6df5);
+  border-radius: 6px;
+  transition: width 0.3s;
+}
+.progress-text { font-size: 24px; color: #5B4CDB; font-weight: 600; min-width: 60px; text-align: right; }
+.card-footer { margin-top: 12px; }
+.invite-hint { font-size: 24px; color: #faad14; }
+
+/* ── 空状态 ── */
+.empty-state {
+  text-align: center;
+  padding: 120px 0 60px;
+}
+.empty-icon { font-size: 80px; display: block; margin-bottom: 24px; }
+.empty-text { font-size: 30px; color: #999; display: block; }
+.empty-hint { font-size: 24px; color: #ccc; display: block; margin-top: 8px; }

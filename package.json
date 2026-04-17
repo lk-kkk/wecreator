@@ -1,0 +1,17 @@
+{
+  "name": "wecreator",
+  "private": true,
+  "scripts": {
+    "dev:platform": "pnpm --filter platform-admin dev",
+    "dev:pc": "pnpm --filter pc-admin dev",
+    "dev:mp": "pnpm --filter worker-mp dev:weapp",
+    "dev:be": "pnpm --filter backend start:dev",
+    "dev": "concurrently \"pnpm dev:be\" \"pnpm dev:pc\"",
+    "test": "pnpm --filter backend test",
+    "docker:up": "docker-compose -f docker/docker-compose.yml up -d",
+    "docker:down": "docker-compose -f docker/docker-compose.yml down"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}

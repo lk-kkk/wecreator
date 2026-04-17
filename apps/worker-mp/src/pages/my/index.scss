@@ -1,0 +1,151 @@
+/* V3.3 我的 — 仿抖音风格 */
+$primary: #5B4CDB;
+$bg: #f5f5f7;
+
+.my-page { min-height: 100vh; background: $bg; position: relative; }
+.scroll-area { height: 100vh; }
+
+.login-prompt {
+  display: flex; flex-direction: column; align-items: center; padding: 300px 0;
+  .prompt-text { font-size: 30px; color: #999; }
+  .prompt-btn { margin-top: 24px; padding: 14px 60px; background: $primary; border-radius: 40px; }
+  .prompt-btn-text { color: #fff; font-size: 28px; }
+}
+
+/* ── 设置按钮 ── */
+.settings-btn {
+  position: absolute; top: 60px; right: 24px; z-index: 10;
+  width: 64px; height: 64px; display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.2); border-radius: 50%;
+  .settings-icon { font-size: 36px; }
+}
+
+/* ── 封面区域 ── */
+.cover-area {
+  position: relative; height: 420px; overflow: hidden;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  .cover-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+  .profile-info {
+    position: absolute; bottom: 32px; left: 32px; right: 32px;
+    display: flex; align-items: flex-end;
+    .avatar-wrap {
+      margin-right: 20px;
+      .avatar { width: 120px; height: 120px; border-radius: 50%; border: 4px solid #fff; }
+      .avatar-placeholder {
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(255,255,255,0.3);
+        .avatar-letter { font-size: 48px; color: #fff; font-weight: 700; }
+      }
+    }
+    .name-area {
+      flex: 1;
+      .name { font-size: 36px; font-weight: 700; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+      .badges {
+        display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;
+        .badge {
+          font-size: 20px; color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.2);
+          padding: 2px 12px; border-radius: 16px;
+          &.badge-green { background: rgba(82,196,26,0.3); }
+          &.badge-gold { background: rgba(245,166,35,0.3); }
+        }
+      }
+      .sub-info { font-size: 22px; color: rgba(255,255,255,0.8); margin-top: 6px; }
+    }
+  }
+}
+
+/* ── 能力标签 ── */
+.skill-tags-area {
+  display: flex; flex-wrap: wrap; gap: 12px; padding: 20px 24px; background: #fff;
+  margin-top: -24px; border-radius: 24px 24px 0 0; position: relative; z-index: 2;
+  .skill-tag {
+    background: rgba(91,76,219,0.08); border-radius: 20px; padding: 8px 20px;
+    .tag-text { font-size: 24px; color: $primary; }
+  }
+}
+
+/* ── 数据面板 ── */
+.stats-panel {
+  display: flex; background: #fff; margin: 16px 24px; border-radius: 16px; padding: 28px 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  .stat-item {
+    flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center;
+    border-right: 1px solid #f0f0f0;
+    &:last-child { border-right: none; }
+    .stat-number { font-size: 40px; font-weight: 700; color: #1a1a1a; }
+    .stat-label { font-size: 22px; color: #999; margin-top: 6px; }
+  }
+}
+
+/* ── 财务面板 ── */
+.finance-panel {
+  display: flex; background: #fff; margin: 0 24px; border-radius: 16px; padding: 28px 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  .fin-item {
+    flex: 1; text-align: center;
+    .fin-amount { font-size: 34px; font-weight: 700; display: block; }
+    .fin-label { font-size: 22px; color: #999; margin-top: 6px; }
+  }
+  .fin-divider { width: 1px; background: #f0f0f0; }
+}
+
+/* ── 作品集 ── */
+.portfolio-section {
+  margin: 16px 24px; background: #fff; border-radius: 16px; padding: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  .section-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
+    .section-title { font-size: 30px; font-weight: 600; color: #333; }
+    .section-more { font-size: 24px; color: $primary; }
+  }
+  .portfolio-grid {
+    display: flex; flex-wrap: wrap; gap: 16px;
+    .portfolio-item {
+      width: calc(50% - 8px);
+      .portfolio-img { width: 100%; height: 200px; border-radius: 12px; }
+      .portfolio-name { font-size: 24px; color: #666; margin-top: 8px; display: block;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    }
+    .portfolio-empty {
+      width: 100%; text-align: center; padding: 48px 0; background: $bg; border-radius: 12px;
+      .empty-text { font-size: 26px; color: #bbb; }
+    }
+  }
+}
+
+/* ── 分享按钮 ── */
+.share-btn {
+  margin: 16px 24px; background: $primary; border-radius: 48px; padding: 24px 0; text-align: center;
+  box-shadow: 0 4px 12px rgba(91,76,219,0.3);
+  &:active { opacity: 0.85; }
+  .share-text { font-size: 30px; color: #fff; font-weight: 600; }
+}
+
+.bottom-safe { height: 60px; }
+
+/* ── 信用分弹窗 ── */
+.credit-mask {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5);
+  z-index: 1000; display: flex; align-items: center; justify-content: center;
+}
+.credit-modal {
+  width: 85%; background: #fff; border-radius: 24px; padding: 40px 32px;
+  .credit-title { font-size: 34px; font-weight: 700; text-align: center; margin-bottom: 24px; }
+  .credit-score-big {
+    text-align: center; margin-bottom: 32px;
+    .score-num { font-size: 72px; font-weight: 800; }
+    .score-level { font-size: 28px; color: #666; margin-left: 12px; }
+  }
+  .credit-dim {
+    display: flex; align-items: center; margin-bottom: 20px;
+    .dim-label { width: 120px; font-size: 24px; color: #666; }
+    .dim-bar-wrap { flex: 1; height: 16px; background: #f0f0f0; border-radius: 8px; overflow: hidden; margin: 0 16px; }
+    .dim-bar { height: 100%; background: $primary; border-radius: 8px; transition: width 0.3s; }
+    .dim-score { width: 48px; font-size: 24px; font-weight: 600; text-align: right; }
+    .dim-weight { width: 60px; font-size: 22px; color: #bbb; text-align: right; }
+  }
+  .credit-close {
+    margin-top: 24px; text-align: center; padding: 16px; background: $bg; border-radius: 12px;
+    .close-text { font-size: 28px; color: #666; }
+  }
+}

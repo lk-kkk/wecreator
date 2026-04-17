@@ -1,0 +1,108 @@
+.page {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding-bottom: 120px;
+}
+.loading-area { padding: 200px 0; text-align: center; }
+.loading-text { font-size: 28px; color: #999; }
+
+/* ── 头像 ── */
+.avatar-section {
+  background: #fff;
+  padding: 40px 0;
+  text-align: center;
+  margin-bottom: 16px;
+}
+.avatar-img {
+  width: 160px;
+  height: 160px;
+  border-radius: 80px;
+  display: block;
+  margin: 0 auto;
+}
+.avatar-placeholder {
+  width: 160px;
+  height: 160px;
+  border-radius: 80px;
+  background: #f0edff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+.avatar-icon { font-size: 56px; }
+.avatar-hint { font-size: 24px; color: #999; display: block; margin-top: 12px; }
+
+/* ── 表单 ── */
+.form-section {
+  background: #fff;
+  margin-bottom: 16px;
+  padding: 0 32px;
+}
+.section-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #333;
+  display: block;
+  padding: 24px 0 8px;
+}
+.form-item {
+  padding: 20px 0;
+  border-bottom: 1px solid #f5f5f5;
+  &:last-child { border-bottom: none; }
+}
+.form-item.clickable:active { background: #f8f8fa; }
+.label {
+  font-size: 26px;
+  color: #666;
+  display: block;
+  margin-bottom: 12px;
+}
+.input {
+  font-size: 28px;
+  color: #333;
+  width: 100%;
+  padding: 12px 0;
+}
+.textarea {
+  font-size: 28px;
+  color: #333;
+  width: 100%;
+  min-height: 160px;
+  padding: 12px 0;
+}
+.char-count {
+  font-size: 22px;
+  color: #ccc;
+  text-align: right;
+  display: block;
+  margin-top: 4px;
+}
+
+/* ── 城市选择器 ── */
+.picker-trigger {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+}
+.picker-text { font-size: 28px; color: #333; }
+.picker-text.placeholder { color: #ccc; }
+.picker-arrow { font-size: 32px; color: #ccc; }
+
+/* ── 链接 ── */
+.link-area { float: right; margin-top: -40px; }
+.link-text { font-size: 26px; color: #5B4CDB; }
+
+/* ── 保存 ── */
+.save-area {
+  padding: 32px;
+}
+.save-btn {
+  background: #5B4CDB;
+  border-radius: 44px;
+  padding: 24px 0;
+  text-align: center;
+  &.disabled { opacity: 0.6; }
+}
+.save-text { font-size: 30px; color: #fff; font-weight: 600; }
