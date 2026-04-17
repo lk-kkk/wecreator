@@ -30,15 +30,20 @@ const sorts = [
   { label: '预算高', value: 'budget' },
 ]
 
+type ViewMode = 'flat' | 'list'
+
 export default function MarketplacePage() {
   const [tasks, setTasks] = useState<MarketplaceTask[]>([])
   const [groups, setGroups] = useState<CompanyGroup[]>([])
   const [total, setTotal] = useState(0)
+  const [companyCount, setCompanyCount] = useState(0)
+  const [hint, setHint] = useState('')
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
   const [keyword, setKeyword] = useState('')
   const [filters, setFilters] = useState({ roleName: '', city: '', taskMode: '', sort: 'latest' })
   const [showFilter, setShowFilter] = useState('')
+  const [viewMode, setViewMode] = useState<ViewMode>('flat')
 
   const loadTasks = useCallback(async (p = 1, append = false) => {
     if (loading || !isLoggedIn()) return
@@ -54,6 +59,8 @@ export default function MarketplacePage() {
       const res = await marketplaceApi.list(params)
       setTasks(prev => append ? [...prev, ...res.list] : res.list)
       setTotal(res.total)
+      setCompanyCount(res.companyCount ?? 0)
+      setHint(res.hint ?? '')
       setPage(p)
     } catch {}
     setLoading(false)
@@ -96,6 +103,22 @@ export default function MarketplacePage() {
     )
   }
 
+  // V3.4: 无零工库关系的空状态
+  if (hint && tasks.length === 0 && !loading) {
+    return (
+      <View className='mp-page'>
+        <View className='empty-pool'>
+          <Text className='empty-pool-icon'>🏢</Text>
+          <Text className='empty-pool-title'>暂无可浏览的任务</Text>
+          <Text className='empty-pool-desc'>{hint}</Text>
+          <View className='empty-pool-btn' onClick={() => Taro.switchTab({ url: '/pages/my/index' })}>
+            <Text className='empty-pool-btn-text'>完善个人资料</Text>
+          </View>
+        </View>
+      </View>
+    )
+  }
+
   return (
     <View className='mp-page'>
       {/* 搜索栏 */}
@@ -112,7 +135,7 @@ export default function MarketplacePage() {
         </View>
       </View>
 
-      {/* 筛选条 */}
+      {/* 筛选条 + 视图切换 */}
       <View className='filter-bar'>
         {[
           { key: 'roleName', label: filters.roleName || '角色', options: roles },
@@ -144,17 +167,32 @@ export default function MarketplacePage() {
           <Text className='filter-text'>{sorts.find(s => s.value === filters.sort)?.label}</Text>
           <Text className='filter-arrow'>↕</Text>
         </View>
+
+        {/* V3.4: 视图切换 */}
+        <View className='view-toggle'>
+          <View className={`toggle-btn ${viewMode === 'flat' ? 'active' : ''}`}
+            onClick={() => setViewMode('flat')}>
+            <Text>▦</Text>
+          </View>
+          <View className={`toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
+            onClick={() => setViewMode('list')}>
+            <Text>☰</Text>
+          </View>
+        </View>
       </View>
 
       <ScrollView className='content-scroll' scrollY
         onScrollToLower={() => { if (page * 10 < total) loadTasks(page + 1, true) }}>
 
-        {/* 上半区：待招募任务 */}
-        <View className='section-header'>
-          <Text className='section-title'>📌 待招募中 ({total})</Text>
-        </View>
+        {/* V3.4: 信任提示条 */}
+        {companyCount > 0 && (
+          <View className='trust-banner'>
+            <Text className='trust-text'>🏢 来自 {companyCount} 家合作企业的任务</Text>
+          </View>
+        )}
 
-        {tasks.map(t => (
+        {/* 扁平化视图 */}
+        {viewMode === 'flat' && tasks.map(t => (
           <View key={t.taskId} className='task-card' onClick={() => goDetail(t.taskId)}>
             <View className='task-top'>
               <Text className='task-title'>{t.title}</Text>
@@ -179,11 +217,25 @@ export default function MarketplacePage() {
           </View>
         ))}
 
+        {/* V3.4: 列表视图 */}
+        {viewMode === 'list' && tasks.map(t => (
+          <View key={t.taskId} className='task-list-row' onClick={() => goDetail(t.taskId)}>
+            <View className='list-main'>
+              <Text className='list-title'>{t.title}</Text>
+              <Text className='list-company'>{t.company.name}</Text>
+            </View>
+            <View className='list-info'>
+              <Text className='list-budget'>{formatBudget(t.totalBudget)}</Text>
+              <Text className='list-roles'>{t.roles.length}个角色</Text>
+            </View>
+          </View>
+        ))}
+
         {loading && <View className='loading-more'><Text>加载中...</Text></View>}
-        {!loading && tasks.length === 0 && <View className='empty'><Text>暂无招募中的任务</Text></View>}
+        {!loading && tasks.length === 0 && !hint && <View className='empty'><Text>暂无招募中的任务</Text></View>}
 
         {/* 下半区：按企业浏览 */}
-        {groups.length > 0 && (
+        {groups.length > 0 && viewMode === 'flat' && (
           <>
             <View className='section-divider'>
               <View className='divider-line' />

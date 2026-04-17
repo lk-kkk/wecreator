@@ -340,7 +340,7 @@ async function handleSaveDraft() {
   try {
     await taskApi.create(buildPayload())
     message.success('草稿已保存')
-    router.push('/task/list')
+    router.push('/task/square')
   } catch (err: any) {
     message.error(err?.message || '保存失败')
   } finally {
@@ -354,7 +354,7 @@ async function handlePublish() {
     const res = await taskApi.create(buildPayload())
     await taskApi.publish(res.taskId)
     message.success('🎉 任务发布成功！')
-    router.push('/task/list')
+    router.push('/task/square')
   } catch (err: any) {
     message.error(err?.message || '发布失败')
   } finally {

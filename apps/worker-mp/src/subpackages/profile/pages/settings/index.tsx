@@ -42,6 +42,7 @@ export default function SettingsPage() {
           badge: user?.isVerified ? '✅' : '待认证',
         },
         { icon: '🎯', label: '角色档案管理', action: () => Taro.navigateTo({ url: '/subpackages/auth/pages/profile-edit/index' }) },
+        { icon: '📝', label: '我的申请', action: () => Taro.navigateTo({ url: '/subpackages/profile/pages/applications/index' }) },
       ],
     },
     {

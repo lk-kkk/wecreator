@@ -1,4 +1,4 @@
-/* V3.3 服务广场 */
+/* V3.4 服务广场 */
 $primary: #5B4CDB;
 $green: #52c41a;
 $orange: #faad14;
@@ -120,3 +120,55 @@ $radius: 16px;
 
 .loading-more, .empty { text-align: center; padding: 32px; font-size: 26px; color: $gray; }
 .bottom-padding { height: 40px; }
+
+/* ── V3.4: 空状态(无零工库关系) ── */
+.empty-pool {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 180px 48px 0;
+  .empty-pool-icon { font-size: 80px; margin-bottom: 24px; }
+  .empty-pool-title { font-size: 34px; font-weight: 600; color: #333; margin-bottom: 16px; }
+  .empty-pool-desc { font-size: 26px; color: $gray; text-align: center; line-height: 1.6; }
+  .empty-pool-btn {
+    margin-top: 40px; padding: 16px 64px; background: $primary; border-radius: 40px;
+    .empty-pool-btn-text { color: #fff; font-size: 28px; }
+  }
+}
+
+/* ── V3.4: 信任提示条 ── */
+.trust-banner {
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px 24px; background: linear-gradient(135deg, #f0ebff, #e8f4ff);
+  margin: 12px 24px; border-radius: 12px;
+  .trust-text { font-size: 26px; color: $primary; font-weight: 500; }
+}
+
+/* ── V3.4: 视图切换 ── */
+.view-toggle {
+  display: flex; gap: 4px; margin-left: 8px;
+  .toggle-btn {
+    width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; font-size: 28px; color: $gray; background: transparent;
+    &.active { color: $primary; background: #f0ebff; }
+  }
+}
+
+/* ── V3.4: 列表视图 ── */
+.task-list-row {
+  display: flex; justify-content: space-between; align-items: center;
+  margin: 0 24px; padding: 20px 24px;
+  background: #fff; border-bottom: 1px solid #f0f0f0;
+  &:first-child { border-radius: $radius $radius 0 0; margin-top: 12px; }
+  &:last-child { border-radius: 0 0 $radius $radius; border-bottom: none; }
+  &:active { background: #f9f9f9; }
+  .list-main {
+    flex: 1; min-width: 0;
+    .list-title { font-size: 28px; font-weight: 500; color: #1a1a1a;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+    .list-company { font-size: 22px; color: $gray; margin-top: 4px; display: block; }
+  }
+  .list-info {
+    text-align: right; margin-left: 16px; white-space: nowrap;
+    .list-budget { font-size: 28px; font-weight: 600; color: #ff4d4f; display: block; }
+    .list-roles { font-size: 22px; color: $gray; margin-top: 4px; display: block; }
+  }
+}

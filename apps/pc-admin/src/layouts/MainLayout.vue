@@ -21,8 +21,10 @@
       <a-menu
         mode="inline"
         :selected-keys="selectedKeys"
+        :open-keys="openKeys"
         :inline-indent="16"
         class="main-menu"
+        @openChange="onOpenChange"
       >
         <a-menu-item key="dashboard" @click="$router.push('/dashboard')">
           <template #icon>
@@ -31,19 +33,21 @@
           <span>数据看板</span>
         </a-menu-item>
 
-        <a-menu-item key="task-list" @click="$router.push('/task/list')">
+        <!-- V3.5 任务管理 SubMenu -->
+        <a-sub-menu key="task-group">
           <template #icon>
             <project-outlined />
           </template>
-          <span>任务管理</span>
-        </a-menu-item>
-
-        <a-menu-item key="task-create" @click="$router.push('/task/create')">
-          <template #icon>
-            <plus-circle-outlined />
-          </template>
-          <span>发布任务</span>
-        </a-menu-item>
+          <template #title>任务管理</template>
+          <a-menu-item key="task-square" @click="$router.push('/task/square')">
+            <template #icon><appstore-outlined /></template>
+            任务广场
+          </a-menu-item>
+          <a-menu-item key="task-create" @click="$router.push('/task/create')">
+            <template #icon><plus-circle-outlined /></template>
+            发布任务
+          </a-menu-item>
+        </a-sub-menu>
 
         <a-menu-item key="worker-pool" @click="$router.push('/worker/pool')">
           <template #icon>
@@ -173,6 +177,7 @@ import { useRouter, useRoute } from 'vue-router'
 import {
   FundOutlined,
   ProjectOutlined,
+  AppstoreOutlined,
   PlusCircleOutlined,
   TeamOutlined,
   AuditOutlined,
@@ -195,12 +200,20 @@ const userStore = useUserStore()
 const collapsed = ref(false)
 const balanceDisplay = ref('—')
 
+// ── SubMenu 展开状态 ───────────────────────────────────────────
+// 初始展开任务管理组
+const openKeys = ref<string[]>(['task-group'])
+function onOpenChange(keys: string[]) {
+  openKeys.value = keys
+}
+
 // ── 路由 → 选中菜单 key ──────────────────────────────────────
 const selectedKeys = computed(() => {
   const path = route.path
   if (path.includes('/task/create'))      return ['task-create']
   if (path.includes('/task/dispute'))     return ['dispute']
-  if (path.includes('/task'))             return ['task-list']
+  if (path.includes('/task/square'))      return ['task-square']
+  if (path.includes('/task'))             return ['task-square']
   if (path.includes('/finance/invoices')) return ['invoices']
   if (path.includes('/finance'))          return ['finance']
   if (path.includes('/worker'))           return ['worker-pool']
@@ -215,8 +228,8 @@ const breadcrumbs = computed<Breadcrumb[]>(() => {
   const path = route.path
   const map: Record<string, Breadcrumb[]> = {
     '/dashboard':              [{ label: '数据看板' }],
-    '/task/list':              [{ label: '任务管理' }],
-    '/task/create':            [{ label: '任务管理', path: '/task/list' }, { label: '发布任务' }],
+    '/task/square':             [{ label: '任务管理' }, { label: '任务广场' }],
+    '/task/create':            [{ label: '任务管理' }, { label: '发布任务' }],
     '/task/dispute':           [{ label: '争议仲裁' }],
     '/worker/pool':            [{ label: '零工库' }],
     '/finance':                [{ label: '财务中心' }],
@@ -226,7 +239,7 @@ const breadcrumbs = computed<Breadcrumb[]>(() => {
   }
   // 任务详情动态路由
   if (/^\/task\/\w+/.test(path) && !path.includes('/create') && !path.includes('/dispute')) {
-    return [{ label: '任务管理', path: '/task/list' }, { label: '任务详情' }]
+    return [{ label: '任务管理' }, { label: '任务广场', path: '/task/square' }, { label: '任务详情' }]
   }
   return map[path] || []
 })
@@ -335,6 +348,23 @@ onMounted(loadBalance)
   margin: 2px 8px;
   width: calc(100% - 16px);
   border-radius: 6px;
+}
+
+.main-menu :deep(.ant-menu-submenu-title) {
+  margin: 2px 8px;
+  width: calc(100% - 16px);
+  border-radius: 6px;
+}
+
+.main-menu :deep(.ant-menu-sub.ant-menu-inline) {
+  background: transparent !important;
+}
+
+.main-menu :deep(.ant-menu-sub .ant-menu-item) {
+  margin: 1px 8px 1px 12px;
+  width: calc(100% - 20px);
+  padding-left: 40px !important;
+  font-size: 13px;
 }
 
 .menu-divider {

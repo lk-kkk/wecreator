@@ -35,6 +35,7 @@ model Company {
   users       CompanyUser[]
   tasks       Task[]
   customRoles CompanyCustomRole[]
+  workerPool  CompanyWorkerPool[]
 
   @@map("companies")
 }
@@ -103,6 +104,7 @@ model Worker {
   portfolios   Portfolio[]
   assignments  RoleAssignment[]
   applications TaskApplication[]
+  companyPools CompanyWorkerPool[]
 
   @@index([city, isVerified])
   @@map("workers")
@@ -599,10 +601,12 @@ model TaskApplication {
   intro       String            @db.VarChar(200)
   expectPay   Decimal?          @map("expect_pay") @db.Decimal(10, 2)
   availableAt DateTime?         @map("available_at")
-  status      ApplicationStatus @default(pending)
-  rejectReason String?          @map("reject_reason") @db.VarChar(200)
-  createdAt   DateTime          @default(now()) @map("created_at")
-  updatedAt   DateTime          @updatedAt @map("updated_at")
+  status       ApplicationStatus @default(pending)
+  rejectReason String?           @map("reject_reason") @db.VarChar(200)
+  reviewedAt   DateTime?         @map("reviewed_at")
+  reviewedBy   BigInt?           @map("reviewed_by")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
 
   taskRole TaskRole @relation(fields: [taskRoleId], references: [id])
   worker   Worker   @relation(fields: [workerId], references: [id])
@@ -611,6 +615,36 @@ model TaskApplication {
   @@index([workerId, status])
   @@index([taskRoleId, status])
   @@map("task_applications")
+}
+
+// ══════════════════════════════════════════════════════════════════
+// V3.4 NEW — 企业零工库 (company_worker_pool)
+// ══════════════════════════════════════════════════════════════════
+
+enum PoolInviteStatus {
+  pending
+  registered
+  verified
+}
+
+model CompanyWorkerPool {
+  id           BigInt           @id @default(autoincrement())
+  companyId    BigInt           @map("company_id")
+  workerId     BigInt?          @map("worker_id")
+  preName      String           @map("pre_name") @db.VarChar(20)
+  prePhone     String           @map("pre_phone") @db.VarChar(11)
+  customTags   Json?            @map("custom_tags")
+  internalNote String?          @map("internal_note") @db.VarChar(200)
+  inviteStatus PoolInviteStatus @default(pending) @map("invite_status")
+  invitedAt    DateTime         @default(now()) @map("invited_at")
+  createdAt    DateTime         @default(now()) @map("created_at")
+
+  company Company  @relation(fields: [companyId], references: [id])
+  worker  Worker?  @relation(fields: [workerId], references: [id])
+
+  @@unique([companyId, prePhone])
+  @@index([workerId, inviteStatus])
+  @@map("company_worker_pool")
 }
 
 // ══════════════════════════════════════════════════════════════════

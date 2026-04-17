@@ -356,3 +356,24 @@
 | M-011 | PRD V3.3 更新(8处章节变更) | PM | ✅ | 2026-04-17 | 3155→3457行 |
 | M-012 | 全端构建验证(3 builds pass) | R8 QA | ✅ | 2026-04-17 | Backend+PC+Worker MP |
 | M-013 | E2E测试回归(124/124 pass) | R8 QA | ✅ | 2026-04-17 | --runInBand green |
+
+## V3.4 服务广场权限模型修正
+
+| 编号 | 任务 | 负责角色 | 状态 | 完成日期 | 备注 |
+|------|------|----------|------|----------|------|
+| V34-001 | Prisma新增CompanyWorkerPool模型+Migration | R10 Schema | ✅ | 2026-04-18 | company_worker_pool表+PoolInviteStatus枚举 |
+| V34-002 | TaskApplication增加reviewedAt/reviewedBy字段 | R10 Schema | ✅ | 2026-04-18 | migration: v3_4_worker_pool_and_review_fields |
+| V34-003 | MarketplaceController增加零工库过滤逻辑 | R2 Task | ✅ | 2026-04-18 | getPoolCompanyIds→仅返回关联企业任务 |
+| V34-004 | TaskApplicationController(企业端申请审核) | R2 Task | ✅ | 2026-04-18 | GET applications + POST review |
+| V34-005 | WorkerApplicationController(零工端申请记录) | R2 Task | ✅ | 2026-04-18 | GET worker/applications |
+| V34-006 | 申请确认→直接创建accepted分配(非invited) | R2 Task | ✅ | 2026-04-18 | 事务: 更新申请+创建分配+任务流转 |
+| V34-007 | 婉拒→仅更新申请状态不影响任务 | R2 Task | ✅ | 2026-04-18 | 必须填写rejectReason |
+| V34-008 | MP服务广场页增加信任提示+视图切换 | R7 MP | ✅ | 2026-04-18 | 「来自X家合作企业」+扁平/列表切换 |
+| V34-009 | MP服务广场空状态(无零工库关系) | R7 MP | ✅ | 2026-04-18 | 引导完善个人资料 |
+| V34-010 | MP「我的申请」页(subpkg-profile) | R7 MP | ✅ | 2026-04-18 | 待审核/已通过/已婉拒+重新申请 |
+| V34-011 | MP设置页增加「我的申请」入口 | R7 MP | ✅ | 2026-04-18 | 个人管理分组新增📝 |
+| V34-012 | MP API层增加workerApplicationApi | R7 MP | ✅ | 2026-04-18 | list接口+类型定义 |
+| V34-013 | PC端任务详情页新增「申请管理」卡片 | R6 PC | ✅ | 2026-04-18 | 确认/婉拒操作+badge显示 |
+| V34-014 | PRD V3.4 更新(10项变更) | PM | ✅ | 2026-04-18 | 3457→3557行 |
+| V34-015 | 全端构建验证(3 builds pass) | R8 QA | ✅ | 2026-04-18 | Backend+PC+Worker MP |
+| V34-016 | E2E测试回归(124/124 pass) | R8 QA | ✅ | 2026-04-18 | 无回归 |

@@ -31,8 +31,35 @@
           </a-card>
         </div>
 
-        <!-- ===================== 中栏：角色 + 交付物 ===================== -->
+        <!-- ===================== 中栏：角色 + 申请管理 + 交付物 ===================== -->
         <div class="col-center">
+          <!-- V3.4: 申请管理 -->
+          <a-card v-if="(task?.status === 'published' || task?.status === 'in_progress') && applications.length > 0" title="📝 申请管理" :bordered="false" class="role-card">
+            <template #extra>
+              <a-badge :count="pendingApplications.length" :number-style="{ backgroundColor: '#faad14' }" />
+            </template>
+            <div v-for="app in applications" :key="app.applicationId" class="application-row">
+              <a-avatar :src="app.worker.avatarUrl || undefined" :size="36">{{ (app.worker.realName || '?')[0] }}</a-avatar>
+              <div style="flex:1;min-width:0;margin-left:8px">
+                <div style="font-weight:600">{{ app.worker.realName || `零工#${app.worker.workerId}` }}
+                  <span style="font-weight:400;color:#999;font-size:12px;margin-left:4px">申请: {{ app.role.roleName }}</span>
+                </div>
+                <div style="font-size:12px;color:#666;margin-top:2px">{{ app.worker.city || '未知' }} · ⭐{{ (app.worker.avgRating || 0).toFixed(1) }} · {{ app.worker.completedCount || 0 }}单</div>
+                <div style="font-size:12px;color:#888;margin-top:4px;font-style:italic">「{{ app.intro }}」</div>
+                <div v-if="app.expectPay" style="font-size:12px;color:#ff4d4f;margin-top:2px">期望报酬: ¥{{ Number(app.expectPay).toLocaleString() }}</div>
+              </div>
+              <div style="display:flex;gap:6px;align-items:center;margin-left:8px">
+                <template v-if="app.status === 'pending'">
+                  <a-popconfirm title="确认后零工将直接进入执行状态" @confirm="handleReviewApp(app.applicationId, 'approved')" ok-text="确认" cancel-text="取消">
+                    <a-button type="primary" size="small">✅ 确认</a-button>
+                  </a-popconfirm>
+                  <a-button size="small" danger @click="showRejectModal(app.applicationId)">婩拒</a-button>
+                </template>
+                <a-tag v-else :color="app.status === 'approved' ? 'green' : 'red'">{{ app.status === 'approved' ? '已确认' : '已婩拒' }}</a-tag>
+              </div>
+            </div>
+          </a-card>
+
           <a-card
             v-for="role in task.roles"
             :key="role.taskRoleId"
@@ -124,7 +151,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import dayjs from 'dayjs'
 import { message } from 'ant-design-vue'
@@ -141,6 +168,8 @@ const taskId = Number(route.params.id)
 const loading = ref(false)
 const task = ref<any>(null)
 const activeConversation = ref<any>(null)
+const applications = ref<any[]>([])
+const pendingApplications = computed(() => applications.value.filter((a: any) => a.status === 'pending'))
 
 const statusColor: Record<string, string> = {
   draft: 'default', pending_review: 'processing', published: 'blue',
@@ -168,6 +197,7 @@ async function load() {
   try {
     const res = await taskApi.detailFull(taskId)
     task.value = res.data ?? res
+    loadApplications()
   } catch (e: any) {
     message.error(e?.message || '加载失败')
   } finally {
@@ -183,6 +213,37 @@ async function handleCancel() {
 
 function openImPanel(assignment: any, role: any) {
   activeConversation.value = { assignment, role, taskId }
+}
+
+// V3.4: 申请管理
+async function loadApplications() {
+  try {
+    const res = await request.get<any,any>(`/tasks/${taskId}/applications`)
+    applications.value = res.list || res.data?.list || []
+  } catch {
+    applications.value = []
+  }
+}
+
+async function handleReviewApp(appId: number, action: 'approved' | 'rejected', reason?: string) {
+  try {
+    const body: any = { action }
+    if (reason) body.rejectReason = reason
+    await request.post(`/tasks/${taskId}/applications/${appId}/review`, body)
+    message.success(action === 'approved' ? '已确认，零工已进入执行状态' : '已婩拒')
+    load()
+  } catch (e: any) {
+    message.error(e?.message || '操作失败')
+  }
+}
+
+function showRejectModal(appId: number) {
+  const reason = window.prompt('请输入婩拒原因（必填）')
+  if (reason && reason.trim()) {
+    handleReviewApp(appId, 'rejected', reason.trim())
+  } else if (reason !== null) {
+    message.warning('婩拒时必须填写原因')
+  }
 }
 
 // ── 邀约抽屉 ──
@@ -302,5 +363,15 @@ onMounted(load)
 }
 .invite-worker-card:hover {
   background: var(--color-bg-hover);
+}
+.application-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border-light);
+}
+.application-row:last-child {
+  border-bottom: none;
 }
 </style>

@@ -35,7 +35,7 @@ export default defineAppConfig({
     },
     {
       root: 'subpackages/profile',
-      pages: ['pages/portfolio/index', 'pages/settings/index'],
+      pages: ['pages/portfolio/index', 'pages/settings/index', 'pages/applications/index'],
     },
   ],
   preloadRule: {

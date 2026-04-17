@@ -21,12 +21,17 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         path: '',
-        redirect: '/task/list',
+        redirect: '/task/square',
       },
       {
-        path: 'task/list',
-        name: 'TaskList',
+        path: 'task/square',
+        name: 'TaskSquare',
         component: () => import('@/pages/task/TaskListPage.vue'),
+      },
+      {
+        // V3.5 兼容旧路由
+        path: 'task/list',
+        redirect: '/task/square',
       },
       {
         path: 'task/create',
