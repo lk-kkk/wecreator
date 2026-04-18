@@ -17,7 +17,7 @@
         </transition>
       </div>
 
-      <!-- 导航菜单 -->
+      <!-- 导航菜单 — 对齐 PRD V3.6 §9.1 侧边栏结构 -->
       <a-menu
         mode="inline"
         :selected-keys="selectedKeys"
@@ -26,18 +26,15 @@
         class="main-menu"
         @openChange="onOpenChange"
       >
+        <!-- 📊 工作台 -->
         <a-menu-item key="dashboard" @click="$router.push('/dashboard')">
-          <template #icon>
-            <fund-outlined />
-          </template>
-          <span>数据看板</span>
+          <template #icon><fund-outlined /></template>
+          <span>工作台</span>
         </a-menu-item>
 
-        <!-- V3.5 任务管理 SubMenu -->
+        <!-- 📦 任务管理 SubMenu -->
         <a-sub-menu key="task-group">
-          <template #icon>
-            <project-outlined />
-          </template>
+          <template #icon><project-outlined /></template>
           <template #title>任务管理</template>
           <a-menu-item key="task-square" @click="$router.push('/task/square')">
             <template #icon><appstore-outlined /></template>
@@ -49,67 +46,57 @@
           </a-menu-item>
         </a-sub-menu>
 
-        <a-menu-item key="worker-pool" @click="$router.push('/worker/pool')">
-          <template #icon>
-            <team-outlined />
-          </template>
-          <span>零工库</span>
-        </a-menu-item>
-
-        <a-menu-item key="dispute" @click="$router.push('/task/dispute')">
-          <template #icon>
-            <audit-outlined />
-          </template>
-          <span>争议仲裁</span>
-        </a-menu-item>
-
-        <a-menu-item key="project" @click="$router.push('/project')">
-          <template #icon>
-            <partition-outlined />
-          </template>
+        <!-- 📁 项目管理 -->
+        <a-menu-item key="project" @click="$router.push('/project/list')">
+          <template #icon><partition-outlined /></template>
           <span>项目管理</span>
         </a-menu-item>
 
-        <!-- AI 智能 SubMenu -->
-        <a-sub-menu key="ai-group">
-          <template #icon>
-            <robot-outlined />
-          </template>
-          <template #title>AI 智能</template>
-          <a-menu-item key="ai-agents" @click="$router.push('/ai/agents')">
-            <template #icon><robot-outlined /></template>
-            智能体管理
-          </a-menu-item>
-          <a-menu-item key="ai-config" @click="$router.push('/ai/config')">
-            <template #icon><api-outlined /></template>
-            LLM 配置
-          </a-menu-item>
-        </a-sub-menu>
+        <!-- 👥 零工库 -->
+        <a-menu-item key="worker-pool" @click="$router.push('/worker/pool')">
+          <template #icon><team-outlined /></template>
+          <span>零工库</span>
+        </a-menu-item>
+
+        <!-- ⚖️ 争议管理 -->
+        <a-menu-item key="dispute" @click="$router.push('/task/dispute')">
+          <template #icon><audit-outlined /></template>
+          <span>争议管理</span>
+        </a-menu-item>
 
         <div class="menu-divider" />
 
+        <!-- 💰 财务中心 -->
         <a-menu-item key="finance" @click="$router.push('/finance')">
-          <template #icon>
-            <wallet-outlined />
-          </template>
+          <template #icon><wallet-outlined /></template>
           <span>财务中心</span>
         </a-menu-item>
 
+        <!-- 🧾 发票管理 -->
         <a-menu-item key="invoices" @click="$router.push('/finance/invoices')">
-          <template #icon>
-            <file-text-outlined />
-          </template>
+          <template #icon><file-text-outlined /></template>
           <span>发票管理</span>
         </a-menu-item>
 
         <div class="menu-divider" />
 
-        <a-menu-item key="subaccounts" @click="$router.push('/admin/subaccounts')">
-          <template #icon>
-            <user-switch-outlined />
-          </template>
-          <span>子账号管理</span>
-        </a-menu-item>
+        <!-- ⚙️ 系统管理 SubMenu — PRD V3.6: 仅 super_admin 可见 -->
+        <a-sub-menu v-if="userStore.isSuperAdmin" key="settings-group">
+          <template #icon><setting-outlined /></template>
+          <template #title>系统管理</template>
+          <a-menu-item key="subaccounts" @click="$router.push('/settings/users')">
+            <template #icon><user-switch-outlined /></template>
+            子账号管理
+          </a-menu-item>
+          <a-menu-item key="llm-config" @click="$router.push('/settings/llm')">
+            <template #icon><api-outlined /></template>
+            大模型配置
+          </a-menu-item>
+          <a-menu-item key="agents" @click="$router.push('/settings/agents')">
+            <template #icon><robot-outlined /></template>
+            智能体管理
+          </a-menu-item>
+        </a-sub-menu>
       </a-menu>
 
       <!-- 底部折叠按钮 -->
@@ -216,7 +203,6 @@ import {
   PartitionOutlined,
   RobotOutlined,
   ApiOutlined,
-  NotificationOutlined,
 } from '@ant-design/icons-vue'
 import { useUserStore } from '@/stores/user'
 import request from '@/api/request'
@@ -234,51 +220,51 @@ function onOpenChange(keys: string[]) {
   openKeys.value = keys
 }
 
-// ── 路由 → 选中菜单 key ──────────────────────────────────────
+// ── 路由 → 选中菜单 key ── 对齐 PRD V3.6 路由路径 ──────────
 const selectedKeys = computed(() => {
   const path = route.path
-  if (path.includes('/task/create'))      return ['task-create']
-  if (path.includes('/task/dispute'))     return ['dispute']
-  if (path.includes('/task/square'))      return ['task-square']
-  if (path.includes('/task'))             return ['task-square']
-  if (path.includes('/finance/invoices')) return ['invoices']
-  if (path.includes('/finance'))          return ['finance']
-  if (path.includes('/worker'))           return ['worker-pool']
-  if (path.includes('/dashboard'))        return ['dashboard']
-  if (path.includes('/project'))          return ['project']
-  if (path.includes('/ai/config'))        return ['ai-config']
-  if (path.includes('/ai/agents'))        return ['ai-agents']
-  if (path.includes('/notifications'))    return ['notifications']
-  if (path.includes('/admin'))            return ['subaccounts']
+  if (path.includes('/task/create'))       return ['task-create']
+  if (path.includes('/task/dispute'))      return ['dispute']
+  if (path.includes('/task/square'))       return ['task-square']
+  if (path.includes('/task'))              return ['task-square']
+  if (path.includes('/project'))           return ['project']
+  if (path.includes('/worker'))            return ['worker-pool']
+  if (path.includes('/finance/invoices'))  return ['invoices']
+  if (path.includes('/finance'))           return ['finance']
+  if (path.includes('/settings/users'))    return ['subaccounts']
+  if (path.includes('/settings/llm'))      return ['llm-config']
+  if (path.includes('/settings/agents'))   return ['agents']
+  if (path.includes('/dashboard'))         return ['dashboard']
+  if (path.includes('/notifications'))     return ['notifications']
   return ['dashboard']
 })
 
-// ── 面包屑 ────────────────────────────────────────────────────
+// ── 面包屑 ── 对齐 PRD V3.6 菜单名称 ─────────────────────────
 interface Breadcrumb { label: string; path?: string }
 const breadcrumbs = computed<Breadcrumb[]>(() => {
   const path = route.path
   const map: Record<string, Breadcrumb[]> = {
-    '/dashboard':              [{ label: '数据看板' }],
-    '/task/square':             [{ label: '任务管理' }, { label: '任务广场' }],
+    '/dashboard':              [{ label: '工作台' }],
+    '/task/square':            [{ label: '任务管理' }, { label: '任务广场' }],
     '/task/create':            [{ label: '任务管理' }, { label: '发布任务' }],
-    '/task/dispute':           [{ label: '争议仲裁' }],
+    '/task/dispute':           [{ label: '争议管理' }],
     '/worker/pool':            [{ label: '零工库' }],
     '/finance':                [{ label: '财务中心' }],
     '/finance/recharge':       [{ label: '财务中心', path: '/finance' }, { label: '充值' }],
     '/finance/invoices':       [{ label: '财务中心', path: '/finance' }, { label: '发票管理' }],
-    '/admin/subaccounts':      [{ label: '子账号管理' }],
-    '/project':                 [{ label: '项目管理' }],
-    '/ai/config':               [{ label: 'AI 智能' }, { label: 'LLM 配置' }],
-    '/ai/agents':               [{ label: 'AI 智能' }, { label: '智能体管理' }],
-    '/notifications':           [{ label: '通知中心' }],
+    '/project/list':           [{ label: '项目管理' }],
+    '/settings/users':         [{ label: '系统管理' }, { label: '子账号管理' }],
+    '/settings/llm':           [{ label: '系统管理' }, { label: '大模型配置' }],
+    '/settings/agents':        [{ label: '系统管理' }, { label: '智能体管理' }],
+    '/notifications':          [{ label: '通知中心' }],
   }
   // 任务详情动态路由
   if (/^\/task\/\w+/.test(path) && !path.includes('/create') && !path.includes('/dispute')) {
     return [{ label: '任务管理' }, { label: '任务广场', path: '/task/square' }, { label: '任务详情' }]
   }
   // 项目详情动态路由
-  if (/^\/project\/\w+/.test(path)) {
-    return [{ label: '项目管理', path: '/project' }, { label: '项目详情' }]
+  if (/^\/project\/\w+/.test(path) && !path.includes('/list')) {
+    return [{ label: '项目管理', path: '/project/list' }, { label: '项目详情' }]
   }
   return map[path] || []
 })

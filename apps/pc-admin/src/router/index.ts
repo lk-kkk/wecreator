@@ -1,6 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 
+/**
+ * 路由结构对齐 PRD V3.6 §9.1 企业端页面清单
+ * 侧边栏菜单结构见 PRD V3.6 §9.1 侧边栏菜单结构
+ */
 const routes: RouteRecordRaw[] = [
   {
     path: '/login',
@@ -19,20 +23,23 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/layouts/MainLayout.vue'),
     meta: { requiresAuth: true },
     children: [
+      // ── 默认首页 → 任务广场 ──
+      { path: '', redirect: '/task/square' },
+
+      // ── 📊 工作台 (Dashboard) ──
       {
-        path: '',
-        redirect: '/task/square',
+        path: 'dashboard',
+        name: 'Dashboard',
+        component: () => import('@/pages/dashboard/DashboardPage.vue'),
       },
+
+      // ── 📦 任务管理 ──
       {
         path: 'task/square',
         name: 'TaskSquare',
         component: () => import('@/pages/task/TaskListPage.vue'),
       },
-      {
-        // V3.5 兼容旧路由
-        path: 'task/list',
-        redirect: '/task/square',
-      },
+      { path: 'task/list', redirect: '/task/square' }, // 兼容旧路由
       {
         path: 'task/create',
         name: 'TaskCreate',
@@ -43,6 +50,35 @@ const routes: RouteRecordRaw[] = [
         name: 'TaskDetail',
         component: () => import('@/pages/task/TaskDetailPage.vue'),
       },
+
+      // ── 📁 项目管理 ── PRD: /project/list
+      {
+        path: 'project/list',
+        name: 'ProjectList',
+        component: () => import('@/pages/project/ProjectListPage.vue'),
+      },
+      { path: 'project', redirect: '/project/list' }, // 兼容短路径
+      {
+        path: 'project/:id',
+        name: 'ProjectDetail',
+        component: () => import('@/pages/project/ProjectDetailPage.vue'),
+      },
+
+      // ── 👥 零工库 ──
+      {
+        path: 'worker/pool',
+        name: 'WorkerPool',
+        component: () => import('@/pages/worker/WorkerPoolPage.vue'),
+      },
+
+      // ── ⚖️ 争议管理 ──
+      {
+        path: 'task/dispute',
+        name: 'Dispute',
+        component: () => import('@/pages/dispute/DisputePage.vue'),
+      },
+
+      // ── 💰 财务中心 ──
       {
         path: 'finance',
         name: 'Finance',
@@ -53,56 +89,38 @@ const routes: RouteRecordRaw[] = [
         name: 'Recharge',
         component: () => import('@/pages/finance/RechargePage.vue'),
       },
-      {
-        path: 'worker/pool',
-        name: 'WorkerPool',
-        component: () => import('@/pages/worker/WorkerPoolPage.vue'),
-      },
-      {
-        path: 'dashboard',
-        name: 'Dashboard',
-        component: () => import('@/pages/dashboard/DashboardPage.vue'),
-      },
-      {
-        path: 'admin/subaccounts',
-        name: 'Subaccounts',
-        component: () => import('@/pages/settings/SubaccountPage.vue'),
-        meta: { requiresRole: 'super_admin' },
-      },
+
+      // ── 🧾 发票管理 ──
       {
         path: 'finance/invoices',
         name: 'Invoices',
         component: () => import('@/pages/finance/InvoicePage.vue'),
       },
+
+      // ── ⚙️ 系统管理 ── PRD V3.6: SubMenu (仅 super_admin 可见)
       {
-        path: 'task/dispute',
-        name: 'Dispute',
-        component: () => import('@/pages/dispute/DisputePage.vue'),
-      },
-      // ── Sprint 3: 项目管理 ──
-      {
-        path: 'project',
-        name: 'ProjectList',
-        component: () => import('@/pages/project/ProjectListPage.vue'),
-      },
-      {
-        path: 'project/:id',
-        name: 'ProjectDetail',
-        component: () => import('@/pages/project/ProjectDetailPage.vue'),
-      },
-      // ── Sprint 3: AI 配置 ──
-      {
-        path: 'ai/config',
-        name: 'LlmConfig',
-        component: () => import('@/pages/ai/LlmConfigPage.vue'),
+        path: 'settings/users',
+        name: 'Subaccounts',
+        component: () => import('@/pages/settings/SubaccountPage.vue'),
         meta: { requiresRole: 'super_admin' },
       },
+      { path: 'admin/subaccounts', redirect: '/settings/users' }, // 兼容旧路由
       {
-        path: 'ai/agents',
-        name: 'AgentList',
-        component: () => import('@/pages/ai/AgentListPage.vue'),
+        path: 'settings/llm',
+        name: 'LlmConfig',
+        component: () => import('@/pages/settings/LlmConfigPage.vue'),
+        meta: { requiresRole: 'super_admin' },
       },
-      // ── Sprint 4: 通知中心 ──
+      { path: 'ai/config', redirect: '/settings/llm' }, // 兼容旧路由
+      {
+        path: 'settings/agents',
+        name: 'AgentList',
+        component: () => import('@/pages/settings/AgentListPage.vue'),
+        meta: { requiresRole: 'super_admin' },
+      },
+      { path: 'ai/agents', redirect: '/settings/agents' }, // 兼容旧路由
+
+      // ── 🔔 通知中心 ──
       {
         path: 'notifications',
         name: 'Notifications',
