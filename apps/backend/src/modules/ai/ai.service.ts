@@ -14,12 +14,13 @@ import {
 import { Cron } from '@nestjs/schedule';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsString, IsOptional, IsNumber, IsArray,
+  IsString, IsOptional, IsNumber, IsArray, IsBoolean,
   MaxLength, IsIn, Min, Max,
 } from 'class-validator';
 import { PrismaService } from '../../prisma';
 import { CryptoUtil } from '../../common/utils/crypto.util';
 import { randomUUID } from 'crypto';
+import * as https from 'https';
 
 const logger = new Logger('AiService');
 
@@ -41,12 +42,17 @@ export class UpdateLlmConfigDto {
   @ApiProperty() @IsString() @MaxLength(100) defaultModel: string;
   @ApiPropertyOptional() @IsOptional() @IsNumber() @Min(0) @Max(2) temperature?: number;
   @ApiPropertyOptional() @IsOptional() @IsNumber() @Min(1) @Max(128000) maxTokens?: number;
+  // Custom HTTP
   @ApiPropertyOptional() @IsOptional() @IsIn(['openai_compatible', 'custom_http']) customProtocol?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() customChatUrl?: string;
   @ApiPropertyOptional() @IsOptional() @IsIn(['bearer', 'header', 'query', 'none']) customAuthType?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() customAuthHeader?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() customRequestTemplate?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() customResponsePath?: string;
+  @ApiPropertyOptional({ description: 'JSON 格式的额外请求头，如 {"X-Custom":"val"}' })
+  @IsOptional() @IsString() customHeaders?: string;  // JSON 字符串，前端传 JSON.stringify({})
+  @ApiPropertyOptional({ description: '跳过 TLS 证书验证（适用于自签名证书/内网部署）' })
+  @IsOptional() @IsBoolean() allowInsecureHttps?: boolean;
 }
 
 export class CreateAgentDto {
@@ -65,11 +71,21 @@ export class UpdateAgentDto extends CreateAgentDto {}
 export class CreateModelPresetDto {
   @ApiProperty({ description: '预设展示名称' }) @IsString() @MaxLength(60) displayName: string;
   @ApiProperty({ enum: SUPPORTED_PROVIDERS }) @IsIn(SUPPORTED_PROVIDERS) provider: string;
-  @ApiProperty({ description: 'API Key （入库前加密）' }) @IsString() apiKey: string;
+  @ApiProperty({ description: 'API Key（入库前加密）' }) @IsString() apiKey: string;
   @ApiProperty({ description: '模型名称' }) @IsString() @MaxLength(100) modelName: string;
   @ApiPropertyOptional() @IsOptional() @IsString() baseUrl?: string;
   @ApiPropertyOptional() @IsOptional() @IsNumber() @Min(0) @Max(2) temperature?: number;
   @ApiPropertyOptional() @IsOptional() @IsNumber() @Min(1) @Max(128000) maxTokens?: number;
+  // Custom HTTP
+  @ApiPropertyOptional() @IsOptional() @IsIn(['openai_compatible', 'custom_http']) customProtocol?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() customChatUrl?: string;
+  @ApiPropertyOptional() @IsOptional() @IsIn(['bearer', 'header', 'query', 'none']) customAuthType?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() customAuthHeader?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() customRequestTemplate?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() customResponsePath?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() customHeaders?: string;
+  @ApiPropertyOptional({ description: '跳过 TLS 证书验证（适用于自签名证书/内网部署）' })
+  @IsOptional() @IsBoolean() allowInsecureHttps?: boolean;
 }
 
 export class UpdateModelPresetDto {
@@ -80,6 +96,15 @@ export class UpdateModelPresetDto {
   @ApiPropertyOptional() @IsOptional() @IsString() baseUrl?: string;
   @ApiPropertyOptional() @IsOptional() @IsNumber() @Min(0) @Max(2) temperature?: number;
   @ApiPropertyOptional() @IsOptional() @IsNumber() @Min(1) @Max(128000) maxTokens?: number;
+  // Custom HTTP
+  @ApiPropertyOptional() @IsOptional() @IsIn(['openai_compatible', 'custom_http']) customProtocol?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() customChatUrl?: string;
+  @ApiPropertyOptional() @IsOptional() @IsIn(['bearer', 'header', 'query', 'none']) customAuthType?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() customAuthHeader?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() customRequestTemplate?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() customResponsePath?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() customHeaders?: string;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() allowInsecureHttps?: boolean;
 }
 
 export class ChatDto {
@@ -122,6 +147,8 @@ export class AiService {
       customAuthHeader: config.customAuthHeader,
       customRequestTemplate: config.customRequestTemplate,
       customResponsePath: config.customResponsePath,
+      customHeaders: config.customHeaders,
+      allowInsecureHttps: config.allowInsecureHttps,
       isActive: config.isActive,
       monthlyCallCount: config.monthlyCallCount,
       monthlyTokenCount: Number(config.monthlyTokenCount),
@@ -169,6 +196,8 @@ export class AiService {
       customAuthHeader: dto.customAuthHeader || null,
       customRequestTemplate: dto.customRequestTemplate || null,
       customResponsePath: dto.customResponsePath || null,
+      customHeaders: dto.customHeaders ? (() => { try { return JSON.parse(dto.customHeaders!); } catch { return null; } })() : null,
+      allowInsecureHttps: dto.allowInsecureHttps ?? false,
     };
 
     const config = await this.prisma.llmConfig.upsert({
@@ -186,7 +215,7 @@ export class AiService {
     if (!config) throw new BadRequestException('请先配置LLM');
 
     const apiKey = this.crypto.decrypt(config.apiKeyEncrypted);
-    const adapter = this.getAdapter(config.provider, apiKey, config.baseUrl, config.defaultModel);
+    const adapter = this.getAdapter(config.provider, apiKey, config.baseUrl, config.defaultModel, config as any);
 
     try {
       const result = await adapter.testConnection();
@@ -314,6 +343,14 @@ export class AiService {
         baseUrl: dto.baseUrl || null,
         temperature: dto.temperature ?? 0.7,
         maxTokens: dto.maxTokens ?? 4096,
+        customProtocol: (dto.customProtocol as any) || null,
+        customChatUrl: dto.customChatUrl || null,
+        customAuthType: (dto.customAuthType as any) || null,
+        customAuthHeader: dto.customAuthHeader || null,
+        customRequestTemplate: dto.customRequestTemplate || null,
+        customResponsePath: dto.customResponsePath || null,
+        customHeaders: dto.customHeaders ? (() => { try { return JSON.parse(dto.customHeaders!); } catch { return null; } })() : null,
+        allowInsecureHttps: dto.allowInsecureHttps ?? false,
       },
     });
     return { presetId: Number(preset.id), displayName: preset.displayName };
@@ -340,6 +377,16 @@ export class AiService {
         baseUrl: dto.baseUrl !== undefined ? (dto.baseUrl || null) : preset.baseUrl,
         temperature: dto.temperature ?? preset.temperature,
         maxTokens: dto.maxTokens ?? preset.maxTokens,
+        customProtocol: dto.customProtocol !== undefined ? ((dto.customProtocol as any) || null) : preset.customProtocol,
+        customChatUrl: dto.customChatUrl !== undefined ? (dto.customChatUrl || null) : preset.customChatUrl,
+        customAuthType: dto.customAuthType !== undefined ? ((dto.customAuthType as any) || null) : preset.customAuthType,
+        customAuthHeader: dto.customAuthHeader !== undefined ? (dto.customAuthHeader || null) : preset.customAuthHeader,
+        customRequestTemplate: dto.customRequestTemplate !== undefined ? (dto.customRequestTemplate || null) : preset.customRequestTemplate,
+        customResponsePath: dto.customResponsePath !== undefined ? (dto.customResponsePath || null) : preset.customResponsePath,
+        customHeaders: dto.customHeaders !== undefined
+          ? (dto.customHeaders ? (() => { try { return JSON.parse(dto.customHeaders!); } catch { return null; } })() : null)
+          : preset.customHeaders,
+        allowInsecureHttps: dto.allowInsecureHttps !== undefined ? dto.allowInsecureHttps : preset.allowInsecureHttps,
       },
     });
     return { presetId };
@@ -368,7 +415,7 @@ export class AiService {
     if (!preset) throw new NotFoundException('预设不存在');
 
     const apiKey = this.crypto.decrypt(preset.apiKeyEncrypted);
-    const adapter = this.getAdapter(preset.provider, apiKey, preset.baseUrl, preset.modelName);
+    const adapter = this.getAdapter(preset.provider, apiKey, preset.baseUrl, preset.modelName, preset as any);
 
     try {
       const result = await adapter.testConnection();
@@ -396,6 +443,15 @@ export class AiService {
       maxTokens: p.maxTokens,
       isActive: p.isActive,
       apiKeyMasked: '****' + this.crypto.decrypt(p.apiKeyEncrypted).slice(-4),
+      // Custom HTTP
+      customProtocol: p.customProtocol,
+      customChatUrl: p.customChatUrl,
+      customAuthType: p.customAuthType,
+      customAuthHeader: p.customAuthHeader,
+      customRequestTemplate: p.customRequestTemplate,
+      customResponsePath: p.customResponsePath,
+      customHeaders: p.customHeaders,
+      allowInsecureHttps: p.allowInsecureHttps,
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
     };
@@ -452,7 +508,9 @@ export class AiService {
     const model = agent.modelName || presetData?.modelName || config.defaultModel;
     const provider = presetData?.provider || config.provider;
     const baseUrl = presetData?.baseUrl ?? config.baseUrl;
-    const adapter = this.getAdapter(provider, apiKey, baseUrl, model);
+    // 合并 preset 或 config 的 custom 字段
+    const adapterConfig = presetData ?? config;
+    const adapter = this.getAdapter(provider, apiKey, baseUrl, model, adapterConfig as any);
 
     const aiResponse = await adapter.chatWithHistory(
       agent.systemPrompt,
@@ -538,7 +596,7 @@ export class AiService {
     if (!config || !config.isActive) return null;
 
     const apiKey = this.crypto.decrypt(config.apiKeyEncrypted);
-    const adapter = this.getAdapter(config.provider, apiKey, config.baseUrl, config.defaultModel);
+    const adapter = this.getAdapter(config.provider, apiKey, config.baseUrl, config.defaultModel, config as any);
 
     const systemPrompt = `你是WeCreator任务规划顾问。根据用户描述，输出JSON格式的任务建议：
 {
@@ -568,17 +626,58 @@ export class AiService {
   }
 
   // ═══════ LLM Adapter (Strategy Pattern) ═══════
-  private getAdapter(provider: string, apiKey: string, baseUrl: string | null, model: string): LLMAdapter {
+  /**
+   * 根据 provider 创建对应的 LLM 适配器
+   * configObj: 包含 customChatUrl / customAuthType / customAuthHeader /
+   *            customRequestTemplate / customResponsePath / customHeaders / allowInsecureHttps
+   */
+  private getAdapter(
+    provider: string,
+    apiKey: string,
+    baseUrl: string | null,
+    model: string,
+    configObj?: {
+      customChatUrl?: string | null;
+      customAuthType?: string | null;
+      customAuthHeader?: string | null;
+      customRequestTemplate?: string | null;
+      customResponsePath?: string | null;
+      customHeaders?: any;
+      allowInsecureHttps?: boolean;
+    },
+  ): LLMAdapter {
+    // custom_http / custom — 使用专用适配器
+    if (provider === 'custom_http' || provider === 'custom') {
+      const chatUrl = configObj?.customChatUrl || baseUrl || '';
+      if (!chatUrl) throw new Error('自定义 HTTP 模式必须提供 Chat URL 或 Base URL');
+      const extraHeaders: Record<string, string> = (() => {
+        if (!configObj?.customHeaders) return {};
+        try { return typeof configObj.customHeaders === 'string'
+          ? JSON.parse(configObj.customHeaders) : (configObj.customHeaders || {}); }
+        catch { return {}; }
+      })();
+      return new CustomHttpAdapter(
+        apiKey,
+        chatUrl,
+        model,
+        configObj?.customAuthType || 'bearer',
+        configObj?.customAuthHeader || '',
+        configObj?.customRequestTemplate || null,
+        configObj?.customResponsePath || null,
+        extraHeaders,
+        configObj?.allowInsecureHttps ?? false,
+      );
+    }
+
+    const allowInsecure = configObj?.allowInsecureHttps ?? false;
     const map: Record<string, () => LLMAdapter> = {
-      openai:            () => new OpenAIAdapter(apiKey, baseUrl || 'https://api.openai.com/v1', model),
-      azure_openai:      () => new OpenAIAdapter(apiKey, baseUrl || '', model),
-      qwen:              () => new OpenAIAdapter(apiKey, baseUrl || 'https://dashscope.aliyuncs.com/compatible-mode/v1', model),
-      zhipu:             () => new OpenAIAdapter(apiKey, baseUrl || 'https://open.bigmodel.cn/api/paas/v4', model),
-      deepseek:          () => new OpenAIAdapter(apiKey, baseUrl || 'https://api.deepseek.com/v1', model),
-      openai_compatible: () => new OpenAIAdapter(apiKey, baseUrl || '', model),
-      custom_http:       () => new OpenAIAdapter(apiKey, baseUrl || '', model),
-      custom:            () => new OpenAIAdapter(apiKey, baseUrl || '', model),
-      claude:            () => new ClaudeAdapter(apiKey, baseUrl || 'https://api.anthropic.com', model),
+      openai:            () => new OpenAIAdapter(apiKey, baseUrl || 'https://api.openai.com/v1', model, allowInsecure),
+      azure_openai:      () => new OpenAIAdapter(apiKey, baseUrl || '', model, allowInsecure),
+      qwen:              () => new OpenAIAdapter(apiKey, baseUrl || 'https://dashscope.aliyuncs.com/compatible-mode/v1', model, allowInsecure),
+      zhipu:             () => new OpenAIAdapter(apiKey, baseUrl || 'https://open.bigmodel.cn/api/paas/v4', model, allowInsecure),
+      deepseek:          () => new OpenAIAdapter(apiKey, baseUrl || 'https://api.deepseek.com/v1', model, allowInsecure),
+      openai_compatible: () => new OpenAIAdapter(apiKey, baseUrl || '', model, allowInsecure),
+      claude:            () => new ClaudeAdapter(apiKey, baseUrl || 'https://api.anthropic.com', model, allowInsecure),
     };
     return (map[provider] || map.openai)();
   }
@@ -609,15 +708,47 @@ interface LLMAdapter {
   testConnection(): Promise<{ latency: number }>;
 }
 
-/** 带超时的 fetch */
-function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
+/**
+ * 带超时 + 可选跳过 TLS 验证的 fetch
+ * allowInsecure=true 时使用 undici.fetch + dispatcher（跳过自签名证书）
+ * 适用于内网私有部署、自签名证书等场景
+ */
+function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number,
+  allowInsecure = false,
+): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  if (allowInsecure && url.startsWith('https')) {
+    // 使用 undici 包的 fetch，支持 dispatcher 选项跳过 TLS 证书验证
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { fetch: undiciFetch, Agent } = require('undici');
+      const agent = new Agent({ connect: { rejectUnauthorized: false } });
+      return (undiciFetch as typeof fetch)(url, {
+        ...init,
+        // @ts-ignore — undici fetch 扩展了标准 RequestInit 支持 dispatcher
+        dispatcher: agent,
+        signal: controller.signal,
+      } as any).finally(() => clearTimeout(timer)) as Promise<Response>;
+    } catch (e) {
+      logger.warn('undici unavailable, falling back to standard fetch (TLS will be verified)');
+    }
+  }
+
   return fetch(url, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer));
 }
 
 class OpenAIAdapter implements LLMAdapter {
-  constructor(private apiKey: string, private baseUrl: string, private model: string) {}
+  constructor(
+    private apiKey: string,
+    private baseUrl: string,
+    private model: string,
+    private allowInsecure = false,
+  ) {}
 
   async chatWithHistory(
     systemPrompt: string,
@@ -639,6 +770,7 @@ class OpenAIAdapter implements LLMAdapter {
         body: JSON.stringify({ model: this.model, messages, temperature, max_tokens: maxTokens }),
       },
       30_000,
+      this.allowInsecure,
     );
     if (!res.ok) {
       const body = await res.text().catch(() => '');
@@ -657,6 +789,7 @@ class OpenAIAdapter implements LLMAdapter {
       `${this.baseUrl}/models`,
       { headers: { Authorization: `Bearer ${this.apiKey}` } },
       10_000,
+      this.allowInsecure,
     );
     if (!res.ok) {
       const body = await res.text().catch(() => '');
@@ -667,7 +800,12 @@ class OpenAIAdapter implements LLMAdapter {
 }
 
 class ClaudeAdapter implements LLMAdapter {
-  constructor(private apiKey: string, private baseUrl: string, private model: string) {}
+  constructor(
+    private apiKey: string,
+    private baseUrl: string,
+    private model: string,
+    private allowInsecure = false,
+  ) {}
 
   async chatWithHistory(
     systemPrompt: string,
@@ -692,6 +830,7 @@ class ClaudeAdapter implements LLMAdapter {
         }),
       },
       30_000,
+      this.allowInsecure,
     );
     if (!res.ok) {
       const body = await res.text().catch(() => '');
@@ -720,6 +859,136 @@ class ClaudeAdapter implements LLMAdapter {
         }),
       },
       10_000,
+      this.allowInsecure,
+    );
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`连接失败: ${res.status} ${body.slice(0, 100)}`);
+    }
+    return { latency: Date.now() - start };
+  }
+}
+
+class CustomHttpAdapter implements LLMAdapter {
+  constructor(
+    private apiKey: string,
+    private chatUrl: string,
+    private model: string,
+    private authType: string,
+    private authHeader: string,
+    private requestTemplate: string | null,
+    private responsePath: string | null,
+    private extraHeaders: Record<string, string>,
+    private allowInsecure: boolean,
+  ) {}
+
+  /** 构建请求头（bearer / header / query / none） */
+  private buildHeaders(base: Record<string, string> = {}): Record<string, string> {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json', ...base, ...this.extraHeaders };
+    if (this.authType === 'bearer' || !this.authType) {
+      headers['Authorization'] = `Bearer ${this.apiKey}`;
+    } else if (this.authType === 'header' && this.authHeader) {
+      headers[this.authHeader] = this.apiKey;
+    }
+    // query 鉴权在 URL 中处理
+    return headers;
+  }
+
+  /** 构建完整请求 URL（处理 query 鉴权） */
+  private buildUrl(base: string): string {
+    if (this.authType === 'query') {
+      const sep = base.includes('?') ? '&' : '?';
+      return `${base}${sep}api_key=${encodeURIComponent(this.apiKey)}`;
+    }
+    return base;
+  }
+
+  /** 从响应 JSON 中按路径取值，如 "choices.0.message.content" */
+  private extractByPath(data: any, path: string | null): string {
+    if (!path) {
+      // 尝试 OpenAI 标准格式
+      return data?.choices?.[0]?.message?.content
+        || data?.result
+        || data?.output?.text
+        || data?.content?.[0]?.text
+        || JSON.stringify(data);
+    }
+    const parts = path.split('.');
+    let cur: any = data;
+    for (const p of parts) {
+      if (cur === null || cur === undefined) break;
+      cur = cur[isNaN(Number(p)) ? p : Number(p)];
+    }
+    return typeof cur === 'string' ? cur : JSON.stringify(cur ?? '');
+  }
+
+  async chatWithHistory(
+    systemPrompt: string,
+    history: Array<{ role: 'user' | 'assistant'; content: string }>,
+    userMessage: string,
+    temperature: number,
+    maxTokens: number,
+  ) {
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      ...history,
+      { role: 'user', content: userMessage },
+    ];
+
+    // 支持自定义请求体模板（{{model}}、{{messages}}、{{temperature}}、{{max_tokens}} 占位符替换）
+    let bodyStr: string;
+    if (this.requestTemplate) {
+      bodyStr = this.requestTemplate
+        .replace('{{model}}', this.model)
+        .replace('"{{messages}}"', JSON.stringify(messages))
+        .replace('{{messages}}', JSON.stringify(messages))
+        .replace('{{temperature}}', String(temperature))
+        .replace('{{max_tokens}}', String(maxTokens));
+    } else {
+      bodyStr = JSON.stringify({ model: this.model, messages, temperature, max_tokens: maxTokens });
+    }
+
+    const res = await fetchWithTimeout(
+      this.buildUrl(this.chatUrl),
+      { method: 'POST', headers: this.buildHeaders(), body: bodyStr },
+      30_000,
+      this.allowInsecure,
+    );
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`Custom HTTP API ${res.status}: ${body.slice(0, 200)}`);
+    }
+    const data = await res.json() as any;
+    const contentText = this.extractByPath(data, this.responsePath);
+    const totalTokens = data?.usage?.total_tokens
+      || data?.usage?.completion_tokens
+      || contentText.length / 4;  // 粗估
+
+    return { content: contentText, totalTokens: Math.round(totalTokens) };
+  }
+
+  async testConnection() {
+    const start = Date.now();
+    // 发送一个极简的探测请求
+    const testBody = this.requestTemplate
+      ? this.requestTemplate
+          .replace('{{model}}', this.model)
+          .replace('"{{messages}}"', JSON.stringify([{ role: 'user', content: 'hi' }]))
+          .replace('{{messages}}', JSON.stringify([{ role: 'user', content: 'hi' }]))
+          .replace('{{temperature}}', '0')
+          .replace('{{max_tokens}}', '1')
+      : JSON.stringify({
+          model: this.model,
+          messages: [{ role: 'user', content: 'hi' }],
+          temperature: 0, max_tokens: 1,
+        });
+
+    const res = await fetchWithTimeout(
+      this.buildUrl(this.chatUrl),
+      { method: 'POST', headers: this.buildHeaders(), body: testBody },
+      10_000,
+      this.allowInsecure,
     );
     if (!res.ok) {
       const body = await res.text().catch(() => '');

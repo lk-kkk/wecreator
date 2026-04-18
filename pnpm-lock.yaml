@@ -92,6 +92,9 @@ importers:
       socket.io:
         specifier: ^4.8.3
         version: 4.8.3
+      undici:
+        specifier: ^8.1.0
+        version: 8.1.0
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.2.0
@@ -7806,6 +7809,10 @@ packages:
 
   undici-types@7.16.0:
     resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
+
+  undici@8.1.0:
+    resolution: {integrity: sha512-E9MkTS4xXLnRPYqxH2e6Hr2/49e7WFDKczKcCaFH4VaZs2iNvHMqeIkyUAD9vM8kujy9TjVrRlQ5KkdEJxB2pw==}
+    engines: {node: '>=22.19.0'}
 
   unescape-js@1.1.4:
     resolution: {integrity: sha512-42SD8NOQEhdYntEiUQdYq/1V/YHwr1HLwlHuTJB5InVVdOSbgI6xu8jK5q65yIzuFCfczzyDF/7hbGzVbyCw0g==}
@@ -16508,6 +16515,8 @@ snapshots:
       through: 2.3.8
 
   undici-types@7.16.0: {}
+
+  undici@8.1.0: {}
 
   unescape-js@1.1.4:
     dependencies:

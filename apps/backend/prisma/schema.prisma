@@ -816,6 +816,7 @@ model LlmConfig {
   customResponsePath            String?         @map("custom_response_path") @db.VarChar(200)
   customHeaders                 Json?           @map("custom_headers")
   customStream                  Boolean         @default(false) @map("custom_stream")
+  allowInsecureHttps            Boolean         @default(false) @map("allow_insecure_https")
   // Parameters
   temperature                   Decimal         @default(0.70) @db.Decimal(3, 2)
   maxTokens                     Int             @default(4096) @map("max_tokens")
@@ -835,18 +836,28 @@ model LlmConfig {
 
 // 命名模型预设：公司可保存多个不同的模型配置供智能体选用
 model LlmModelPreset {
-  id              BigInt      @id @default(autoincrement())
-  companyId       BigInt      @map("company_id")
-  displayName     String      @map("display_name") @db.VarChar(60)   // 展示名，如 "GPT-4o 主力" / "DeepSeek 速答"
+  id              BigInt           @id @default(autoincrement())
+  companyId       BigInt           @map("company_id")
+  displayName     String           @map("display_name") @db.VarChar(60)
   provider        LlmProvider
-  apiKeyEncrypted String      @map("api_key_encrypted") @db.VarChar(512)
-  baseUrl         String?     @map("base_url") @db.VarChar(500)
-  modelName       String      @map("model_name") @db.VarChar(100)
-  temperature     Decimal     @default(0.70) @db.Decimal(3, 2)
-  maxTokens       Int         @default(4096) @map("max_tokens")
-  isActive        Boolean     @default(true) @map("is_active")
-  createdAt       DateTime    @default(now()) @map("created_at")
-  updatedAt       DateTime    @updatedAt @map("updated_at")
+  apiKeyEncrypted String           @map("api_key_encrypted") @db.VarChar(512)
+  baseUrl         String?          @map("base_url") @db.VarChar(500)
+  modelName       String           @map("model_name") @db.VarChar(100)
+  temperature     Decimal          @default(0.70) @db.Decimal(3, 2)
+  maxTokens       Int              @default(4096) @map("max_tokens")
+  // Custom HTTP 字段
+  customProtocol  CustomProtocol?  @map("custom_protocol")
+  customMethod    String           @default("POST") @map("custom_method") @db.VarChar(10)
+  customChatUrl   String?          @map("custom_chat_url") @db.VarChar(500)
+  customAuthType  CustomAuthType?  @map("custom_auth_type")
+  customAuthHeader String?         @map("custom_auth_header") @db.VarChar(100)
+  customRequestTemplate String?    @map("custom_request_template") @db.Text
+  customResponsePath    String?    @map("custom_response_path") @db.VarChar(200)
+  customHeaders         Json?      @map("custom_headers")
+  allowInsecureHttps    Boolean    @default(false) @map("allow_insecure_https")  // 跳过 TLS 证书验证（自签名 / 内网）
+  isActive        Boolean          @default(true) @map("is_active")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
 
   company Company    @relation(fields: [companyId], references: [id])
   agents  AiAgent[]

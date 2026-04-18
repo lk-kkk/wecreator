@@ -38,6 +38,15 @@
             <a-form-item label="Max Tokens">
               <a-input-number v-model:value="form.maxTokens" :min="256" :max="128000" style="width:160px" />
             </a-form-item>
+            <a-form-item label="跳过 TLS 验证">
+              <a-switch v-model:checked="form.allowInsecureHttps" />
+              <span v-if="form.allowInsecureHttps" style="margin-left:8px;font-size:12px;color:#ff7875">
+                ⚠️ 已关闭证书验证（仅限内网/开发环境）
+              </span>
+              <div style="font-size:11px;color:#999;margin-top:3px">
+                用于连接使用自签名 TLS 证书的私有 HTTPS 服务
+              </div>
+            </a-form-item>
             <a-form-item :wrapper-col="{ offset: 5 }">
               <a-space>
                 <a-button type="primary" @click="handleSave" :loading="saving">保存配置</a-button>
@@ -153,10 +162,10 @@
     <!-- 模型预设 新增/编辑 弹窗 -->
     <a-modal v-model:open="showPresetForm"
       :title="editingPresetId ? '编辑模型预设' : '添加模型预设'"
-      @ok="handlePresetSave" :confirm-loading="savingPreset" width="560px" destroy-on-close>
+      @ok="handlePresetSave" :confirm-loading="savingPreset" width="620px" destroy-on-close>
       <a-form :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }" style="margin-top:16px">
         <a-form-item label="预设名称" required>
-          <a-input v-model:value="presetForm.displayName" placeholder="如：GPT-4o 主力 / DeepSeek 速答"
+          <a-input v-model:value="presetForm.displayName" placeholder="如：GPT-4o 主力 / 内网私有模型"
             :maxlength="60" show-count />
         </a-form-item>
         <a-form-item label="服务商" required>
@@ -167,23 +176,84 @@
             <a-select-option value="qwen">通义千问 (Qwen)</a-select-option>
             <a-select-option value="zhipu">智谱 GLM</a-select-option>
             <a-select-option value="deepseek">DeepSeek</a-select-option>
-            <a-select-option value="openai_compatible">OpenAI 兼容</a-select-option>
-            <a-select-option value="custom_http">自定义 HTTP</a-select-option>
+            <a-select-option value="openai_compatible">OpenAI 兼容（Moonshot/Kimi 等）</a-select-option>
+            <a-select-option value="custom_http">🔧 自定义 HTTPS（内网/私有部署）</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item label="API Key" :required="!editingPresetId">
           <a-input-password v-model:value="presetForm.apiKey"
-            :placeholder="editingPresetId ? '留空则保留原有Key' : '输入此模型的 API Key'" />
+            :placeholder="editingPresetId ? '留空则保留原有Key' : '输入此模型的 API Key（无鉴权可填任意值）'" />
         </a-form-item>
-        <a-form-item label="Base URL">
-          <a-input v-model:value="presetForm.baseUrl" :placeholder="presetDefaultBaseUrl" />
-        </a-form-item>
-        <a-form-item label="模型名称" required>
-          <a-input v-model:value="presetForm.modelName" placeholder="如：gpt-4o / deepseek-chat" />
-        </a-form-item>
+
+        <!-- 非 custom_http：显示 Base URL + 模型名 -->
+        <template v-if="!isCustomHttp">
+          <a-form-item label="Base URL">
+            <a-input v-model:value="presetForm.baseUrl" :placeholder="presetDefaultBaseUrl" />
+          </a-form-item>
+          <a-form-item label="模型名称" required>
+            <a-input v-model:value="presetForm.modelName" placeholder="如：gpt-4o / deepseek-chat" />
+          </a-form-item>
+        </template>
+
+        <!-- custom_http：显示完整自定义 HTTPS 配置 -->
+        <template v-if="isCustomHttp">
+          <a-divider style="margin:8px 0 12px">🔧 自定义 HTTPS 请求配置</a-divider>
+          <a-form-item label="Chat 接口 URL" required>
+            <a-input v-model:value="presetForm.customChatUrl"
+              placeholder="https://your-server/api/chat（支持 HTTP 或 HTTPS）" />
+            <div style="font-size:11px;color:#999;margin-top:3px">完整的聊天接口地址，OpenAI 兼容格式</div>
+          </a-form-item>
+          <a-form-item label="模型名称" required>
+            <a-input v-model:value="presetForm.modelName" placeholder="如：llama3 / qwen2 / your-model" />
+          </a-form-item>
+          <a-form-item label="鉴权方式">
+            <a-select v-model:value="presetForm.customAuthType" style="width:200px">
+              <a-select-option value="bearer">Bearer Token（Authorization 头）</a-select-option>
+              <a-select-option value="header">自定义 Header Key</a-select-option>
+              <a-select-option value="query">Query 参数（?api_key=xxx）</a-select-option>
+              <a-select-option value="none">无鉴权</a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item v-if="presetForm.customAuthType === 'header'" label="Header 名称">
+            <a-input v-model:value="presetForm.customAuthHeader"
+              placeholder="如：X-API-Key / Authorization" style="width:220px" />
+          </a-form-item>
+          <a-form-item label="额外请求头">
+            <a-textarea v-model:value="presetForm.customHeaders" :rows="3"
+              placeholder='{"X-Custom-Header": "value", "X-Tenant": "xxx"}（JSON 格式）' />
+            <div style="font-size:11px;color:#999;margin-top:3px">附加到每次请求的固定请求头，JSON 格式</div>
+          </a-form-item>
+          <a-form-item label="响应取值路径">
+            <a-input v-model:value="presetForm.customResponsePath"
+              placeholder="留空自动识别（choices.0.message.content）" />
+            <div style="font-size:11px;color:#999;margin-top:3px">
+              从响应 JSON 中提取文本的点路径，如 <code>result</code> 或 <code>output.0.text</code>
+            </div>
+          </a-form-item>
+          <a-form-item label="请求体模板">
+            <a-textarea v-model:value="presetForm.customRequestTemplate" :rows="4"
+              placeholder='留空使用 OpenAI 格式。支持占位符: {{model}} {{messages}} {{temperature}} {{max_tokens}}' />
+            <div style="font-size:11px;color:#999;margin-top:3px">
+              自定义请求 JSON 模板，不兼容 OpenAI 格式的接口使用
+            </div>
+          </a-form-item>
+          <a-form-item label="跳过 TLS 验证">
+            <a-switch v-model:checked="presetForm.allowInsecureHttps" />
+            <span style="margin-left:8px;font-size:12px;color:#ff7875" v-if="presetForm.allowInsecureHttps">
+              ⚠️ 已关闭证书验证（仅限内网/开发环境）
+            </span>
+            <div style="font-size:11px;color:#999;margin-top:3px">
+              启用后可连接使用自签名证书的 HTTPS 服务（Ollama 本地部署、企业内网等）
+            </div>
+          </a-form-item>
+        </template>
+
+        <a-divider style="margin:8px 0 12px" />
         <a-form-item label="Temperature">
-          <a-slider v-model:value="presetForm.temperature" :min="0" :max="2" :step="0.1" />
-          <span style="font-size:12px;color:#999">{{ presetForm.temperature }}</span>
+          <a-row :gutter="8">
+            <a-col :span="16"><a-slider v-model:value="presetForm.temperature" :min="0" :max="2" :step="0.1" /></a-col>
+            <a-col :span="6"><a-input-number v-model:value="presetForm.temperature" :min="0" :max="2" :step="0.1" style="width:100%" /></a-col>
+          </a-row>
         </a-form-item>
         <a-form-item label="Max Tokens">
           <a-input-number v-model:value="presetForm.maxTokens" :min="256" :max="128000" style="width:160px" />
@@ -211,6 +281,7 @@ const testResult = ref<any>(null)
 const form = ref({
   provider: 'openai', apiKey: '', baseUrl: '', defaultModel: 'gpt-4o',
   temperature: 0.7, maxTokens: 4096,
+  allowInsecureHttps: false,
 })
 
 // ─── Preset state ───
@@ -224,7 +295,14 @@ const presetTestResults = reactive<Record<number, any>>({})
 const presetForm = ref({
   displayName: '', provider: 'openai', apiKey: '', baseUrl: '',
   modelName: '', temperature: 0.7, maxTokens: 4096,
+  // Custom HTTP
+  customChatUrl: '', customAuthType: 'bearer', customAuthHeader: '',
+  customRequestTemplate: '', customResponsePath: '',
+  customHeaders: '',          // JSON 字符串
+  allowInsecureHttps: false,
 })
+// 是否为 custom_http provider（控制高级选项展示）
+const isCustomHttp = computed(() => presetForm.value.provider === 'custom_http' || presetForm.value.provider === 'custom')
 
 const presetColumns = [
   { title: '预设名称', key: 'displayName', dataIndex: 'displayName', width: 160 },
@@ -300,6 +378,7 @@ async function fetchConfig() {
       form.value.defaultModel = res.data.defaultModel
       form.value.temperature = res.data.temperature
       form.value.maxTokens = res.data.maxTokens
+      form.value.allowInsecureHttps = res.data.allowInsecureHttps ?? false
     }
   } finally { loading.value = false }
 }
@@ -313,6 +392,7 @@ async function handleSave() {
     const body: Record<string, any> = {
       provider: form.value.provider, defaultModel: form.value.defaultModel,
       temperature: form.value.temperature, maxTokens: form.value.maxTokens,
+      allowInsecureHttps: form.value.allowInsecureHttps,
     }
     if (form.value.apiKey.trim()) body.apiKey = form.value.apiKey.trim()
     if (form.value.baseUrl.trim()) body.baseUrl = form.value.baseUrl.trim()
@@ -353,6 +433,9 @@ function openPresetCreate() {
   presetForm.value = {
     displayName: '', provider: 'openai', apiKey: '', baseUrl: '',
     modelName: '', temperature: 0.7, maxTokens: 4096,
+    customChatUrl: '', customAuthType: 'bearer', customAuthHeader: '',
+    customRequestTemplate: '', customResponsePath: '', customHeaders: '',
+    allowInsecureHttps: false,
   }
   showPresetForm.value = true
 }
@@ -367,6 +450,13 @@ function openPresetEdit(preset: any) {
     modelName: preset.modelName,
     temperature: preset.temperature,
     maxTokens: preset.maxTokens,
+    customChatUrl: preset.customChatUrl || '',
+    customAuthType: preset.customAuthType || 'bearer',
+    customAuthHeader: preset.customAuthHeader || '',
+    customRequestTemplate: preset.customRequestTemplate || '',
+    customResponsePath: preset.customResponsePath || '',
+    customHeaders: preset.customHeaders ? JSON.stringify(preset.customHeaders, null, 2) : '',
+    allowInsecureHttps: preset.allowInsecureHttps ?? false,
   }
   showPresetForm.value = true
 }
@@ -400,9 +490,22 @@ async function handlePresetSave() {
       modelName: presetForm.value.modelName.trim(),
       temperature: presetForm.value.temperature,
       maxTokens: presetForm.value.maxTokens,
+      allowInsecureHttps: presetForm.value.allowInsecureHttps,
     }
     if (presetForm.value.apiKey.trim()) body.apiKey = presetForm.value.apiKey.trim()
     if (presetForm.value.baseUrl.trim()) body.baseUrl = presetForm.value.baseUrl.trim()
+    // Custom HTTP fields
+    if (presetForm.value.provider === 'custom_http' || presetForm.value.provider === 'custom') {
+      if (presetForm.value.customChatUrl.trim()) body.customChatUrl = presetForm.value.customChatUrl.trim()
+      if (presetForm.value.customAuthType) body.customAuthType = presetForm.value.customAuthType
+      if (presetForm.value.customAuthHeader.trim()) body.customAuthHeader = presetForm.value.customAuthHeader.trim()
+      if (presetForm.value.customRequestTemplate.trim()) body.customRequestTemplate = presetForm.value.customRequestTemplate.trim()
+      if (presetForm.value.customResponsePath.trim()) body.customResponsePath = presetForm.value.customResponsePath.trim()
+      if (presetForm.value.customHeaders.trim()) {
+        try { JSON.parse(presetForm.value.customHeaders); body.customHeaders = presetForm.value.customHeaders.trim() }
+        catch { message.error('额外请求头格式错误，请输入合法 JSON'); return }
+      }
+    }
 
     if (editingPresetId.value) {
       await request.put(`/company/model-presets/${editingPresetId.value}`, body)
