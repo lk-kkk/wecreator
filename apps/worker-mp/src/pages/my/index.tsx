@@ -157,7 +157,7 @@ export default function MyPage() {
         {/* ── 财务面板 ── */}
         <View className='finance-panel' onClick={goWallet}>
           <View className='fin-item'>
-            <Text className='fin-amount' style={{ color: '#5B4CDB' }}>
+            <Text className='fin-amount' style={{ color: '#0858F4' }}>
               ¥{(wallet?.availableBalance ?? 0).toFixed(2)}
             </Text>
             <Text className='fin-label'>可用金额</Text>

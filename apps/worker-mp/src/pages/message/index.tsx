@@ -43,14 +43,14 @@ export default function MessagePage() {
   const connectWs = useCallback(() => {
     const token = Taro.getStorageSync('wc_token')
     if (!token) return
-    const apiBase = (process.env.TARO_APP_API_BASE as string || 'http://localhost:3000/api/v1')
+    const apiBase = (process.env.TARO_APP_API_BASE as string || 'http://localhost:3001/api/v1')
     const wsBase = apiBase.replace('/api/v1', '').replace('http', 'ws')
-    const ws = Taro.connectSocket({
+    const wsTask = Taro.connectSocket({
       url: `${wsBase}/chat?token=${token}`,
       protocols: [],
     })
-    wsRef.current = ws
-    ws.onMessage((msgEvent: any) => {
+    wsRef.current = wsTask
+    ;(wsTask as any).onMessage?.((msgEvent: any) => {
       try {
         const data = JSON.parse(msgEvent.data as string)
         if (data.event === 'new_message') {

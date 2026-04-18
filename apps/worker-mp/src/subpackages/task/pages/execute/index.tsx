@@ -134,7 +134,7 @@ export default function TaskExecutePage() {
           step={5}
           onChange={(e: any) => setProgress(e.detail.value)}
           blockSize={18}
-          activeColor='#5B4CDB'
+          activeColor='#0858F4'
         />
         <Input
           className='note-input'

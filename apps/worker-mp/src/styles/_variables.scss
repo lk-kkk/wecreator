@@ -1,43 +1,48 @@
 // ═══════════════════════════════════════════════════════════
-// WeCreator Design System v1.0
+// WeCreator Design System v1.1
 // 小程序全局设计 Token — 所有页面必须引用此文件
+// 对齐 PC 端 Design System V1.1（品牌色 #0858F4 → tokens #2B5BFC）
 // ═══════════════════════════════════════════════════════════
 
 // ── 品牌色 ──────────────────────────────────────────────
-$color-primary:       #5B4CDB;
-$color-primary-light: #EBE8FD;
-$color-primary-dark:  #4A3BC5;
-$color-primary-bg:    rgba(91, 76, 219, 0.08);
+$color-primary:       #0858F4;   // V1.1 品牌主色（画板 1496 提取）
+$color-primary-light: #D0DCFC;   // V1.1 浅蓝强调区
+$color-primary-dark:  #0040C0;   // V1.1 深蓝悬停
+$color-primary-bg:    rgba(8, 88, 244, 0.08);
+$color-accent:        #FC6400;   // V1.1 CTA 强调橙
 
 // ── 功能色 ──────────────────────────────────────────────
-$color-success:       #00B578;
-$color-success-bg:    #F0FFF5;
-$color-warning:       #FF8F1F;
-$color-warning-bg:    #FFFBE8;
-$color-danger:        #FA3534;
+$color-success:       #38D048;   // V1.1 成功绿
+$color-success-bg:    #E8F8E8;
+$color-warning:       #F5A623;   // V1.1 警告橙
+$color-warning-bg:    #FFF8E8;
+$color-danger:        #E8383C;   // V1.1 错误红
 $color-danger-bg:     #FFF1F0;
-$color-info:          #1677FF;
-$color-info-bg:       #E8F3FF;
-$color-price:         #FF4D4F;
-$color-gold:          #FAAD14;
+$color-info:          #3B82F6;
+$color-info-bg:       #DBEAFE;
+$color-price:         #E8383C;
+$color-gold:          #F5A623;
+$color-teal:          #34B8A8;   // V1.1 补充色
+$color-purple:        #E04CFC;   // V1.1 补充色
 
 // ── 文字色 ──────────────────────────────────────────────
-$color-text-primary:     #1A1A1A;  // 标题 / 重要文字
+$color-text-primary:     #181818;  // V1.1 标题
 $color-text-regular:     #333333;  // 正文
 $color-text-secondary:   #666666;  // 说明文字
-$color-text-placeholder: #999999;  // 提示 / 标签
+$color-text-placeholder: #999999;  // 提示/标签
 $color-text-disabled:    #CCCCCC;  // 禁用
 $color-text-white:       #FFFFFF;  // 深色背景上
 
 // ── 背景色 ──────────────────────────────────────────────
-$color-bg-page:    #F7F8FA;
+$color-bg-page:    #F0F0F0;   // V1.1 页面背景（画板 1496 提取）
 $color-bg-card:    #FFFFFF;
 $color-bg-hover:   #F5F5F5;
 $color-bg-mask:    rgba(0, 0, 0, 0.5);
+$color-bg-emphasis:#E4ECF8;   // V1.1 强调区背景
 
 // ── 边框/分割 ─────────────────────────────────────────
-$color-border:       #EBEDF0;
-$color-border-light: #F5F5F5;
+$color-border:       #E0E0E0;  // V1.1 标准边框
+$color-border-light: #F0F0F0;
 
 // ── 字号（7 档，全部 rpx）─────────────────────────────
 $font-xs:    22rpx;   // 时间戳 / 辅助标签
@@ -94,17 +99,18 @@ $transition-fast:   all $duration-fast $ease-out;
 $transition-normal: all $duration-normal $ease-out;
 $transition-slow:   all $duration-slow $ease-out;
 
-// ── 派生色（避免 lighten/darken 函数） ──────────────
-$color-primary-lighter: #9B8FEC;  // lighten($color-primary, 15%)
-$color-primary-border:  #B8AFF0;  // lighten($color-primary, 25%)
-$color-gold-dark:       #D48806;  // darken($color-gold, 10%)
-$color-gold-darker:     #AD6800;  // darken($color-gold, 20%)
-$color-gold-border:     #FFE58F;  // lighten($color-gold, 20%)
-$color-gold-border-lt:  #FFF1B8;  // lighten($color-gold, 25%)
-$color-success-light:   #95DE64;  // lighten($color-success, 25%)
-$color-success-border:  #B7EB8F;  // lighten($color-success, 30%)
+// ── 派生色 ──────────────────────────────────────────
+$color-primary-lighter: #5A8BF6;  // 品牌色浅化
+$color-primary-border:  #97B3FD;  // 品牌色边框
+$color-gold-dark:       #D48806;
+$color-gold-darker:     #AD6800;
+$color-gold-border:     #FFE58F;
+$color-gold-border-lt:  #FFF1B8;
+$color-success-light:   #6FE07A;
+$color-success-border:  #A8EDAB;
 
 // ── 品牌渐变 ─────────────────────────────────────────
 $gradient-primary: linear-gradient(135deg, $color-primary 0%, $color-primary-lighter 100%);
-$gradient-header:  linear-gradient(135deg, $color-primary 0%, #7B6EE8 100%);
-$gradient-wallet:  linear-gradient(135deg, $color-primary 0%, #7B6EE8 100%);
+$gradient-header:  linear-gradient(135deg, $color-primary 0%, #3A7AF8 100%);
+$gradient-wallet:  linear-gradient(135deg, $color-primary 0%, #3A7AF8 100%);
+$gradient-accent:  linear-gradient(135deg, $color-accent 0%, #FF8833 100%);

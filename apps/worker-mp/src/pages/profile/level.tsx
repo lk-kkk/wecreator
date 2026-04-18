@@ -24,7 +24,7 @@ const LEVELS: LevelConfig[] = [
   },
   {
     level: 'skilled', label: '熟练工', badge: '⚡',
-    color: '#1677ff', bgColor: '#eff6ff',
+    color: '#0858F4', bgColor: '#E4ECF8',
     minTasks: 10, minRating: 4.0, minRate: 80,
     perks: ['优先展示在推荐列表', '解锁批量接单', '获得技能认证标签'],
   },

@@ -54,7 +54,7 @@ export default defineAppConfig({
   },
   tabBar: {
     color: '#999',
-    selectedColor: '#5B4CDB',
+    selectedColor: '#0858F4',
     backgroundColor: '#fff',
     list: [
       { pagePath: 'pages/index/index', text: '首页' },
@@ -65,7 +65,7 @@ export default defineAppConfig({
   },
   window: {
     backgroundTextStyle: 'light',
-    navigationBarBackgroundColor: '#5B4CDB',
+    navigationBarBackgroundColor: '#0858F4',
     navigationBarTitleText: 'WeCreator',
     navigationBarTextStyle: 'white',
   },

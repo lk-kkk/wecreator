@@ -15,3 +15,8 @@ page {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* 全局 Toast 样式覆盖 */
+.van-toast {
+  z-index: 10000 !important;
+}

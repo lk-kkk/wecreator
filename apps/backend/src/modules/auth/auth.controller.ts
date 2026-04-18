@@ -12,6 +12,7 @@
  *
  * 零工端路由 /api/v1/worker/
  *   POST   /login           微信登录
+ *   POST   /refresh-token   Token 续期
  *   POST   /bind-phone      绑定手机号
  *   POST   /verify          实名认证
  *   GET    /profile         获取个人信息
@@ -124,6 +125,12 @@ export class WorkerAuthController {
   @ApiOperation({ summary: '零工微信登录（wx.login code → JWT 双 Token）' })
   async login(@Body() dto: LoginWorkerDto) {
     return this.authService.loginWorker(dto);
+  }
+
+  @Post('refresh-token')
+  @ApiOperation({ summary: '零工端 Token 续期（refreshToken → 新双 Token）' })
+  async refreshToken(@Body() dto: RefreshTokenDto) {
+    return this.authService.refreshToken(dto.refreshToken);
   }
 
   @Post('bind-phone')

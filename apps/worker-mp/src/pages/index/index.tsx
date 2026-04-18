@@ -91,7 +91,7 @@ export default function IndexPage() {
 
   // 开发环境调试登录
   const handleDevLogin = useCallback(async () => {
-    const { content, confirm } = await Taro.showModal({
+    const { content, confirm } = await (Taro.showModal as any)({
       title: '🔧 开发调试登录',
       editable: true,
       placeholderText: '输入 code（如 demo_worker_2026）',
