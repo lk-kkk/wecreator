@@ -213,7 +213,11 @@ export class TaskService {
         include: {
           taskRoles: {
             include: {
-              _count: { select: { assignments: true } },
+              _count: {
+                select: {
+                  assignments: { where: { status: { in: ['accepted', 'completed'] } } },
+                },
+              },
               applications: {
                 where: { status: 'pending' },
                 select: { id: true },
@@ -312,7 +316,7 @@ export class TaskService {
         budget: Number(r.budget),
         skillTags: r.skillTags,
         description: r.description,
-        filledCount: r.assignments.length,
+        filledCount: r.assignments.filter((a: any) => ['accepted', 'completed'].includes(a.status)).length,
         pendingApplications: r.applications?.filter((a: any) => a.status === 'pending').length ?? 0,
         assignments: r.assignments.map((a: any) => ({
           id: Number(a.id),
