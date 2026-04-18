@@ -15,12 +15,12 @@
  *   GET    /ai/sessions/:id/messages    — 对话消息记录
  */
 import { Module } from '@nestjs/common';
-import { AiController, LlmConfigController } from './ai.controller';
+import { AiController, LlmConfigController, ModelPresetController } from './ai.controller';
 import { AiService } from './ai.service';
 import { CryptoUtil } from '../../common/utils/crypto.util';
 
 @Module({
-  controllers: [AiController, LlmConfigController],
+  controllers: [AiController, LlmConfigController, ModelPresetController],
   providers: [AiService, CryptoUtil],
   exports: [AiService],
 })

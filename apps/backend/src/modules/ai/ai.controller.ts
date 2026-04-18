@@ -10,7 +10,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { CurrentUserPayload } from '../auth/decorators/current-user.decorator';
-import { AiService, UpdateLlmConfigDto, CreateAgentDto, UpdateAgentDto, ChatDto } from './ai.service';
+import { AiService, UpdateLlmConfigDto, CreateAgentDto, UpdateAgentDto, ChatDto, CreateModelPresetDto, UpdateModelPresetDto } from './ai.service';
 
 
 function requireSuperAdmin(user: CurrentUserPayload) {
@@ -43,6 +43,52 @@ export class LlmConfigController {
   test(@CurrentUser() user: CurrentUserPayload) {
     requireSuperAdmin(user);
     return this.svc.testLlmConnection(user.companyId!);
+  }
+}
+
+@ApiTags('Model Presets')
+@Controller('company/model-presets')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth('access-token')
+export class ModelPresetController {
+  constructor(private readonly svc: AiService) {}
+
+  @Get()
+  @ApiOperation({ summary: '模型预设列表' })
+  list(@CurrentUser() user: CurrentUserPayload) {
+    return this.svc.getModelPresets(user.companyId!);
+  }
+
+  @Post()
+  @ApiOperation({ summary: '新增模型预设' })
+  create(@CurrentUser() user: CurrentUserPayload, @Body() dto: CreateModelPresetDto) {
+    requireSuperAdmin(user);
+    return this.svc.createModelPreset(user.companyId!, dto);
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: '更新模型预设' })
+  update(
+    @CurrentUser() user: CurrentUserPayload,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateModelPresetDto,
+  ) {
+    requireSuperAdmin(user);
+    return this.svc.updateModelPreset(user.companyId!, id, dto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: '删除模型预设' })
+  delete(@CurrentUser() user: CurrentUserPayload, @Param('id', ParseIntPipe) id: number) {
+    requireSuperAdmin(user);
+    return this.svc.deleteModelPreset(user.companyId!, id);
+  }
+
+  @Post(':id/test')
+  @ApiOperation({ summary: '测试模型预设连接' })
+  test(@CurrentUser() user: CurrentUserPayload, @Param('id', ParseIntPipe) id: number) {
+    requireSuperAdmin(user);
+    return this.svc.testModelPreset(user.companyId!, id);
   }
 }
 

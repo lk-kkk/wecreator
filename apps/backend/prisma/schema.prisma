@@ -41,6 +41,7 @@ model Company {
   projects       Project[]
   llmConfig      LlmConfig?
   aiAgents       AiAgent[]
+  modelPresets   LlmModelPreset[]
   aiChatSessions AiChatSession[]
   notifications  CompanyNotification[]
 
@@ -832,6 +833,29 @@ model LlmConfig {
   @@map("llm_configs")
 }
 
+// 命名模型预设：公司可保存多个不同的模型配置供智能体选用
+model LlmModelPreset {
+  id              BigInt      @id @default(autoincrement())
+  companyId       BigInt      @map("company_id")
+  displayName     String      @map("display_name") @db.VarChar(60)   // 展示名，如 "GPT-4o 主力" / "DeepSeek 速答"
+  provider        LlmProvider
+  apiKeyEncrypted String      @map("api_key_encrypted") @db.VarChar(512)
+  baseUrl         String?     @map("base_url") @db.VarChar(500)
+  modelName       String      @map("model_name") @db.VarChar(100)
+  temperature     Decimal     @default(0.70) @db.Decimal(3, 2)
+  maxTokens       Int         @default(4096) @map("max_tokens")
+  isActive        Boolean     @default(true) @map("is_active")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  company Company    @relation(fields: [companyId], references: [id])
+  agents  AiAgent[]
+
+  @@unique([companyId, displayName])
+  @@index([companyId, isActive])
+  @@map("llm_model_presets")
+}
+
 model AiAgent {
   id               BigInt   @id @default(autoincrement())
   companyId        BigInt   @map("company_id")
@@ -844,13 +868,15 @@ model AiAgent {
   tools            Json? // JSON: 启用的工具能力数组
   isActive         Boolean  @default(true) @map("is_active")
   isPreset         Boolean  @default(false) @map("is_preset")
+  presetId         BigInt?  @map("preset_id")  // 关联模型预设；null 时使用公司全局默认
   createdBy        BigInt   @map("created_by")
   monthlyCallCount Int      @default(0) @map("monthly_call_count")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
-  company  Company         @relation(fields: [companyId], references: [id])
-  sessions AiChatSession[]
+  company   Company          @relation(fields: [companyId], references: [id])
+  sessions  AiChatSession[]
+  preset    LlmModelPreset?  @relation(fields: [presetId], references: [id])
 
   @@unique([companyId, name])
   @@map("ai_agents")

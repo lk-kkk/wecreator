@@ -56,10 +56,31 @@ export class CreateAgentDto {
   @ApiProperty() @IsString() @MaxLength(10000) systemPrompt: string;
   @ApiPropertyOptional() @IsOptional() @IsString() modelName?: string;
   @ApiPropertyOptional() @IsOptional() @IsNumber() temperature?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() presetId?: number;  // 关联的模型预设 ID
   @ApiPropertyOptional() @IsOptional() @IsArray() tools?: string[];
 }
 
 export class UpdateAgentDto extends CreateAgentDto {}
+
+export class CreateModelPresetDto {
+  @ApiProperty({ description: '预设展示名称' }) @IsString() @MaxLength(60) displayName: string;
+  @ApiProperty({ enum: SUPPORTED_PROVIDERS }) @IsIn(SUPPORTED_PROVIDERS) provider: string;
+  @ApiProperty({ description: 'API Key （入库前加密）' }) @IsString() apiKey: string;
+  @ApiProperty({ description: '模型名称' }) @IsString() @MaxLength(100) modelName: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() baseUrl?: string;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() @Min(0) @Max(2) temperature?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() @Min(1) @Max(128000) maxTokens?: number;
+}
+
+export class UpdateModelPresetDto {
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(60) displayName?: string;
+  @ApiPropertyOptional({ enum: SUPPORTED_PROVIDERS }) @IsOptional() @IsIn(SUPPORTED_PROVIDERS) provider?: string;
+  @ApiPropertyOptional({ description: '留空则保留原有Key' }) @IsOptional() @IsString() apiKey?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(100) modelName?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() baseUrl?: string;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() @Min(0) @Max(2) temperature?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() @Min(1) @Max(128000) maxTokens?: number;
+}
 
 export class ChatDto {
   @ApiProperty() @IsNumber() agentId: number;
@@ -190,6 +211,7 @@ export class AiService {
     const list = await this.prisma.aiAgent.findMany({
       where: { companyId: BigInt(companyId) },
       orderBy: { createdAt: 'desc' },
+      include: { preset: true },
     });
     return list.map(a => this.serializeAgent(a));
   }
@@ -198,17 +220,22 @@ export class AiService {
     const count = await this.prisma.aiAgent.count({ where: { companyId: BigInt(companyId) } });
     if (count >= 20) throw new BadRequestException('智能体数量已达上限(20)');
 
+    // 如果指定了 presetId，验证预设属于该公司
+    if (dto.presetId) {
+      const preset = await this.prisma.llmModelPreset.findFirst({
+        where: { id: BigInt(dto.presetId), companyId: BigInt(companyId), isActive: true },
+      });
+      if (!preset) throw new NotFoundException('模型预设不存在或已停用');
+    }
+
     const agent = await this.prisma.aiAgent.create({
       data: {
         companyId: BigInt(companyId),
-        name: dto.name,
-        avatarUrl: dto.avatarUrl,
-        description: dto.description,
-        systemPrompt: dto.systemPrompt,
-        modelName: dto.modelName,
-        temperature: dto.temperature,
-        tools: dto.tools || [],
-        createdBy: BigInt(userId),
+        name: dto.name, avatarUrl: dto.avatarUrl,
+        description: dto.description, systemPrompt: dto.systemPrompt,
+        modelName: dto.modelName, temperature: dto.temperature,
+        presetId: dto.presetId ? BigInt(dto.presetId) : null,
+        tools: dto.tools || [], createdBy: BigInt(userId),
       },
     });
     return { agentId: Number(agent.id) };
@@ -220,11 +247,19 @@ export class AiService {
     });
     if (!agent) throw new NotFoundException('智能体不存在');
 
+    if (dto.presetId) {
+      const preset = await this.prisma.llmModelPreset.findFirst({
+        where: { id: BigInt(dto.presetId), companyId: BigInt(companyId), isActive: true },
+      });
+      if (!preset) throw new NotFoundException('模型预设不存在或已停用');
+    }
+
     await this.prisma.aiAgent.update({
       where: { id: BigInt(agentId) },
       data: {
         name: dto.name, description: dto.description, systemPrompt: dto.systemPrompt,
         avatarUrl: dto.avatarUrl, modelName: dto.modelName, temperature: dto.temperature,
+        presetId: dto.presetId !== undefined ? (dto.presetId ? BigInt(dto.presetId) : null) : undefined,
         tools: dto.tools ?? undefined,
       },
     });
@@ -255,6 +290,117 @@ export class AiService {
     return { agentId, isActive: updated.isActive };
   }
 
+  // ═══════ Model Presets ═══════
+
+  async getModelPresets(companyId: number) {
+    const list = await this.prisma.llmModelPreset.findMany({
+      where: { companyId: BigInt(companyId) },
+      orderBy: { createdAt: 'asc' },
+    });
+    return list.map(p => this.serializePreset(p));
+  }
+
+  async createModelPreset(companyId: number, dto: CreateModelPresetDto) {
+    const count = await this.prisma.llmModelPreset.count({ where: { companyId: BigInt(companyId) } });
+    if (count >= 20) throw new BadRequestException('模型预设数量已达上限(20)');
+
+    const preset = await this.prisma.llmModelPreset.create({
+      data: {
+        companyId: BigInt(companyId),
+        displayName: dto.displayName,
+        provider: dto.provider as any,
+        apiKeyEncrypted: this.crypto.encrypt(dto.apiKey),
+        modelName: dto.modelName,
+        baseUrl: dto.baseUrl || null,
+        temperature: dto.temperature ?? 0.7,
+        maxTokens: dto.maxTokens ?? 4096,
+      },
+    });
+    return { presetId: Number(preset.id), displayName: preset.displayName };
+  }
+
+  async updateModelPreset(companyId: number, presetId: number, dto: UpdateModelPresetDto) {
+    const preset = await this.prisma.llmModelPreset.findFirst({
+      where: { id: BigInt(presetId), companyId: BigInt(companyId) },
+    });
+    if (!preset) throw new NotFoundException('预设不存在');
+
+    const newKey = dto.apiKey?.trim();
+    const encrypted = (newKey && newKey !== '__unchanged__')
+      ? this.crypto.encrypt(newKey)
+      : preset.apiKeyEncrypted;
+
+    await this.prisma.llmModelPreset.update({
+      where: { id: BigInt(presetId) },
+      data: {
+        displayName: dto.displayName ?? preset.displayName,
+        provider: (dto.provider as any) ?? preset.provider,
+        apiKeyEncrypted: encrypted,
+        modelName: dto.modelName ?? preset.modelName,
+        baseUrl: dto.baseUrl !== undefined ? (dto.baseUrl || null) : preset.baseUrl,
+        temperature: dto.temperature ?? preset.temperature,
+        maxTokens: dto.maxTokens ?? preset.maxTokens,
+      },
+    });
+    return { presetId };
+  }
+
+  async deleteModelPreset(companyId: number, presetId: number) {
+    const preset = await this.prisma.llmModelPreset.findFirst({
+      where: { id: BigInt(presetId), companyId: BigInt(companyId) },
+    });
+    if (!preset) throw new NotFoundException('预设不存在');
+
+    // 检查是否有智能体正在使用
+    const inUse = await this.prisma.aiAgent.count({
+      where: { presetId: BigInt(presetId), companyId: BigInt(companyId) },
+    });
+    if (inUse > 0) throw new BadRequestException(`有 ${inUse} 个智能体正在使用此预设，请先更改其使用的模型`);
+
+    await this.prisma.llmModelPreset.delete({ where: { id: BigInt(presetId) } });
+    return { deleted: true };
+  }
+
+  async testModelPreset(companyId: number, presetId: number) {
+    const preset = await this.prisma.llmModelPreset.findFirst({
+      where: { id: BigInt(presetId), companyId: BigInt(companyId) },
+    });
+    if (!preset) throw new NotFoundException('预设不存在');
+
+    const apiKey = this.crypto.decrypt(preset.apiKeyEncrypted);
+    const adapter = this.getAdapter(preset.provider, apiKey, preset.baseUrl, preset.modelName);
+
+    try {
+      const result = await adapter.testConnection();
+      return { success: true, model: preset.modelName, latency: result.latency };
+    } catch (e: any) {
+      const msg = e.message || '';
+      let friendlyError = msg;
+      if (msg.includes('401')) friendlyError = 'API Key 无效或已过期（401）';
+      else if (msg.includes('403')) friendlyError = '无权访问该模型（403）';
+      else if (msg.includes('429')) friendlyError = '配额耗尽（429）';
+      else if (msg.includes('404')) friendlyError = 'Base URL 地址错误（404）';
+      else if (e.name === 'AbortError' || msg.includes('aborted')) friendlyError = '连接超时（10秒）';
+      return { success: false, error: friendlyError };
+    }
+  }
+
+  private serializePreset(p: any) {
+    return {
+      id: Number(p.id),
+      displayName: p.displayName,
+      provider: p.provider,
+      modelName: p.modelName,
+      baseUrl: p.baseUrl,
+      temperature: Number(p.temperature),
+      maxTokens: p.maxTokens,
+      isActive: p.isActive,
+      apiKeyMasked: '****' + this.crypto.decrypt(p.apiKeyEncrypted).slice(-4),
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+    };
+  }
+
   // ═══════ AI Chat ═══════
 
   async chat(companyId: number, userId: number, dto: ChatDto) {
@@ -264,9 +410,10 @@ export class AiService {
     });
     if (!config || !config.isActive) throw new BadRequestException('LLM未配置或已禁用');
 
-    // 2. 获取智能体
+    // 2. 获取智能体（include 绑定的 preset）
     const agent = await this.prisma.aiAgent.findFirst({
       where: { id: BigInt(dto.agentId), companyId: BigInt(companyId), isActive: true },
+      include: { preset: true },
     });
     if (!agent) throw new NotFoundException('智能体不存在或已禁用');
 
@@ -297,10 +444,15 @@ export class AiService {
     }
     const history = sessionHistoryCache.get(sessionKey)!;
 
-    // 5. 调用LLM（携带历史 messages）
-    const apiKey = this.crypto.decrypt(config.apiKeyEncrypted);
-    const model = agent.modelName || config.defaultModel;
-    const adapter = this.getAdapter(config.provider, apiKey, config.baseUrl, model);
+    // 5. 调用LLM — 优先使用智能体绑定 preset 的 key/model，否则回退到全局 config
+    const presetData = (agent as any).preset;
+    const apiKey = presetData
+      ? this.crypto.decrypt(presetData.apiKeyEncrypted)
+      : this.crypto.decrypt(config.apiKeyEncrypted);
+    const model = agent.modelName || presetData?.modelName || config.defaultModel;
+    const provider = presetData?.provider || config.provider;
+    const baseUrl = presetData?.baseUrl ?? config.baseUrl;
+    const adapter = this.getAdapter(provider, apiKey, baseUrl, model);
 
     const aiResponse = await adapter.chatWithHistory(
       agent.systemPrompt,
@@ -438,6 +590,8 @@ export class AiService {
       modelName: a.modelName,
       temperature: a.temperature ? Number(a.temperature) : null,
       tools: a.tools, isActive: a.isActive, isPreset: a.isPreset,
+      presetId: a.presetId ? Number(a.presetId) : null,
+      preset: a.preset ? this.serializePreset(a.preset) : null,
       monthlyCallCount: a.monthlyCallCount, createdAt: a.createdAt,
     };
   }
