@@ -44,7 +44,19 @@
           <p class="login-subtitle">登录企业管理账号</p>
         </div>
 
+        <!-- 错误/警告提示 -->
+        <a-alert
+          v-if="errorMsg"
+          :message="errorMsg"
+          type="error"
+          show-icon
+          closable
+          @close="errorMsg = ''"
+          style="margin-bottom: 16px;"
+        />
+
         <a-form
+          ref="formRef"
           :model="form"
           :rules="rules"
           layout="vertical"
@@ -58,6 +70,7 @@
               size="large"
               :maxlength="11"
               class="form-input"
+              @pressEnter="handleLogin"
             >
               <template #prefix>
                 <phone-outlined style="color: var(--color-text-tertiary);" />
@@ -71,6 +84,7 @@
               placeholder="请输入密码"
               size="large"
               class="form-input"
+              @pressEnter="handleLogin"
             >
               <template #prefix>
                 <lock-outlined style="color: var(--color-text-tertiary);" />
@@ -109,6 +123,29 @@
         </div>
       </div>
     </div>
+
+    <!-- 企业审核警告弹窗 -->
+    <a-modal
+      v-model:open="showWarningModal"
+      title="企业审核提示"
+      :footer="null"
+      :closable="true"
+      :maskClosable="true"
+      @cancel="handleWarningClose"
+      width="420px"
+      centered
+    >
+      <div class="warning-modal-body">
+        <div class="warning-icon-wrapper">
+          <exclamation-circle-outlined class="warning-icon" />
+        </div>
+        <p class="warning-text">{{ warningMessage }}</p>
+        <p class="warning-hint">审核中部分功能可能受限，您可以先浏览平台功能。</p>
+        <a-button type="primary" block size="large" @click="handleWarningClose">
+          我知道了，继续使用
+        </a-button>
+      </div>
+    </a-modal>
   </div>
 </template>
 
@@ -116,7 +153,10 @@
 import { reactive, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { PhoneOutlined, LockOutlined, SafetyOutlined } from '@ant-design/icons-vue'
+import {
+  PhoneOutlined, LockOutlined, SafetyOutlined,
+  ExclamationCircleOutlined,
+} from '@ant-design/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
@@ -124,6 +164,10 @@ const route = useRoute()
 const userStore = useUserStore()
 const loading = ref(false)
 const rememberMe = ref(false)
+const errorMsg = ref('')
+const showWarningModal = ref(false)
+const warningMessage = ref('')
+const formRef = ref()
 
 const form = reactive({ phone: '', password: '' })
 
@@ -139,17 +183,53 @@ const rules = {
 }
 
 async function handleLogin() {
-  loading.value = true
+  // 手动触发表单验证
   try {
-    await userStore.login(form)
-    message.success('登录成功')
-    const redirect = (route.query.redirect as string) || '/'
-    router.push(redirect)
+    await formRef.value?.validate()
+  } catch {
+    return
+  }
+
+  loading.value = true
+  errorMsg.value = ''
+
+  try {
+    const res = await userStore.login(form)
+
+    // 登录成功
+    message.success(`欢迎回来，${res.user.name}`)
+
+    // 检查企业审核状态
+    if (res.warning) {
+      warningMessage.value = res.warning
+      showWarningModal.value = true
+      // 不直接跳转，等用户确认
+    } else {
+      navigateAfterLogin()
+    }
   } catch (err: any) {
-    message.error(err?.response?.data?.message || '登录失败，请检查手机号和密码')
+    // 提取后端返回的具体错误信息
+    const backendMsg = err?.response?.data?.message
+    if (backendMsg) {
+      errorMsg.value = backendMsg
+    } else if (err?.message) {
+      errorMsg.value = err.message
+    } else {
+      errorMsg.value = '登录失败，请检查手机号和密码'
+    }
   } finally {
     loading.value = false
   }
+}
+
+function handleWarningClose() {
+  showWarningModal.value = false
+  navigateAfterLogin()
+}
+
+function navigateAfterLogin() {
+  const redirect = (route.query.redirect as string) || '/'
+  router.push(redirect)
 }
 </script>
 
@@ -378,6 +458,34 @@ async function handleLogin() {
 .security-icon {
   color: var(--color-primary);
   font-size: 13px;
+}
+
+/* ── 警告弹窗 ──────────────────────────────────────── */
+.warning-modal-body {
+  text-align: center;
+  padding: 8px 0 0;
+}
+
+.warning-icon-wrapper {
+  margin-bottom: 16px;
+}
+
+.warning-icon {
+  font-size: 48px;
+  color: #faad14;
+}
+
+.warning-text {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  margin-bottom: 8px;
+}
+
+.warning-hint {
+  font-size: 13px;
+  color: var(--color-text-tertiary);
+  margin-bottom: 24px;
 }
 
 /* ── 响应式 ──────────────────────────────────────────── */

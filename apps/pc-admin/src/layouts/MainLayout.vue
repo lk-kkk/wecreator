@@ -145,7 +145,7 @@
                 <a-menu-item key="profile" disabled>
                   <div class="dropdown-user-info">
                     <div class="dropdown-company">{{ userStore.companyName }}</div>
-                    <div class="dropdown-role">企业管理员</div>
+                    <div class="dropdown-role">{{ userStore.userName }} · {{ userStore.isSuperAdmin ? '超级管理员' : '管理员' }}</div>
                   </div>
                 </a-menu-item>
                 <a-menu-divider />
@@ -246,8 +246,7 @@ const breadcrumbs = computed<Breadcrumb[]>(() => {
 
 // ── 用户头像首字母 ────────────────────────────────────────────
 const userInitial = computed(() => {
-  const name = userStore.userInfo?.name || userStore.companyName || 'U'
-  return name[0].toUpperCase()
+  return userStore.avatarInitial
 })
 
 // ── 加载余额 ──────────────────────────────────────────────────

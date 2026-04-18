@@ -57,7 +57,19 @@
           <p class="register-subtitle">已有账号？<router-link to="/login">立即登录</router-link></p>
         </div>
 
+        <!-- 错误提示 -->
+        <a-alert
+          v-if="errorMsg"
+          :message="errorMsg"
+          type="error"
+          show-icon
+          closable
+          @close="errorMsg = ''"
+          style="margin-bottom: 16px;"
+        />
+
         <a-form
+          ref="formRef"
           :model="form"
           :rules="rules"
           layout="vertical"
@@ -135,6 +147,15 @@
                 <lock-outlined style="color: var(--color-text-tertiary);" />
               </template>
             </a-input-password>
+            <!-- 密码强度指示 -->
+            <div v-if="form.password" class="password-strength">
+              <div class="strength-bars">
+                <div class="strength-bar" :class="{ active: passwordStrength >= 1, weak: passwordStrength === 1 }" />
+                <div class="strength-bar" :class="{ active: passwordStrength >= 2, medium: passwordStrength === 2 }" />
+                <div class="strength-bar" :class="{ active: passwordStrength >= 3, strong: passwordStrength >= 3 }" />
+              </div>
+              <span class="strength-label" :class="strengthClass">{{ strengthText }}</span>
+            </div>
           </a-form-item>
 
           <a-form-item label="联系邮箱（选填）" name="contactEmail">
@@ -181,16 +202,52 @@
         </div>
       </div>
     </div>
+
+    <!-- 注册成功弹窗 -->
+    <a-modal
+      v-model:open="showSuccessModal"
+      :footer="null"
+      :closable="false"
+      :maskClosable="false"
+      width="420px"
+      centered
+    >
+      <div class="success-modal-body">
+        <div class="success-icon-wrapper">
+          <check-circle-outlined class="success-icon" />
+        </div>
+        <h3 class="success-title">注册成功！</h3>
+        <p class="success-text">
+          您的企业账号已创建，平台将在 <strong>1-3 个工作日</strong> 内完成资质审核。
+        </p>
+        <p class="success-hint">
+          审核通过前您可以登录浏览平台功能，部分高级功能将在审核通过后解锁。
+        </p>
+        <a-button
+          type="primary"
+          block
+          size="large"
+          @click="goToLogin"
+          class="success-btn"
+        >
+          前往登录
+        </a-button>
+        <div class="success-countdown">
+          {{ countdown }} 秒后自动跳转
+        </div>
+      </div>
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, computed, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import {
   BankOutlined, IdcardOutlined, PhoneOutlined,
   LockOutlined, MailOutlined, SafetyOutlined,
+  CheckCircleOutlined,
 } from '@ant-design/icons-vue'
 import { useUserStore } from '@/stores/user'
 
@@ -198,6 +255,11 @@ const router = useRouter()
 const userStore = useUserStore()
 const loading = ref(false)
 const agreed = ref(false)
+const errorMsg = ref('')
+const showSuccessModal = ref(false)
+const countdown = ref(5)
+const formRef = ref()
+let countdownTimer: ReturnType<typeof setInterval> | null = null
 
 const form = reactive({
   name: '',
@@ -226,22 +288,86 @@ const rules = {
   ],
 }
 
+// ── 密码强度 ──────────────────────────────────
+const passwordStrength = computed(() => {
+  const p = form.password
+  if (!p) return 0
+  let score = 0
+  if (p.length >= 8) score++
+  if (/[a-z]/.test(p) && /[A-Z]/.test(p)) score++
+  if (/\d/.test(p) && /[^a-zA-Z0-9]/.test(p)) score++
+  else if (/\d/.test(p) || /[^a-zA-Z0-9]/.test(p)) score += 0.5
+  return Math.min(Math.ceil(score), 3)
+})
+
+const strengthText = computed(() => {
+  const map = ['', '弱', '中', '强']
+  return map[passwordStrength.value] || ''
+})
+
+const strengthClass = computed(() => {
+  const map = ['', 'weak', 'medium', 'strong']
+  return map[passwordStrength.value] || ''
+})
+
+// ── 注册 ──────────────────────────────────────
 async function handleRegister() {
+  try {
+    await formRef.value?.validate()
+  } catch {
+    return
+  }
+
   if (!agreed.value) {
     message.warning('请先阅读并同意用户协议')
     return
   }
+
   loading.value = true
+  errorMsg.value = ''
+
   try {
     await userStore.register(form)
-    message.success('注册成功！请登录')
-    router.push('/login')
+    // 注册成功 → 显示成功弹窗
+    showSuccessModal.value = true
+    startCountdown()
   } catch (err: any) {
-    message.error(err?.response?.data?.message || '注册失败，请稍后重试')
+    const backendMsg = err?.response?.data?.message
+    if (backendMsg) {
+      errorMsg.value = backendMsg
+    } else if (err?.message) {
+      errorMsg.value = err.message
+    } else {
+      errorMsg.value = '注册失败，请稍后重试'
+    }
   } finally {
     loading.value = false
   }
 }
+
+// ── 倒计时跳转 ────────────────────────────────
+function startCountdown() {
+  countdown.value = 5
+  countdownTimer = setInterval(() => {
+    countdown.value--
+    if (countdown.value <= 0) {
+      goToLogin()
+    }
+  }, 1000)
+}
+
+function goToLogin() {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
+  }
+  showSuccessModal.value = false
+  router.push('/login')
+}
+
+onBeforeUnmount(() => {
+  if (countdownTimer) clearInterval(countdownTimer)
+})
 </script>
 
 <style scoped>
@@ -429,6 +555,40 @@ async function handleRegister() {
   margin-bottom: 16px;
 }
 
+/* 密码强度 */
+.password-strength {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.strength-bars {
+  display: flex;
+  gap: 4px;
+}
+
+.strength-bar {
+  width: 40px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--color-border-light);
+  transition: background-color 0.3s;
+}
+
+.strength-bar.active.weak { background: #E8383C; }
+.strength-bar.active.medium { background: #faad14; }
+.strength-bar.active.strong { background: #38D048; }
+
+.strength-label {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.strength-label.weak { color: #E8383C; }
+.strength-label.medium { color: #faad14; }
+.strength-label.strong { color: #38D048; }
+
 /* 协议 */
 .agreement-row {
   display: flex;
@@ -478,6 +638,54 @@ async function handleRegister() {
   font-size: 13px;
   margin-top: 1px;
   flex-shrink: 0;
+}
+
+/* ── 成功弹窗 ──────────────────────────────── */
+.success-modal-body {
+  text-align: center;
+  padding: 16px 0 0;
+}
+
+.success-icon-wrapper {
+  margin-bottom: 16px;
+}
+
+.success-icon {
+  font-size: 56px;
+  color: #38D048;
+}
+
+.success-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 12px;
+}
+
+.success-text {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+  line-height: 1.6;
+}
+
+.success-hint {
+  font-size: 13px;
+  color: var(--color-text-tertiary);
+  margin-bottom: 24px;
+}
+
+.success-btn {
+  height: 44px !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+}
+
+.success-countdown {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--color-text-tertiary);
 }
 
 /* 响应式 */

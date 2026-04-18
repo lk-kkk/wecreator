@@ -67,6 +67,7 @@ const routes: RouteRecordRaw[] = [
         path: 'admin/subaccounts',
         name: 'Subaccounts',
         component: () => import('@/pages/admin/SubaccountPage.vue'),
+        meta: { requiresRole: 'super_admin' },
       },
       {
         path: 'finance/invoices',
@@ -87,16 +88,60 @@ const router = createRouter({
   routes,
 })
 
-// 路由守卫
-router.beforeEach((to, _from, next) => {
+// ── 路由守卫 ──────────────────────────────────
+let profileFetched = false
+
+router.beforeEach(async (to, _from, next) => {
   const token = localStorage.getItem('wc_token')
 
+  // 1. 未登录但需要认证 → 跳登录
   if (to.meta.requiresAuth !== false && !token) {
     next({ name: 'Login', query: { redirect: to.fullPath } })
-  } else if ((to.name === 'Login' || to.name === 'Register') && token) {
+    return
+  }
+
+  // 2. 已登录访问登录/注册页 → 跳首页
+  if ((to.name === 'Login' || to.name === 'Register') && token) {
     next('/')
-  } else {
-    next()
+    return
+  }
+
+  // 3. 登录后首次访问：自动获取 Profile
+  if (token && !profileFetched) {
+    profileFetched = true
+    try {
+      const { useUserStore } = await import('@/stores/user')
+      const userStore = useUserStore()
+      if (userStore.isLoggedIn && !userStore.companyProfile) {
+        await userStore.fetchProfile()
+      }
+    } catch {
+      // Profile 获取失败不阻塞导航
+    }
+  }
+
+  // 4. 角色权限检查
+  if (to.meta.requiresRole) {
+    try {
+      const { useUserStore } = await import('@/stores/user')
+      const userStore = useUserStore()
+      if (userStore.userRole !== to.meta.requiresRole) {
+        next('/')
+        return
+      }
+    } catch {
+      next('/')
+      return
+    }
+  }
+
+  next()
+})
+
+// 登出时重置 flag
+router.afterEach((to) => {
+  if (to.name === 'Login') {
+    profileFetched = false
   }
 })
 
