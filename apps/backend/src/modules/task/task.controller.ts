@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Put,
+  Delete,
   Body,
   Param,
   Query,
@@ -20,6 +21,7 @@ import {
   SetTaskRolesDto,
   TaskQueryDto,
   ReviewDeliverableDto,
+  AddAttachmentDto,
 } from './dto';
 
 @ApiTags('task')
@@ -114,6 +116,36 @@ export class TaskController {
     @Body() dto: ReviewDeliverableDto,
   ) {
     return this.taskService.reviewDeliverable(taskId, roleId, user.companyId!, dto.result, dto.reviewNote);
+  }
+
+  // ── 附件管理 ──
+  @Get(':id/attachments')
+  @ApiOperation({ summary: '任务附件列表' })
+  async listAttachments(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.taskService.getAttachments(id, user.companyId!);
+  }
+
+  @Post(':id/attachments')
+  @ApiOperation({ summary: '添加任务附件（OSS上传完成后调用）' })
+  async addAttachment(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: CurrentUserPayload,
+    @Body() dto: AddAttachmentDto,
+  ) {
+    return this.taskService.addAttachment(id, user.companyId!, user.userId, dto);
+  }
+
+  @Delete(':id/attachments/:attachmentId')
+  @ApiOperation({ summary: '删除任务附件' })
+  async deleteAttachment(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('attachmentId', ParseIntPipe) attachmentId: number,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.taskService.deleteAttachment(id, attachmentId, user.companyId!);
   }
 }
 

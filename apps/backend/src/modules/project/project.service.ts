@@ -18,6 +18,8 @@ export class CreateProjectDto {
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(50) clientLocation?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(500) description?: string;
   @ApiPropertyOptional() @IsOptional() @IsDateString() expectedDeliveryDate?: string;
+  @ApiPropertyOptional({ description: '项目负责人（company_users.id），默认为创建者' })
+  @IsOptional() @IsNumber() managerId?: number;
 }
 
 export class UpdateProjectDto {
@@ -75,20 +77,32 @@ export class ProjectService {
         orderBy: { createdAt: 'desc' },
         include: {
           milestones: { select: { id: true, status: true } },
-          tasks: { select: { id: true, status: true } },
+          tasks: { select: { id: true, status: true, totalBudget: true } },
         },
       }),
       this.prisma.project.count({ where }),
     ]);
 
+    // 批量查询负责人名称
+    const managerIds = [...new Set(list.map(p => Number(p.managerId)))];
+    const managers = await this.prisma.companyUser.findMany({
+      where: { id: { in: managerIds.map(id => BigInt(id)) } },
+      select: { id: true, name: true },
+    });
+    const managerMap = new Map(managers.map(m => [Number(m.id), m.name]));
+
     return {
-      list: list.map(p => this.serializeProject(p)),
+      list: list.map(p => ({ ...this.serializeProject(p), managerName: managerMap.get(Number(p.managerId)) ?? null })),
       total, page, pageSize,
     };
   }
 
   /** C06a-02: 创建项目 */
   async createProject(companyId: number, userId: number, dto: CreateProjectDto) {
+    // 项目上限500
+    const existingCount = await this.prisma.project.count({ where: { companyId: BigInt(companyId) } });
+    if (existingCount >= 500) throw new BadRequestException('每企业最多创建500个项目');
+
     // 生成项目编号 PRJ-YYYYMMDD-NNN
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const count = await this.prisma.project.count({
@@ -102,7 +116,7 @@ export class ProjectService {
         projectNo,
         name: dto.name,
         clientLocation: dto.clientLocation,
-        managerId: BigInt(userId),
+        managerId: BigInt(dto.managerId ?? userId),
         description: dto.description,
         expectedDeliveryDate: dto.expectedDeliveryDate ? new Date(dto.expectedDeliveryDate) : null,
       },
@@ -117,14 +131,19 @@ export class ProjectService {
       include: {
         milestones: { orderBy: { sortOrder: 'asc' }, include: { attachments: true } },
         tasks: {
-          select: { id: true, title: true, status: true, taskMode: true,
+          select: { id: true, title: true, status: true, taskMode: true, totalBudget: true,
             taskRoles: { select: { id: true, roleName: true, headcount: true } } },
           orderBy: { createdAt: 'desc' },
         },
       },
     });
     if (!p) throw new NotFoundException('项目不存在');
-    return this.serializeProject(p);
+    // 查询负责人名称
+    const manager = await this.prisma.companyUser.findUnique({
+      where: { id: p.managerId },
+      select: { name: true },
+    });
+    return { ...this.serializeProject(p), managerName: manager?.name ?? null };
   }
 
   /** C06a-04: 更新项目 */
@@ -133,6 +152,7 @@ export class ProjectService {
       where: { id: BigInt(projectId), companyId: BigInt(companyId) },
     });
     if (!p) throw new NotFoundException('项目不存在');
+    if (p.status === 'archived') throw new ForbiddenException('已归档项目不可编辑');
 
     const updated = await this.prisma.project.update({
       where: { id: BigInt(projectId) },
@@ -338,6 +358,7 @@ export class ProjectService {
       milestones: p.milestones?.map((m: any) => this.serializeMilestone(m)),
       tasks: p.tasks?.map((t: any) => ({
         id: Number(t.id), title: t.title, status: t.status, taskMode: t.taskMode,
+        totalBudget: t.totalBudget ? Number(t.totalBudget) : 0,
         roles: t.taskRoles?.map((r: any) => ({ id: Number(r.id), roleName: r.roleName, headcount: r.headcount })),
       })),
     };

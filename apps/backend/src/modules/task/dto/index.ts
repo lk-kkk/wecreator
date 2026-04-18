@@ -92,6 +92,11 @@ export class CreateTaskDto {
   @ValidateNested({ each: true })
   @Type(() => TaskRoleDto)
   roles?: TaskRoleDto[];
+
+  @ApiPropertyOptional({ description: '关联项目ID（可选）' })
+  @IsOptional()
+  @IsNumber()
+  projectId?: number;
 }
 
 // ============================================================
@@ -222,4 +227,28 @@ export class ReviewDeliverableDto {
   @IsOptional()
   @IsString()
   reviewNote?: string;
+}
+
+// ============================================================
+// 附件上传
+// ============================================================
+export class AddAttachmentDto {
+  @ApiProperty({ description: '文件名', example: '需求文档.pdf' })
+  @IsString()
+  @MaxLength(200)
+  fileName: string;
+
+  @ApiProperty({ description: '文件访问URL（OSS地址）' })
+  @IsString()
+  @MaxLength(500)
+  fileUrl: string;
+
+  @ApiProperty({ description: '文件大小（字节）', example: 1048576 })
+  @IsNumber()
+  fileSize: number;
+
+  @ApiProperty({ description: '文件类型', example: 'pdf' })
+  @IsString()
+  @MaxLength(20)
+  fileType: string;
 }

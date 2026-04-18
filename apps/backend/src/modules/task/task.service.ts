@@ -36,6 +36,7 @@ export class TaskService {
           startDate: dto.startDate ? new Date(dto.startDate) : undefined,
           endDate: dto.endDate ? new Date(dto.endDate) : undefined,
           address: dto.address,
+          projectId: dto.projectId ? BigInt(dto.projectId) : undefined,
           status: 'draft',
         },
       });
@@ -291,6 +292,7 @@ export class TaskService {
           },
         },
         deliverables: { orderBy: { submittedAt: 'desc' } },
+        attachments: { orderBy: { createdAt: 'asc' } },
       },
     });
 
@@ -352,6 +354,14 @@ export class TaskService {
         version: d.version,
         status: d.status,
         submittedAt: d.submittedAt,
+      })),
+      attachments: ((task as any).attachments || []).map((a: any) => ({
+        attachmentId: Number(a.id),
+        fileName: a.fileName,
+        fileUrl: a.fileUrl,
+        fileSize: Number(a.fileSize),
+        fileType: a.fileType,
+        createdAt: a.createdAt,
       })),
     };
   }
@@ -613,6 +623,65 @@ export class TaskService {
         reviewedAt:    d.reviewedAt,
       })),
     };
+  }
+
+  // ================================================================
+  // 附件管理
+  // ================================================================
+  async addAttachment(
+    taskId: number,
+    companyId: number,
+    userId: number,
+    dto: import('./dto').AddAttachmentDto,
+  ) {
+    await this.getTaskOrThrow(taskId, companyId);
+    const existing = await this.prisma.taskAttachment.count({ where: { taskId: BigInt(taskId) } });
+    if (existing >= 10) throw new BadRequestException('附件最多10个');
+
+    const attachment = await this.prisma.taskAttachment.create({
+      data: {
+        taskId: BigInt(taskId),
+        fileName: dto.fileName,
+        fileUrl: dto.fileUrl,
+        fileSize: BigInt(dto.fileSize),
+        fileType: dto.fileType,
+        uploadedBy: BigInt(userId),
+      },
+    });
+    return {
+      attachmentId: Number(attachment.id),
+      fileName: attachment.fileName,
+      fileUrl: attachment.fileUrl,
+      fileSize: Number(attachment.fileSize),
+      fileType: attachment.fileType,
+      createdAt: attachment.createdAt,
+    };
+  }
+
+  async deleteAttachment(taskId: number, attachmentId: number, companyId: number) {
+    await this.getTaskOrThrow(taskId, companyId);
+    const att = await this.prisma.taskAttachment.findFirst({
+      where: { id: BigInt(attachmentId), taskId: BigInt(taskId) },
+    });
+    if (!att) throw new NotFoundException('附件不存在');
+    await this.prisma.taskAttachment.delete({ where: { id: BigInt(attachmentId) } });
+    return { attachmentId };
+  }
+
+  async getAttachments(taskId: number, companyId: number) {
+    await this.getTaskOrThrow(taskId, companyId);
+    const list = await this.prisma.taskAttachment.findMany({
+      where: { taskId: BigInt(taskId) },
+      orderBy: { createdAt: 'asc' },
+    });
+    return list.map((a) => ({
+      attachmentId: Number(a.id),
+      fileName: a.fileName,
+      fileUrl: a.fileUrl,
+      fileSize: Number(a.fileSize),
+      fileType: a.fileType,
+      createdAt: a.createdAt,
+    }));
   }
 
 }

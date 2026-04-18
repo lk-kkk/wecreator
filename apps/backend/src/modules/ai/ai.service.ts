@@ -279,9 +279,25 @@ export class AiService {
       }),
     ]);
 
+    // 检测响应是否含完整结构化JSON
+    let isComplete = false;
+    try {
+      const parsed = JSON.parse(aiResponse.content);
+      if (parsed && typeof parsed === 'object' && parsed.title) isComplete = true;
+    } catch {
+      const match = aiResponse.content.match(/```json\n?([\s\S]+?)\n?```/);
+      if (match) {
+        try {
+          const parsed = JSON.parse(match[1]);
+          if (parsed && typeof parsed === 'object' && parsed.title) isComplete = true;
+        } catch { /* noop */ }
+      }
+    }
+
     return {
       sessionUuid: session.sessionUuid,
       response: aiResponse.content,
+      isComplete,
       model,
       tokensUsed: aiResponse.totalTokens || 0,
     };

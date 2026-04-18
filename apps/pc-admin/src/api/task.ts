@@ -69,4 +69,13 @@ export const taskApi = {
   /** W4: 获取 OSS 直传预签名 URL */
   getPresignUrl: (data: { category: string; originalName: string; fileSize: number }) =>
     request.post<any, any>('/common/upload/presign', data),
+
+  /** 附件管理 */
+  listAttachments: (taskId: number) =>
+    request.get<any, any>(`/tasks/${taskId}/attachments`).then((r: any) => r.data || []),
+  addAttachment: (taskId: number, data: {
+    fileName: string; fileUrl: string; fileSize: number; fileType: string;
+  }) => request.post<any, any>(`/tasks/${taskId}/attachments`, data).then((r: any) => r.data),
+  deleteAttachment: (taskId: number, attachmentId: number) =>
+    request.delete<any, any>(`/tasks/${taskId}/attachments/${attachmentId}`),
 }
