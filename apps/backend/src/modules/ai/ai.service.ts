@@ -43,7 +43,7 @@ export class CreateAgentDto {
   @ApiProperty() @IsString() @MaxLength(40) name: string;
   @ApiPropertyOptional() @IsOptional() @IsString() avatarUrl?: string;
   @ApiProperty() @IsString() @MaxLength(200) description: string;
-  @ApiProperty() @IsString() systemPrompt: string;
+  @ApiProperty() @IsString() @MaxLength(10000) systemPrompt: string;
   @ApiPropertyOptional() @IsOptional() @IsString() modelName?: string;
   @ApiPropertyOptional() @IsOptional() @IsNumber() temperature?: number;
   @ApiPropertyOptional() @IsOptional() @IsArray() tools?: string[];
@@ -96,6 +96,16 @@ export class AiService {
   }
 
   async updateLlmConfig(companyId: number, dto: UpdateLlmConfigDto) {
+    // R9 SSRF 防护：禁止内网地址作为 LLM baseUrl
+    if (dto.baseUrl) {
+      const url = dto.baseUrl.toLowerCase();
+      const blocked = ['localhost', '127.0.0.1', '0.0.0.0', '10.', '172.16.', '172.17.', '172.18.',
+        '172.19.', '172.20.', '172.21.', '172.22.', '172.23.', '172.24.', '172.25.', '172.26.',
+        '172.27.', '172.28.', '172.29.', '172.30.', '172.31.', '192.168.', '169.254.', '[::1]', '[::]'];
+      if (blocked.some(b => url.includes(b))) {
+        throw new BadRequestException('Base URL 不允许指向内网地址');
+      }
+    }
     const encrypted = this.crypto.encrypt(dto.apiKey);
     const data: any = {
       provider: dto.provider,

@@ -580,8 +580,8 @@ export class WorkerApplicationController {
         taskRole: {
           include: {
             task: {
-              select: { id: true, title: true, status: true, taskMode: true },
-              include: {
+              select: {
+                id: true, title: true, status: true, taskMode: true,
                 company: { select: { id: true, name: true, logoUrl: true } },
               },
             },

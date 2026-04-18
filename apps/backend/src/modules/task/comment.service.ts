@@ -39,7 +39,7 @@ export class CommentService {
         taskId: BigInt(taskId),
         authorType: authorType as any,
         authorId: BigInt(authorId),
-        content: dto.content,
+        content: dto.content.replace(/<[^>]*>/g, ''), // XSS防护：去除HTML标签
         parentId: dto.parentId ? BigInt(dto.parentId) : null,
         attachments: dto.attachments || [],
         isImportant: dto.isImportant || false,

@@ -130,6 +130,16 @@ export class ReviewService {
     if (assignment.status !== 'completed')
       throw new BadRequestException('只有已完成的任务才能评价');
 
+    // 自动解析 targetId：企业评零工→workerId，零工评企业→taskRole.task.companyId
+    if (targetId === 0) {
+      if (reviewerType === 'company') {
+        targetId = Number(assignment.workerId);
+      } else {
+        const task = await this.prisma.task.findUnique({ where: { id: assignment.taskRole.taskId } });
+        targetId = task ? Number(task.companyId) : 0;
+      }
+    }
+
     const existing = await this.prisma.review.findUnique({
       where: {
         assignmentId_reviewerType: {

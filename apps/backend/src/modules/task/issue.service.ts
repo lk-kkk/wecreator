@@ -42,7 +42,7 @@ export class IssueService {
         reporterId: BigInt(reporterId),
         title: dto.title,
         type: dto.type as any,
-        description: dto.description,
+        description: dto.description.replace(/<[^>]*>/g, ''), // XSS防护
         attachments: dto.attachments || [],
       },
     });
