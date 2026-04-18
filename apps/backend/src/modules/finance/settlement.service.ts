@@ -24,7 +24,7 @@ export class SettlementService {
   // ================================================================
   async triggerSettlement(taskRoleId: number, companyId: number) {
     const assignment = await this.prisma.roleAssignment.findFirst({
-      where: { taskRoleId: BigInt(taskRoleId), status: 'accepted' },
+      where: { taskRoleId: BigInt(taskRoleId), status: { in: ['accepted', 'completed'] } },
       include: { taskRole: true },
     });
     if (!assignment) throw new NotFoundException('未找到已接单记录');
