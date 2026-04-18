@@ -14,15 +14,15 @@
 import {
   Injectable, BadRequestException, NotFoundException, ForbiddenException, Logger,
 } from '@nestjs/common';
-import { IsString, IsOptional, IsIn, IsArray, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsIn, IsArray, IsNumber, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { PrismaService } from '../../prisma';
 
 // ── DTOs ────────────────────────────────────────────────────────────
 export class CreateDisputeDto {
-  @ApiProperty({ description: '关联任务 ID' }) @Type(() => Number) taskId: number;
-  @ApiProperty({ description: '关联分配 ID' }) @Type(() => Number) assignmentId: number;
+  @ApiProperty({ description: '关联任务 ID' }) @IsNumber() @Type(() => Number) taskId: number;
+  @ApiProperty({ description: '关联分配 ID' }) @IsNumber() @Type(() => Number) assignmentId: number;
   @ApiProperty({ description: '争议原因', maxLength: 500 })
   @IsString() @MaxLength(500) reason: string;
   @ApiPropertyOptional({ description: '证据文件 OSS URL 数组（最多10个）', type: [String] })

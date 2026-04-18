@@ -66,7 +66,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'admin/subaccounts',
         name: 'Subaccounts',
-        component: () => import('@/pages/admin/SubaccountPage.vue'),
+        component: () => import('@/pages/settings/SubaccountPage.vue'),
         meta: { requiresRole: 'super_admin' },
       },
       {
@@ -77,7 +77,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'task/dispute',
         name: 'Dispute',
-        component: () => import('@/pages/task/DisputePage.vue'),
+        component: () => import('@/pages/dispute/DisputePage.vue'),
       },
     ],
   },

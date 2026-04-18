@@ -26,7 +26,7 @@ export class DisputeController {
   ) {
     return this.svc.createDispute(
       user.userType as 'company' | 'worker',
-      user.userId,
+      user.userType === 'company' ? user.companyId! : user.userId,
       dto,
     );
   }
