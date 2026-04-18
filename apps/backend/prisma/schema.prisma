@@ -1257,6 +1257,8 @@ enum LlmProvider {
   zhipu
   deepseek
   custom
+  openai_compatible
+  custom_http
 }
 
 enum CustomProtocol {

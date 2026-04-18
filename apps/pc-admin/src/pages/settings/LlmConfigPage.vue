@@ -11,9 +11,10 @@
                 <a-select-option value="openai">OpenAI</a-select-option>
                 <a-select-option value="claude">Claude (Anthropic)</a-select-option>
                 <a-select-option value="azure_openai">Azure OpenAI</a-select-option>
-                <a-select-option value="qwen">通义千问</a-select-option>
+                <a-select-option value="qwen">通义千问 (Qwen)</a-select-option>
                 <a-select-option value="zhipu">智谱 GLM</a-select-option>
-                <a-select-option value="openai_compatible">OpenAI 兼容</a-select-option>
+                <a-select-option value="deepseek">DeepSeek</a-select-option>
+                <a-select-option value="openai_compatible">OpenAI 兼容（Moonshot / Kimi 等）</a-select-option>
                 <a-select-option value="custom_http">自定义 HTTP</a-select-option>
               </a-select>
             </a-form-item>
@@ -92,15 +93,32 @@ const defaultBaseUrl = computed(() => {
     claude: 'https://api.anthropic.com',
     qwen: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     zhipu: 'https://open.bigmodel.cn/api/paas/v4',
+    deepseek: 'https://api.deepseek.com/v1',
+    azure_openai: 'https://{resource}.openai.azure.com/openai/deployments/{deployment}',
   }
-  return m[form.value.provider] || '请输入 Base URL'
+  return m[form.value.provider] || '请输入 Base URL（OpenAI兼容格式）'
 })
 
 function onProviderChange() {
   const models: Record<string, string> = {
-    openai: 'gpt-4o', claude: 'claude-3.5-sonnet', qwen: 'qwen-plus', zhipu: 'glm-4',
+    openai: 'gpt-4o',
+    claude: 'claude-3-5-sonnet-20241022',
+    qwen: 'qwen-plus',
+    zhipu: 'glm-4',
+    deepseek: 'deepseek-chat',
+    openai_compatible: '',
+    custom_http: '',
   }
-  form.value.defaultModel = models[form.value.provider] || ''
+  form.value.defaultModel = models[form.value.provider] ?? ''
+  // 自动填入默认Base URL（仅当当前为空时）
+  if (!form.value.baseUrl) {
+    const urls: Record<string, string> = {
+      deepseek: 'https://api.deepseek.com/v1',
+      qwen: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+      zhipu: 'https://open.bigmodel.cn/api/paas/v4',
+    }
+    form.value.baseUrl = urls[form.value.provider] || ''
+  }
 }
 
 async function fetchConfig() {
