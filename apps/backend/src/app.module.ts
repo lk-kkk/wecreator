@@ -24,6 +24,8 @@ import { CheckinModule }      from './modules/checkin/checkin.module';
 import { DisputeModule }      from './modules/dispute/dispute.module';
 import { AdminModule }        from './modules/admin/admin.module';
 import { PlatformModule }     from './modules/platform/platform.module';
+import { ProjectModule }      from './modules/project/project.module';
+import { AiModule }           from './modules/ai/ai.module';
 
 @Module({
   imports: [
@@ -64,6 +66,8 @@ import { PlatformModule }     from './modules/platform/platform.module';
     DisputeModule,      // W8 ✅
     AdminModule,        // W9 ✅
     PlatformModule,     // V3.2 平台运营后台 ✅
+    ProjectModule,      // W13 R2-a ✅
+    AiModule,           // W14 R2-b ✅
   ],
   controllers: [AppController],
   providers: [

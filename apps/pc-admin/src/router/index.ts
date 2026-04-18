@@ -79,6 +79,35 @@ const routes: RouteRecordRaw[] = [
         name: 'Dispute',
         component: () => import('@/pages/dispute/DisputePage.vue'),
       },
+      // ── Sprint 3: 项目管理 ──
+      {
+        path: 'project',
+        name: 'ProjectList',
+        component: () => import('@/pages/project/ProjectListPage.vue'),
+      },
+      {
+        path: 'project/:id',
+        name: 'ProjectDetail',
+        component: () => import('@/pages/project/ProjectDetailPage.vue'),
+      },
+      // ── Sprint 3: AI 配置 ──
+      {
+        path: 'ai/config',
+        name: 'LlmConfig',
+        component: () => import('@/pages/ai/LlmConfigPage.vue'),
+        meta: { requiresRole: 'super_admin' },
+      },
+      {
+        path: 'ai/agents',
+        name: 'AgentList',
+        component: () => import('@/pages/ai/AgentListPage.vue'),
+      },
+      // ── Sprint 4: 通知中心 ──
+      {
+        path: 'notifications',
+        name: 'Notifications',
+        component: () => import('@/pages/notification/NotificationPage.vue'),
+      },
     ],
   },
 ]
