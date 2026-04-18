@@ -25,7 +25,7 @@ const logger = new Logger('AiService');
 export class UpdateLlmConfigDto {
   @ApiProperty() @IsIn(['openai', 'azure_openai', 'claude', 'qwen', 'zhipu', 'openai_compatible', 'custom_http'])
   provider: string;
-  @ApiProperty() @IsString() apiKey: string; // 明文，入库前AES加密
+  @ApiPropertyOptional({ description: '留空则保留原有API Key' }) @IsOptional() @IsString() apiKey?: string; // 明文，入库前AES加密；不传则保留原有加密值
   @ApiPropertyOptional() @IsOptional() @IsString() baseUrl?: string;
   @ApiProperty() @IsString() @MaxLength(100) defaultModel: string;
   @ApiPropertyOptional() @IsOptional() @IsNumber() @Min(0) @Max(2) temperature?: number;
@@ -106,7 +106,21 @@ export class AiService {
         throw new BadRequestException('Base URL 不允许指向内网地址');
       }
     }
-    const encrypted = this.crypto.encrypt(dto.apiKey);
+    // 当 apiKey 为空或特殊占位符时，保留原有加密值（更新配置时不强制重填key）
+    let encrypted: string | undefined;
+    if (dto.apiKey && dto.apiKey !== '__unchanged__' && dto.apiKey.trim().length > 0) {
+      encrypted = this.crypto.encrypt(dto.apiKey);
+    } else {
+      // 查询现有配置保留旧key
+      const existing = await this.prisma.llmConfig.findUnique({
+        where: { companyId: BigInt(companyId) },
+        select: { apiKeyEncrypted: true },
+      });
+      if (!existing) {
+        throw new BadRequestException('首次配置必须提供 API Key');
+      }
+      encrypted = existing.apiKeyEncrypted;
+    }
     const data: any = {
       provider: dto.provider,
       apiKeyEncrypted: encrypted,

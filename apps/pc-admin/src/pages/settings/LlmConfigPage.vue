@@ -17,8 +17,12 @@
                 <a-select-option value="custom_http">自定义 HTTP</a-select-option>
               </a-select>
             </a-form-item>
-            <a-form-item label="API Key" required>
-              <a-input-password v-model:value="form.apiKey" :placeholder="config?.apiKeyMasked || '输入API Key'" />
+            <a-form-item label="API Key" :required="!config">
+              <a-input-password v-model:value="form.apiKey" 
+                :placeholder="config ? `留空则保留原有Key（末4位: ${config.apiKeyMasked?.slice(-4) || '****'})` : '输入API Key'" />
+              <div v-if="config" style="font-size:11px;color:#999;margin-top:4px">
+                当前Key尾号：{{ config.apiKeyMasked }} · 重新输入新Key可覆盖
+              </div>
             </a-form-item>
             <a-form-item label="Base URL">
               <a-input v-model:value="form.baseUrl" :placeholder="defaultBaseUrl" />
@@ -115,15 +119,27 @@ async function fetchConfig() {
 }
 
 async function handleSave() {
-  if (!form.value.apiKey && !config.value) return message.warning('请输入API Key')
+  if (!form.value.provider) return message.warning('请选择服务商')
+  if (!form.value.defaultModel.trim()) return message.warning('请填写默认模型名称')
+  // 首次配置必须提供 API Key；已有配置时留空表示「保持原Key不变」
+  if (!form.value.apiKey.trim() && !config.value) return message.warning('首次配置必须输入 API Key')
   saving.value = true
   try {
-    const body = { ...form.value }
-    if (!body.apiKey) body.apiKey = '__unchanged__' // backend should handle
-    if (!body.baseUrl) delete (body as any).baseUrl
+    const body: Record<string, any> = {
+      provider: form.value.provider,
+      defaultModel: form.value.defaultModel,
+      temperature: form.value.temperature,
+      maxTokens: form.value.maxTokens,
+    }
+    // 只有用户实际输入了新Key才传递，空值后端会保留原有Key
+    if (form.value.apiKey.trim()) body.apiKey = form.value.apiKey.trim()
+    if (form.value.baseUrl.trim()) body.baseUrl = form.value.baseUrl.trim()
     await request.put('/company/llm-config', body)
     message.success('配置已保存')
+    form.value.apiKey = '' // 保存成功后清空输入框（安全）
     fetchConfig()
+  } catch (e: any) {
+    message.error(e?.response?.data?.message || e?.message || '保存失败')
   } finally { saving.value = false }
 }
 
