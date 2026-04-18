@@ -81,7 +81,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { PlusOutlined, AppstoreOutlined, ProjectOutlined } from '@ant-design/icons-vue'
-import { request } from '@/api/request'
+import request from '@/api/request'
 
 const router = useRouter()
 const viewMode = ref<'list' | 'board'>('board')

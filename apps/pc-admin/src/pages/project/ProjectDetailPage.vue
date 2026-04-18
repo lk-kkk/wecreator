@@ -97,7 +97,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { DownOutlined } from '@ant-design/icons-vue'
-import { request } from '@/api/request'
+import request from '@/api/request'
 
 const route = useRoute()
 const projectId = Number(route.params.id)

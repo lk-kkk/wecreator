@@ -46,7 +46,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
-import { request } from '@/api/request'
+import request from '@/api/request'
 
 const tab = ref('all')
 const loading = ref(false)

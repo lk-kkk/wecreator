@@ -69,7 +69,7 @@
 import { ref, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import { PlusOutlined } from '@ant-design/icons-vue'
-import { request } from '@/api/request'
+import request from '@/api/request'
 
 const agents = ref<any[]>([])
 const showForm = ref(false)

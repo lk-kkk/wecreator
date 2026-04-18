@@ -70,7 +70,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { message } from 'ant-design-vue'
-import { request } from '@/api/request'
+import request from '@/api/request'
 
 const loading = ref(false)
 const saving = ref(false)
