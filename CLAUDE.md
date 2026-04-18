@@ -119,22 +119,26 @@ cd apps/backend && pnpm dlx prisma studio
 
 ---
 
-## 5. 12个 Agent 角色
+## 5. 14个 Agent 角色（V2 · 方案B）
 
-| 角色 | Skill Slug | 职责 | 代码范围 |
-|------|-----------|------|---------|
-| R0 Orchestrator | `wc-orchestrator` | 任务编排·依赖追踪·里程碑验收 | docs/ + task-checklist |
-| R1 Auth-Dev | `wc-auth-dev` | 认证：注册/登录/JWT/RBAC | modules/auth + modules/user |
-| R2 Task-Dev | `wc-task-dev` | 任务：发布/撮合/执行/验收/状态机 | modules/task + modules/assignment |
-| R3 Pay-Dev | `wc-pay-dev` | 支付：充值/锁定/结算/提现/对账 | modules/finance + modules/wallet |
-| R4 Msg-Dev | `wc-msg-dev` | 消息：WebSocket IM + 订阅消息 | modules/message + modules/notification |
-| R5 File-Dev | `wc-file-dev` | 文件：OSS直传/交付物/合同PDF | modules/file + modules/contract |
-| R6 PC-Dev | `wc-pc-dev` | 企业PC端：Vue3 15个页面 | apps/pc-admin/ |
-| R7 MP-Dev | `wc-mp-dev` | 零工小程序：Taro 4Tab+7分包 | apps/worker-mp/ |
-| R8 QA-Lead | `wc-qa-lead` | 测试：E2E+资金流+压测 | test/ + k6-scripts/ |
-| R9 Security-Ops | `wc-security-ops` | 安全：OWASP+加密审计 | 全项目审计 |
-| R10 Schema-Ops | `wc-schema-ops` | 数据库：Schema/Migration/种子 | prisma/ |
-| R11 DevOps | `wc-devops` | 运维：Docker/CI-CD/监控 | docker/ + .github/ |
+> **V2 变更说明（2026-04-18）：** 基于全量 PRD V3.6.1 + V3.7（105 API · 41 表）负载分析，原 R2 过载（55 API），拆分为 R2 + R2-a + R2-b 三个角色。详见 `docs/Agent_Role_Analysis.md`。
+
+| 角色 | Skill Slug | 职责 | 代码范围 | API 数 |
+|------|-----------|------|---------|--------|
+| R0 Orchestrator | `wc-orchestrator` | 任务编排·依赖追踪·里程碑验收·Sprint 3-5优先级仲裁 | docs/ + task-checklist | — |
+| R1 Auth-Dev | `wc-auth-dev` | 认证：注册/登录/JWT/RBAC/子账号/运营后台维护 | modules/auth + modules/user + modules/admin + modules/platform | ~18 |
+| R2 Task-Dev | `wc-task-dev` | 任务核心：发布/撮合/执行/验收/状态机/检查点/评论/问题上报/数据分析 | modules/task + modules/assignment + modules/review + modules/dispute + modules/checkin(打卡逻辑) | ~32 |
+| R2-a Project-Dev | `wc-project-dev` | 项目管理：CRUD/看板/里程碑/阶段流转/三色预警 | modules/project | ~12 |
+| R2-b AI-Dev | `wc-ai-dev` | AI系统：LLM配置/智能体管理/AI对话/6种Adapter/月度统计cron | modules/ai | ~11 |
+| R3 Pay-Dev | `wc-pay-dev` | 支付：充值/锁定/结算/提现/对账/周结算 | modules/finance + modules/wallet + modules/checkin(周结算) | ~15 |
+| R4 Msg-Dev | `wc-msg-dev` | 消息：WebSocket IM + 通知中心 + 微信订阅消息 + @提及通知 | modules/message + modules/notification | ~12 |
+| R5 File-Dev | `wc-file-dev` | 文件：OSS直传/交付物/合同PDF/任务附件/里程碑附件 | modules/file + modules/contract | ~8 |
+| R6 PC-Dev | `wc-pc-dev` | 全部PC端：企业后台(26+页) + 运营后台(12页) | apps/pc-admin/ + apps/platform-admin/ | ~38页 |
+| R7 MP-Dev | `wc-mp-dev` | 零工小程序：Taro 4Tab+7分包 | apps/worker-mp/ | ~26页 |
+| R8 QA-Lead | `wc-qa-lead` | 测试：E2E+资金流+压测（105 API全覆盖） | test/ + k6-scripts/ | — |
+| R9 Security-Ops | `wc-security-ops` | 安全：OWASP+加密审计+SSRF防护+XSS检查 | 全项目审计 | — |
+| R10 Schema-Ops | `wc-schema-ops` | 数据库：Schema(35+表)/Migration/种子/索引(23+条) | prisma/ | — |
+| R11 DevOps | `wc-devops` | 运维：Docker/CI-CD/监控/cron调度部署 | docker/ + .github/ | — |
 
 **调用方式**：在会话中输入 `[skill:wc-auth-dev]` 激活对应角色。
 

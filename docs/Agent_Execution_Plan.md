@@ -1,8 +1,8 @@
 # WeCreator 全量功能开发 — Agent 执行顺序
 
 > **基于:** PRD V3.6.1 + V3.7（项目及任务管理深化）· 全量 19 章 · ~105 个 API · ~41 张表
-> **覆盖:** 5 个 Sprint · 18 周 · 12 个 Agent 角色
-> **编制日期:** 2026-04-18
+> **覆盖:** 5 个 Sprint · 18 周 · **14 个 Agent 角色（方案 B）**
+> **编制日期:** 2026-04-18 · **V2 更新:** 采用 14 Agent 方案 B，R2 拆分为 R2/R2-a/R2-b
 > **目的:** 为每个 Agent 角色明确执行顺序、输入输出、依赖关系和验收标准
 
 ---
@@ -55,24 +55,26 @@
 
 ---
 
-## 1. Agent 角色速查
+## 1. Agent 角色速查（14 Agent · 方案 B）
+
+> **V2 变更:** R2 拆分为 R2 + R2-a + R2-b，总数 12→14。详见 `docs/Agent_Role_Analysis.md`。
 
 | Agent | 代号 | 职责范围 | 核心输出 |
-|-------|------|---------|---------|
-| R0 | wc-orchestrator | 编排协调 · 任务分发 · 阻塞仲裁 | 周计划 · 进度跟踪 |
-| R1 | wc-auth-dev | 认证模块（企业注册/登录/子账号/JWT） | 15 个 API |
-| R2 | wc-task-dev | 任务核心（发布/列表/详情/状态机/撮合/验收） | 25+ 个 API |
-| R3 | wc-pay-dev | 支付结算（充值/锁定/结算/提现/发票） | 15 个 API |
-| R4 | wc-msg-dev | 消息系统（IM/通知/WebSocket/订阅消息） | 10 个 API |
-| R5 | wc-file-dev | 文件服务（OSS 直传/合同 PDF/附件） | 5+ 个 API |
-| R6 | wc-pc-dev | 企业 PC 端全部页面（Vue 3） | 20+ 页面 |
-| R7 | wc-mp-dev | 零工小程序（Taro 4 + React 19） | 4 Tab + 7 子包 |
-| R8 | wc-qa-lead | 测试（E2E/接口自动化/压测） | 测试用例 + 报告 |
-| R9 | wc-security-ops | 安全（OWASP/加密审计/SSRF 防护） | 安全报告 |
-| R10 | wc-schema-ops | 数据架构（Prisma Schema/迁移/种子数据） | Schema + Migration |
-| R11 | wc-devops | 运维部署（Docker/CI/监控/灰度） | Dockerfile + CI |
-
----
+|-------|------|---------|----------|
+| R0 | wc-orchestrator | 编排协调 · 任务分发 · 阻塞仲裁 · Sprint 3-5 优先级仲裁 | 周计划 · 进度跟踪 |
+| R1 | wc-auth-dev | 认证（注册/登录/JWT/RBAC/子账号）+ 运营后台维护 | ~18 个 API |
+| **R2** | **wc-task-dev** | **任务核心（发布/撮合/执行/验收/状态机/检查点/评论/问题/分析）** | **~32 个 API** |
+| **R2-a** | **wc-project-dev** | **项目管理（CRUD/看板/里程碑/阶段流转/三色预警）** | **~12 个 API** |
+| **R2-b** | **wc-ai-dev** | **AI 系统（LLM 配置/智能体/对话/6 Adapter/月度 cron）** | **~11 个 API** |
+| R3 | wc-pay-dev | 支付结算（充值/锁定/结算/提现/发票/周结算） | ~15 个 API |
+| R4 | wc-msg-dev | 消息系统（IM/通知中心/WebSocket/订阅消息/@提及） | ~12 个 API |
+| R5 | wc-file-dev | 文件服务（OSS 直传/合同 PDF/任务附件/里程碑附件） | ~8 个 API |
+| R6 | wc-pc-dev | 全部 PC 端（企业 26+ 页 + 运营 12 页） | ~38 页面 |
+| R7 | wc-mp-dev | 零工小程序（Taro 4 + React 19） | ~26 页面 |
+| R8 | wc-qa-lead | 测试（E2E/接口自动化/压测 · 105 API 全覆盖） | 测试用例 + 报告 |
+| R9 | wc-security-ops | 安全（OWASP/加密审计/SSRF 防护/XSS 检查） | 安全报告 |
+| R10 | wc-schema-ops | 数据架构（Prisma Schema 35+ 表/迁移/种子/23+ 索引） | Schema + Migration |
+| R11 | wc-devops | 运维部署（Docker/CI/监控/灰度/cron 调度） | Dockerfile + CI |
 
 ## 2. 全局依赖关系图
 
@@ -87,42 +89,52 @@
        ┌─────────┐  ┌──────────┐  ┌─────────┐
        │ R10     │  │ R11      │  │ R9      │
        │ Schema  │  │ DevOps   │  │Security │
+       │ 35+表   │  │ cron部署 │  │SSRF+XSS │
        └────┬────┘  └────┬─────┘  └────┬────┘
             │             │             │
             │ Prisma      │ Docker      │ 审计
             │ Schema      │ + CI        │
             ▼             ▼             ▼
-       ┌─────────────────────────────────────┐
-       │          后端 Service 层             │
-       │  R1(Auth) → R2(Task) → R3(Pay)     │
-       │     ↕          ↕          ↕         │
-       │  R4(Msg)    R5(File)               │
-       └─────────────┬───────────────────────┘
-                      │ REST API + WebSocket
-              ┌───────┼───────┐
-              ▼       ▼       ▼
-          ┌──────┐ ┌──────┐ ┌──────────┐
-          │ R6   │ │ R7   │ │ R6(Admin)│
-          │ PC端 │ │ 小程序│ │ 运营后台  │
-          └──────┘ └──────┘ └──────────┘
-                      │
-                      ▼
-                ┌──────────┐
-                │ R8 QA    │
-                │ 全链路测试 │
-                └──────────┘
+       ┌─────────────────────────────────────────────┐
+       │              后端 Service 层（7 Agent）       │
+       │                                              │
+       │  R1(Auth) ─→ R2(Task,32) ──→ R3(Pay)       │
+       │     ↕            ↕    ↕          ↕           │
+       │  R4(Msg) ←C19~22 │   R5(File)              │
+       │                   │                          │
+       │          ┌────────┴────────┐                 │
+       │          ▼                 ▼                 │
+       │    R2-a(Project,12)  R2-b(AI,11)            │
+       │    看板·里程碑·预警   Adapter·对话·cron       │
+       └──────────────────┬──────────────────────────┘
+                          │ REST API + WebSocket
+              ┌───────────┼───────────┐
+              ▼           ▼           ▼
+          ┌──────┐    ┌──────┐   ┌──────────┐
+          │ R6   │    │ R7   │   │ R6(Admin)│
+          │ 26+页│    │ 26页 │   │ 运营12页  │
+          └──────┘    └──────┘   └──────────┘
+                          │
+                          ▼
+                    ┌──────────┐
+                    │ R8 QA    │
+                    │ 105 API  │
+                    └──────────┘
 ```
 
 **硬性依赖链（阻塞型）:**
-1. **R10 → R1~R5**: 没有 Schema 迁移,后端无法编译
-2. **R1 → R2~R5**: 没有 JWT Guard,后端无法鉴权
-3. **R1~R5 → R6/R7**: 没有 API,前端只能 Mock
-4. **R2 → R3**: 任务验收通过才能触发结算
-5. **R2 → R4**: 任务状态变更才能触发通知
+1. **R10 → R1~R5, R2-a, R2-b**: 没有 Schema 迁移,后端无法编译
+2. **R1 → R2~R5, R2-a, R2-b**: 没有 JWT Guard,后端无法鉴权
+3. **全部后端 → R6/R7**: 没有 API,前端只能 Mock
+4. **R2 → R3**: 任务验收通过才能触发结算（C10 事件）
+5. **R2/R2-a → R4**: 任务状态变更/评论@/问题上报/里程碑到期 → 触发通知（C11,C19~C22 事件）
+6. **R2-b → R2**: AI 生成任务建议 → R2 处理一键填充（C23 内部调用）
+7. **R2-a → R2**: 项目关联查询（C24 内部调用）
 
 **柔性依赖（可并行，Mock 先行）:**
 - R6/R7 可在 API 完成前用 Mock 数据开发 UI
 - R4 通知可后接入,不阻塞核心流程
+- R2-a/R2-b 可与 R2 并行开发（共享 Schema 但代码独立）
 - R8 可在 API 稳定后补写测试
 
 ---
@@ -352,17 +364,17 @@
 | 序号 | Agent | 任务 | 依赖 |
 |------|-------|------|------|
 | **13.1** | R10 | Schema V5 — 新增表（projects/llm_configs/ai_agents/ai_chat_sessions/task_attachments） | PRD §10.4 | Sprint 2 |
-| **13.2** | R2 | 项目管理 CRUD API（4个 — §4.9: list/create/update/status） | R10(13.1) |
+| **13.2** | **R2-a** | 项目管理 CRUD API（4个 — §4.9: list/create/update/status） | R10(13.1) |
 | **13.3** | R5 | 任务附件 API（POST presign + POST metadata + DELETE — V3.6 §4.2.1） | R10(13.1) |
 | **13.4** | R1 | AI 模块鉴权（super_admin only guard for /settings/*） | Sprint 1 |
-| **13.5** | R2* | LLM 配置 API（GET/PUT /company/llm-config + POST test — §4.8.1） | R10(13.1) |
-| **13.6** | R2* | 智能体管理 API（GET/POST/PUT /company/agents — §4.8.2） | R10(13.1) |
+| **13.5** | **R2-b** | LLM 配置 API（GET/PUT /company/llm-config + POST test — §4.8.1） | R10(13.1) |
+| **13.6** | **R2-b** | 智能体管理 API（GET/POST/PUT /company/agents — §4.8.2） | R10(13.1) |
 | **13.7** | R6 | 项目列表/详情页（ProjectListPage + ProjectDetailPage） | 无（Mock） |
 | **13.8** | R6 | 大模型配置页（LlmConfigPage — Provider/Key/参数表单） | 无（Mock） |
 | **13.9** | R6 | 智能体管理页（AgentListPage — CRUD + 预览 + 启停） | 无（Mock） |
 | **13.10** | R6 | TaskCreatePage Step2 附件上传增强（拖拽+批量,最多10个/50MB） | R5(13.3) |
 
-> *注: LLM/Agent API 逻辑上属于新的 `ai` module,但由 R2(wc-task-dev) 负责,因为与任务发布 Drawer 紧密耦合。也可独立为 R2-AI 子角色。
+> **V2 变更:** W13 中项目管理由 R2-a(wc-project-dev)负责，AI/LLM由 R2-b(wc-ai-dev)负责。R2(wc-task-dev)仅负责附件系统与任务核心联调。
 
 ---
 
@@ -370,10 +382,10 @@
 
 | 序号 | Agent | 任务 | 依赖 |
 |------|-------|------|------|
-| **14.1** | R2 | LLM Adapter 架构（Strategy Pattern — 6 个适配器: OpenAI/Claude/Azure/Qwen/Compatible/CustomHTTP — §19.2） | 13.5 |
-| **14.2** | R2 | AI 对话 API（POST /ai/chat + GET /ai/sessions — §19.3 协议） | 14.1, R10(13.1) |
-| **14.3** | R2 | AI 对话存储（MySQL ai_chat_sessions + MongoDB ai_chat_messages） | R10(13.1) |
-| **14.4** | R2 | 月度统计 cron（每月1日归零 call_count/token_count — V3.6.1 §19.5） | 14.2 |
+| **14.1** | **R2-b** | LLM Adapter 架构（Strategy Pattern — 6 个适配器: OpenAI/Claude/Azure/Qwen/Compatible/CustomHTTP — §19.2） | 13.5 |
+| **14.2** | **R2-b** | AI 对话 API（POST /ai/chat + GET /ai/sessions — §19.3 协议） | 14.1, R10(13.1) |
+| **14.3** | **R2-b** | AI 对话存储（MySQL ai_chat_sessions + MongoDB ai_chat_messages） | R10(13.1) |
+| **14.4** | **R2-b** | 月度统计 cron（每月1日归零 call_count/token_count — V3.6.1 §19.5） | 14.2 |
 | **14.5** | R6 | AI 任务顾问 Drawer（560px 右侧抽屉 — 对话界面 + 一键填充 — §V3.6 AI 顾问） | R2(14.2) |
 | **14.6** | R6+R7 | Sprint 3 前后端联调 | 13.1~14.5 |
 | **14.7** | R8 | Sprint 3 功能测试（项目CRUD + AI对话 + 附件上传） | 14.6 |
@@ -398,10 +410,10 @@
 |------|-------|------|------|
 | **15.1** | R10 | Schema V6 — 新增表（milestones/milestone_attachments/task_checkpoints/task_comments/task_issues/notifications 重构）+ tasks 表新增字段（task_no/priority/acceptance_criteria/risk_level/acceptance_status）+ projects 表新增字段（expected_delivery_date/phase/risk_level）+ projects.status 枚举 5 态 + progress_updates 扩展 | V3.7 §6 | Sprint 3 |
 | **15.2** | R2 | 任务编号自动生成（Redis INCR `task:seq:YYYYMMDD`）+ 优先级字段 | 15.1 |
-| **15.3** | R2 | 里程碑 CRUD API（4个 — GET/POST/PUT/DELETE /projects/:id/milestones） | 15.1 |
+| **15.3** | **R2-a** | 里程碑 CRUD API（4个 — GET/POST/PUT/DELETE /projects/:id/milestones） | 15.1 |
 | **15.4** | R2 | 检查点 CRUD API（4个 — GET/POST/PUT/DELETE /tasks/:id/checkpoints） | 15.1 |
 | **15.5** | R4 | 通知中心 API（GET /notifications + PUT /notifications/read） + notifications 表增强 | 15.1 |
-| **15.6** | R6 | 项目看板页（ProjectBoardPage — 卡片 + 三色预警 + 列表/看板切换） | 无（Mock） |
+| **15.6** | R6 | 项目看板页（ProjectBoardPage — 卡片 + 三色预警 + 列表/看板切换，消费 R2-a API） | 无（Mock） |
 | **15.7** | R6 | 里程碑管理组件（MilestonePanel — 在项目详情页内,CRUD + 时间线展示） | 无（Mock） |
 | **15.8** | R6 | 任务信息增强（TaskCreatePage Step2 新增: 任务编号只读 + 优先级选择 + 验收标准） | 无 |
 | **15.9** | R6 | 项目信息增强（ProjectModal 新增: 预期交付日期 + 项目阶段 + 5态状态） | 无 |
@@ -417,7 +429,7 @@
 | **16.2** | R2 | 问题上报 API（3个 — GET/POST/PUT /tasks/:id/issues + SLA 计时） | 15.1 |
 | **16.3** | R2 | 风险等级自动计算 cron（每小时：任务 risk_level + 项目 risk_level） | 15.2 |
 | **16.4** | R2 | 异常自动化 cron（检查点逾期 + 日报缺失 + 阻塞问题超时 + 里程碑到期） | 15.4, 16.2 |
-| **16.5** | R2 | 项目阶段自动流转逻辑（首个任务 in_progress→制作执行; 全部完成→验收交付） | 15.1 |
+| **16.5** | **R2-a** | 项目阶段自动流转逻辑（首个任务 in_progress→制作执行; 全部完成→验收交付） | 15.1 |
 | **16.6** | R6 | 检查点面板（CheckpointPanel — 在任务详情中栏,创建/提交/审核） | R2(15.4) |
 | **16.7** | R6 | 工作日志面板（WorkLogPanel — 在任务详情中栏,日报列表+企业评论） | R2 |
 | **16.8** | R6 | 交付物版本浏览器（DeliverableVersionViewer — 版本列表+退回原因+下载） | 已有基础 |
@@ -497,24 +509,26 @@
 ## 9. Agent 激活时间表（甘特图视角）
 
 ```
-Agent    W1  W2  W3  W4  W5  W6  W7  W8  W9  W10 W11 W12 W13 W14 W15 W16 W17 W18
-─────────────────────────────────────────────────────────────────────────────────────
-R0 编排  ██                  ██                          ██              ██      ██
-R1 认证  ████████                  ████                  ░░
-R2 任务      ██████████████████    ████████████      ████████████████████████
-R3 支付          ████████████░░    ░░██░░                                    ░░
-R4 消息              ████████░░        ████░░              ████
-R5 文件      ░░              ░░                    ████
-R6 PC端  ██████████████████████    ████████████████  ████████████████████████████
-R7 小程序██████████████████████    ████████████████  ░░  ░░  ░░  ████████████████
-R8 测试                      ████            ████████        ░░  ████        ████
-R9 安全  ░░                  ████            ████                ░░  ████    ████
-R10 架构 ████████████    ████                          ████████
-R11 运维 ██              ░░  ████                ████                        ████
-─────────────────────────────────────────────────────────────────────────────────────
-         ├── Sprint 1 ──┤    ├── Sprint 2 ────────┤    ├─S3─┤├─ Sprint 4 ─┤├─S5─┤
+Agent     W1  W2  W3  W4  W5  W6  W7  W8  W9  W10 W11 W12 W13 W14 W15 W16 W17 W18
+──────────────────────────────────────────────────────────────────────────────────────
+R0 编排   ██                  ██                          ██              ██      ██
+R1 认证   ████████                  ████                  ░░
+R2 任务       ██████████████████    ████████████      ░░  ░░  ████████████████
+R2-a项目                                                ████████████████░░██
+R2-b AI                                                 ████████
+R3 支付           ████████████░░    ░░██░░                                    ░░
+R4 消息               ████████░░        ████░░              ████
+R5 文件       ░░              ░░                    ████
+R6 PC端   ██████████████████████    ████████████████  ████████████████████████████
+R7 小程序 ██████████████████████    ████████████████  ░░  ░░  ░░  ████████████████
+R8 测试                       ████            ████████        ░░  ████        ████
+R9 安全   ░░                  ████            ████                ░░  ████    ████
+R10 架构  ████████████    ████                          ████████
+R11 运维  ██              ░░  ████                ████                        ████
+──────────────────────────────────────────────────────────────────────────────────────
+          ├── Sprint 1 ──┤    ├── Sprint 2 ────────┤    ├─S3─┤├─ Sprint 4 ─┤├─S5─┤
 
-██ = 主力工作   ░░ = 支援/待命
+██ = 主力工作   ░░ = 支援/待命   R2-a/R2-b 从 W13 启动（Sprint 3 起新增角色）
 ```
 
 ---
@@ -548,4 +562,4 @@ R11 运维 ██              ░░  ████                ████ 
 ---
 
 **文档版本:** V1.0 · 全量功能开发 Agent 执行顺序
-**统计:** 5 Sprint · 18 周 · 12 Agent · ~130 个执行步骤 · ~105 API · ~41 表 · ~30 页面
+**统计:** 5 Sprint · 18 周 · **14 Agent（方案 B）** · ~130 个执行步骤 · ~108 API · ~41 表 · ~38 PC页面 + ~26 小程序页面
