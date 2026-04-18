@@ -533,6 +533,16 @@ export class TaskService {
         reviewedAt: new Date(),
       },
     });
+
+    // 验收通过 → 分配状态改为 completed
+    if (result === 'approved') {
+      await this.prisma.roleAssignment.update({
+        where: { id: assignment.id },
+        data: { status: 'completed', progress: 100 },
+      });
+      this.logger.log(`分配 #${assignment.id} 验收通过 → completed`);
+    }
+
     this.logger.log(`验收结果: task=${taskId} role=${taskRoleId} result=${result}`);
     return { taskRoleId, deliverableId: Number(deliverable.id), result, reviewNote };
   }
