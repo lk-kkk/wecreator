@@ -99,12 +99,12 @@ const routes: RouteRecordRaw[] = [
 
       // ── ⚙️ 系统管理 ── PRD V3.6: SubMenu (仅 super_admin 可见)
       {
-        path: 'settings/users',
+        path: 'admin/subaccounts',
         name: 'Subaccounts',
         component: () => import('@/pages/settings/SubaccountPage.vue'),
         meta: { requiresRole: 'super_admin' },
       },
-      { path: 'admin/subaccounts', redirect: '/settings/users' }, // 兼容旧路由
+      { path: 'settings/users', redirect: '/admin/subaccounts' }, // PRD页面清单兼容
       {
         path: 'settings/llm',
         name: 'LlmConfig',

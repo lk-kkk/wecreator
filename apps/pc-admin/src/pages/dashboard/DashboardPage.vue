@@ -3,7 +3,7 @@
     <!-- 页头 -->
     <div class="wc-page-header">
       <div>
-        <h1 class="wc-page-title">数据看板</h1>
+        <h1 class="wc-page-title">工作台</h1>
         <p class="wc-page-subtitle">更新于 {{ lastUpdated }}</p>
       </div>
       <a-button :loading="loading" @click="loadData">

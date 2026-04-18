@@ -84,7 +84,7 @@
         <a-sub-menu v-if="userStore.isSuperAdmin" key="settings-group">
           <template #icon><setting-outlined /></template>
           <template #title>系统管理</template>
-          <a-menu-item key="subaccounts" @click="$router.push('/settings/users')">
+          <a-menu-item key="subaccounts" @click="$router.push('/admin/subaccounts')">
             <template #icon><user-switch-outlined /></template>
             子账号管理
           </a-menu-item>
@@ -231,7 +231,7 @@ const selectedKeys = computed(() => {
   if (path.includes('/worker'))            return ['worker-pool']
   if (path.includes('/finance/invoices'))  return ['invoices']
   if (path.includes('/finance'))           return ['finance']
-  if (path.includes('/settings/users'))    return ['subaccounts']
+  if (path.includes('/admin/subaccounts'))  return ['subaccounts']
   if (path.includes('/settings/llm'))      return ['llm-config']
   if (path.includes('/settings/agents'))   return ['agents']
   if (path.includes('/dashboard'))         return ['dashboard']
@@ -253,7 +253,7 @@ const breadcrumbs = computed<Breadcrumb[]>(() => {
     '/finance/recharge':       [{ label: '财务中心', path: '/finance' }, { label: '充值' }],
     '/finance/invoices':       [{ label: '财务中心', path: '/finance' }, { label: '发票管理' }],
     '/project/list':           [{ label: '项目管理' }],
-    '/settings/users':         [{ label: '系统管理' }, { label: '子账号管理' }],
+    '/admin/subaccounts':        [{ label: '系统管理' }, { label: '子账号管理' }],
     '/settings/llm':           [{ label: '系统管理' }, { label: '大模型配置' }],
     '/settings/agents':        [{ label: '系统管理' }, { label: '智能体管理' }],
     '/notifications':          [{ label: '通知中心' }],
