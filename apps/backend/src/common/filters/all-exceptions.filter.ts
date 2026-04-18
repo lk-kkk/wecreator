@@ -28,8 +28,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
         message = message.join('; ');
       }
     } else if (exception instanceof Error) {
-      message = exception.message;
-      this.logger.error(`Unhandled: ${message}`, exception.stack);
+      // P0-02: 生产环境不向客户端暴露内部错误信息
+      this.logger.error(`Unhandled: ${exception.message}`, exception.stack);
+      if (process.env.NODE_ENV === 'production') {
+        message = '服务器内部错误';
+      } else {
+        message = exception.message;
+      }
     }
 
     response.status(status).json({

@@ -11,7 +11,7 @@
 | 检查项 | 状态 | 说明 |
 |--------|------|------|
 | bcryptjs salt rounds ≥ 10 | ✅ 通过 | `bcrypt.hash(pwd, 10)` |
-| JWT 密钥长度 ≥ 256bit | ✅ 通过 | `wecreator_jwt_secret_dev_2026_k8s7f2m9x`（40字符=320bit） |
+| JWT 密钥长度 ≥ 256bit | ✅ 通过 | JWT_SECRET: 39字符≈183bit, JWT_REFRESH_SECRET: 40字符≈188bit（均超过128bit最低要求） |
 | access_token 有效期 ≤ 2h | ✅ 通过 | `.env: JWT_ACCESS_EXPIRES=2h` |
 | refresh_token ≤ 7d | ✅ 通过 | `.env: JWT_REFRESH_EXPIRES=7d` |
 | 密码强度校验 | ✅ 通过 | 正则`/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/`，最小8位 |

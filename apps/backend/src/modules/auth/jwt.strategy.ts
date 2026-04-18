@@ -16,10 +16,16 @@ export interface JwtPayload {
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(config: ConfigService) {
+    const secret = config.get<string>('JWT_SECRET');
+    if (!secret) {
+      throw new Error(
+        '[FATAL] JWT_SECRET 未配置！请在 .env 中设置 JWT_SECRET（至少32字符随机字符串）',
+      );
+    }
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: config.get<string>('JWT_SECRET') || 'fallback_secret',
+      secretOrKey: secret,
     });
   }
 
@@ -27,6 +33,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!payload.sub || !payload.userType) {
       throw new UnauthorizedException('无效的Token');
     }
+
+    // P0-03: 校验 userType 白名单，防止不同端 Token 混用
+    const validUserTypes = ['company', 'worker', 'platform'];
+    if (!validUserTypes.includes(payload.userType)) {
+      throw new UnauthorizedException('无效的Token类型');
+    }
+
     return {
       userId: payload.sub,
       companyId: payload.companyId,

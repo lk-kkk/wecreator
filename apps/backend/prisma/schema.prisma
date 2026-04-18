@@ -52,6 +52,7 @@ model CompanyUser {
   companyId    BigInt          @map("company_id")
   name         String          @db.VarChar(20)
   phone        String          @db.VarChar(200) // AES-256-CBC 加密存储
+  phoneHash    String?         @map("phone_hash") @db.VarChar(64) // SHA-256 索引查找
   passwordHash String          @map("password_hash") @db.VarChar(128)
   role         CompanyUserRole @default(operator)
   status       UserStatus      @default(active)
@@ -63,6 +64,7 @@ model CompanyUser {
   company Company @relation(fields: [companyId], references: [id])
 
   @@index([companyId, role])
+  @@index([phoneHash])
   @@map("company_users")
 }
 

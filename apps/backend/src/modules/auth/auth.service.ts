@@ -71,8 +71,9 @@ export class AuthService {
       throw new ConflictException('该企业已注册');
     }
 
-    // 2. 加密手机号 + hash 密码
+    // 2. 加密手机号 + hash 密码 + 手机 hash索引
     const encryptedPhone = this.crypto.encrypt(dto.adminPhone);
+    const phoneHash = createHash('sha256').update(dto.adminPhone).digest('hex');
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
     // 3. 事务创建企业 + 管理员
@@ -91,6 +92,7 @@ export class AuthService {
           companyId: company.id,
           name: dto.adminName,
           phone: encryptedPhone,
+          phoneHash,
           passwordHash,
           role: 'super_admin',
         },
@@ -117,20 +119,35 @@ export class AuthService {
     // ── 1. IP 限流检查 ──────────────────────────────
     await this.checkLoginRateLimit(ip);
 
-    // ── 2. 查找用户（加密手机号遍历匹配）───────────
-    //    NOTE: 开发阶段 O(n) 遍历可接受；
-    //    生产环境需增加 phone_hash 列做索引查找
-    const users = await this.prisma.companyUser.findMany({
+    // ── 2. 查找用户（phoneHash 索引 + 旧数据回退）──
+    const phoneHash = createHash('sha256').update(dto.phone).digest('hex');
+    let user = await this.prisma.companyUser.findFirst({
+      where: { phoneHash },
       include: { company: true },
     });
 
-    const user = users.find((u) => {
-      try {
-        return this.crypto.decrypt(u.phone) === dto.phone;
-      } catch {
-        return false;
+    // 旧数据回退：phoneHash 列为 null 的记录逐个解密匹配
+    if (!user) {
+      const legacyUsers = await this.prisma.companyUser.findMany({
+        where: { phoneHash: null },
+        include: { company: true },
+      });
+      user = legacyUsers.find((u) => {
+        try {
+          return this.crypto.decrypt(u.phone) === dto.phone;
+        } catch {
+          return false;
+        }
+      }) ?? null;
+
+      // 找到后补填 phoneHash（渐进迁移）
+      if (user) {
+        await this.prisma.companyUser.update({
+          where: { id: user.id },
+          data: { phoneHash },
+        });
       }
-    });
+    }
 
     if (!user) {
       await this.recordLoginFailure(ip);

@@ -62,6 +62,7 @@ async function bootstrap() {
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api/docs', app, document);
     logger.log('Swagger docs at http://localhost:3000/api/docs');
+    logger.warn('⚠️  Swagger UI 已启用！生产环境必须设置 NODE_ENV=production 以禁用');
   }
 
   // ── 启动 ──────────────────────────────────────

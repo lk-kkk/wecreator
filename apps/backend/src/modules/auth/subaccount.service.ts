@@ -34,6 +34,7 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import * as bcrypt from 'bcryptjs';
+import { createHash } from 'crypto';
 import { PrismaService } from '../../prisma';
 import { CryptoUtil } from '../../common/utils/crypto.util';
 
@@ -166,15 +167,17 @@ export class SubaccountService {
       throw new ConflictException('该手机号已被注册');
     }
 
-    // P0-3: AES 加密手机号
+    // P0-3: AES 加密手机号 + phoneHash 索引
     const encryptedPhone = this.crypto.encrypt(dto.phone);
+    const phoneHash = createHash('sha256').update(dto.phone).digest('hex');
     const hash = await bcrypt.hash(dto.password, 10);
 
     const account = await this.prisma.companyUser.create({
       data: {
         companyId: BigInt(companyId),
         name: dto.name,
-        phone: encryptedPhone, // 加密存储
+        phone: encryptedPhone,
+        phoneHash,
         passwordHash: hash,
         role: dto.role as any,
         status: 'active',
