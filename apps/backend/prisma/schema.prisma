@@ -1,6 +1,8 @@
 // ============================================================
-// WeCreator PRD V3.1 — 完整数据库 Schema
-// 27张核心表 + 6张辅助表 + 15条索引
+// WeCreator — Prisma Schema V2 (Sprint 1 基线)
+// 对齐 PRD V3.6.1 + V3.7 全量字段
+// 40 张业务表 · 30+ 枚举 · 25+ 索引
+// R10 Schema-Ops · 2026-04-18
 // ============================================================
 
 generator client {
@@ -27,15 +29,20 @@ model Company {
   industryTag   String?       @map("industry_tag") @db.VarChar(50)
   balance       Decimal       @default(0) @db.Decimal(12, 2)
   lockedBalance Decimal       @default(0) @map("locked_balance") @db.Decimal(12, 2)
-  version       Int           @default(0)
+  version       Int           @default(0) // 乐观锁版本号(资金操作并发控制)
   createdAt     DateTime      @default(now()) @map("created_at")
   approvedAt    DateTime?     @map("approved_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
 
-  users       CompanyUser[]
-  tasks       Task[]
-  customRoles CompanyCustomRole[]
-  workerPool  CompanyWorkerPool[]
+  users          CompanyUser[]
+  tasks          Task[]
+  customRoles    CompanyCustomRole[]
+  workerPool     CompanyWorkerPool[]
+  projects       Project[]
+  llmConfig      LlmConfig?
+  aiAgents       AiAgent[]
+  aiChatSessions AiChatSession[]
+  notifications  CompanyNotification[]
 
   @@map("companies")
 }
@@ -44,7 +51,7 @@ model CompanyUser {
   id           BigInt          @id @default(autoincrement())
   companyId    BigInt          @map("company_id")
   name         String          @db.VarChar(20)
-  phone        String          @db.VarChar(200)
+  phone        String          @db.VarChar(200) // AES-256-CBC 加密存储
   passwordHash String          @map("password_hash") @db.VarChar(128)
   role         CompanyUserRole @default(operator)
   status       UserStatus      @default(active)
@@ -60,17 +67,18 @@ model CompanyUser {
 }
 
 model CompanyCustomRole {
-  id          BigInt   @id @default(autoincrement())
-  companyId   BigInt   @map("company_id")
-  roleName    String   @map("role_name") @db.VarChar(50)
-  description String?  @db.VarChar(200)
-  skillTags   String?  @map("skill_tags") @db.VarChar(500)
-  dailyRate   Decimal? @map("daily_rate") @db.Decimal(10, 2)
-  createdAt   DateTime @default(now()) @map("created_at")
+  id           BigInt   @id @default(autoincrement())
+  companyId    BigInt   @map("company_id")
+  name         String   @default("") @db.VarChar(20)
+  category     String?  @db.VarChar(30)
+  description  String?  @db.VarChar(500)
+  commonSkills Json?    @map("common_skills") // JSON: 常用技能标签(最多10个)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
 
   company Company @relation(fields: [companyId], references: [id])
 
-  @@index([companyId])
+  @@unique([companyId, name])
   @@map("company_custom_roles")
 }
 
@@ -79,25 +87,29 @@ model CompanyCustomRole {
 // ============================================================
 
 model Worker {
-  id              BigInt       @id @default(autoincrement())
-  openid          String       @unique @db.VarChar(64)
-  unionid         String?      @db.VarChar(64)
-  phone           String?      @db.VarChar(200)
-  realName        String?      @map("real_name") @db.VarChar(100)
-  idCardEncrypted String?      @map("id_card_encrypted") @db.VarChar(500)
-  avatarUrl       String?      @map("avatar_url") @db.VarChar(500)
-  city            String?      @db.VarChar(50)
-  bio             String?      @db.VarChar(300)
-  isVerified      Boolean      @default(false) @map("is_verified")
-  avgRating       Decimal      @default(0) @map("avg_rating") @db.Decimal(3, 2)
-  completionRate  Decimal      @default(0) @map("completion_rate") @db.Decimal(5, 4)
-  completedCount  Int          @default(0) @map("completed_count")
-  level           WorkerLevel  @default(unverified)
-  coverImage      String?      @map("cover_image") @db.VarChar(500)
-  coverTemplate   String?      @map("cover_template") @db.VarChar(20)
-  status          WorkerStatus @default(active)
-  createdAt       DateTime     @default(now()) @map("created_at")
-  updatedAt       DateTime     @updatedAt @map("updated_at")
+  id               BigInt       @id @default(autoincrement())
+  openid           String       @unique @db.VarChar(64)
+  unionid          String?      @db.VarChar(64)
+  nickname         String?      @db.VarChar(50)
+  phone            String?      @db.VarChar(200) // AES-256-CBC 加密存储
+  realName         String?      @map("real_name") @db.VarChar(100)
+  idCardHash       String?      @map("id_card_hash") @db.VarChar(64)
+  idCardEncrypted  String?      @map("id_card_encrypted") @db.VarChar(500)
+  avatarUrl        String?      @map("avatar_url") @db.VarChar(500)
+  city             String?      @db.VarChar(50)
+  bio              String?      @db.VarChar(300)
+  skillTags        Json?        @map("skill_tags") // JSON: 技能标签数组
+  isVerified       Boolean      @default(false) @map("is_verified")
+  avgRating        Decimal      @default(0) @map("avg_rating") @db.Decimal(3, 2)
+  completionRate   Decimal      @default(0) @map("completion_rate") @db.Decimal(5, 4)
+  completedCount   Int          @default(0) @map("completed_count")
+  level            WorkerLevel  @default(unverified)
+  avgResponseHours Decimal?     @map("avg_response_hours") @db.Decimal(5, 2)
+  coverImage       String?      @map("cover_image") @db.VarChar(500)
+  coverTemplate    String?      @map("cover_template") @db.VarChar(20)
+  status           WorkerStatus @default(active)
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
 
   wallet       Wallet?
   workerRoles  WorkerRole[]
@@ -107,32 +119,44 @@ model Worker {
   companyPools CompanyWorkerPool[]
 
   @@index([city, isVerified])
+  @@index([level, avgRating(sort: Desc)])
   @@map("workers")
 }
 
 model WorkerRole {
-  id        BigInt   @id @default(autoincrement())
-  workerId  BigInt   @map("worker_id")
-  roleName  String   @map("role_name") @db.VarChar(50)
-  yearsExp  Int?     @map("years_exp")
-  skillTags String?  @map("skill_tags") @db.VarChar(500)
-  createdAt DateTime @default(now()) @map("created_at")
+  id             BigInt     @id @default(autoincrement())
+  workerId       BigInt     @map("worker_id")
+  platformRoleId BigInt?    @map("platform_role_id")
+  roleName       String     @map("role_name") @db.VarChar(50)
+  level          RoleLevel? // junior/mid/senior/expert
+  yearsExp       Int?       @map("years_exp")
+  minDailyRate   Decimal?   @map("min_daily_rate") @db.Decimal(10, 2)
+  maxDailyRate   Decimal?   @map("max_daily_rate") @db.Decimal(10, 2)
+  skillTags      Json?      @map("skill_tags") // JSON: 角色专属技能标签
+  experienceDesc String?    @map("experience_desc") @db.VarChar(300)
+  isAccepting    Boolean    @default(true) @map("is_accepting")
+  completedCount Int        @default(0) @map("completed_count")
+  avgRating      Decimal    @default(0) @map("avg_rating") @db.Decimal(3, 2)
+  createdAt      DateTime   @default(now()) @map("created_at")
 
-  worker Worker @relation(fields: [workerId], references: [id])
+  worker       Worker        @relation(fields: [workerId], references: [id])
+  platformRole PlatformRole? @relation(fields: [platformRoleId], references: [id])
 
   @@index([workerId])
   @@map("worker_roles")
 }
 
 model Portfolio {
-  id          BigInt   @id @default(autoincrement())
-  workerId    BigInt   @map("worker_id")
-  title       String   @db.VarChar(100)
-  description String?  @db.VarChar(500)
-  fileUrl     String   @map("file_url") @db.VarChar(500)
-  fileType    String   @map("file_type") @db.VarChar(20)
-  sortOrder   Int      @default(0) @map("sort_order")
-  createdAt   DateTime @default(now()) @map("created_at")
+  id          BigInt            @id @default(autoincrement())
+  workerId    BigInt            @map("worker_id")
+  title       String            @db.VarChar(100)
+  description String?           @db.VarChar(500)
+  fileUrl     String            @map("file_url") @db.VarChar(500)
+  fileType    PortfolioFileType @map("file_type")
+  isFeatured  Boolean           @default(false) @map("is_featured")
+  visibility  Visibility        @default(public_visible)
+  sortOrder   Int               @default(0) @map("sort_order")
+  createdAt   DateTime          @default(now()) @map("created_at")
 
   worker Worker @relation(fields: [workerId], references: [id])
 
@@ -141,46 +165,79 @@ model Portfolio {
 }
 
 // ============================================================
-// 3. 任务相关表
+// 3. 任务相关表 (PRD §4.2 + V3.6 + V3.7)
 // ============================================================
 
 model Task {
-  id           BigInt     @id @default(autoincrement())
-  companyId    BigInt     @map("company_id")
-  createdBy    BigInt     @map("created_by")
-  title        String     @db.VarChar(100)
-  description  String?    @db.Text
-  taskMode     TaskMode   @map("task_mode")
-  status       TaskStatus @default(draft)
-  totalBudget  Decimal    @map("total_budget") @db.Decimal(12, 2)
-  lockedAmount Decimal    @default(0) @map("locked_amount") @db.Decimal(12, 2)
-  startDate    DateTime?  @map("start_date")
-  endDate      DateTime?  @map("end_date")
-  address      String?    @db.VarChar(200)
-  createdAt    DateTime   @default(now()) @map("created_at")
-  publishedAt  DateTime?  @map("published_at")
-  updatedAt    DateTime   @updatedAt @map("updated_at")
+  id                 BigInt            @id @default(autoincrement())
+  companyId          BigInt            @map("company_id")
+  createdBy          BigInt            @map("created_by")
+  projectId          BigInt?           @map("project_id") // V3.6: 关联项目(可为空)
+  taskNo             String?           @unique @map("task_no") @db.VarChar(20) // V3.7: TSK-YYYYMMDD-NNN
+  title              String            @db.VarChar(100)
+  description        String?           @db.Text // 背景 + 目标合并
+  background         String?           @db.Text // V3.6: 项目背景
+  objective          String?           @db.Text // V3.6: 交付目标
+  taskMode           TaskMode          @map("task_mode")
+  status             TaskStatus        @default(draft)
+  priority           TaskPriority      @default(p2) // V3.7
+  totalBudget        Decimal           @map("total_budget") @db.Decimal(12, 2)
+  lockedAmount       Decimal           @default(0) @map("locked_amount") @db.Decimal(12, 2)
+  startDate          DateTime?         @map("start_date")
+  endDate            DateTime?         @map("end_date")
+  workMode           WorkMode?         @map("work_mode") // remote/onsite/hybrid
+  onsiteCity         String?           @map("onsite_city") @db.VarChar(20)
+  onsiteAddress      String?           @map("onsite_address") @db.VarChar(100)
+  address            String?           @db.VarChar(200) // 兼容旧字段
+  communication      Json? // JSON: 沟通机制数组
+  isConfidential     Boolean           @default(false) @map("is_confidential")
+  overallProgress    Int               @default(0) @map("overall_progress") // 0-100
+  acceptanceCriteria String?           @map("acceptance_criteria") @db.Text // V3.7
+  riskLevel          RiskLevel         @default(green) @map("risk_level") // V3.7
+  acceptanceStatus   AcceptanceStatus? @map("acceptance_status") // V3.7
+  createdAt          DateTime          @default(now()) @map("created_at")
+  publishedAt        DateTime?         @map("published_at")
+  completedAt        DateTime?         @map("completed_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
 
-  company     Company      @relation(fields: [companyId], references: [id])
-  taskRoles   TaskRole[]
-  deliverables Deliverable[]
+  company         Company          @relation(fields: [companyId], references: [id])
+  project         Project?         @relation(fields: [projectId], references: [id])
+  taskRoles       TaskRole[]
+  deliverables    Deliverable[]
+  attachments     TaskAttachment[]
+  checkpoints     TaskCheckpoint[]
+  comments        TaskComment[]
+  issues          TaskIssue[]
+  progressUpdates ProgressUpdate[]
 
   @@index([companyId, status])
   @@index([status, createdAt])
+  @@index([projectId])
   @@map("tasks")
 }
 
 model TaskRole {
-  id          BigInt   @id @default(autoincrement())
-  taskId      BigInt   @map("task_id")
-  roleName    String   @map("role_name") @db.VarChar(50)
-  headcount   Int      @default(1)
-  budget      Decimal  @db.Decimal(10, 2)
-  skillTags   String?  @map("skill_tags") @db.VarChar(500)
-  description String?  @db.VarChar(500)
-  createdAt   DateTime @default(now()) @map("created_at")
+  id                  BigInt         @id @default(autoincrement())
+  taskId              BigInt         @map("task_id")
+  platformRoleId      BigInt?        @map("platform_role_id")
+  roleName            String         @map("role_name") @db.VarChar(50)
+  level               RoleLevel? // junior/mid/senior/expert
+  headcount           Int            @default(1)
+  billingType         BillingType    @default(fixed) @map("billing_type")
+  rate                Decimal        @default(0) @db.Decimal(10, 2) // 单价(固定总价 or 日薪)
+  estimatedDays       Int?           @map("estimated_days")
+  budget              Decimal        @db.Decimal(10, 2) // 岗位总预算(兼容)
+  description         String?        @db.Text
+  requiredSkills      Json?          @map("required_skills") // JSON: 必备技能
+  bonusSkills         Json?          @map("bonus_skills") // JSON: 加分技能
+  specialRequirements String?        @map("special_requirements") @db.Text
+  skillTags           String?        @map("skill_tags") @db.VarChar(500) // 兼容旧格式
+  status              TaskRoleStatus @default(pending)
+  progress            Int            @default(0)
+  createdAt           DateTime       @default(now()) @map("created_at")
 
   task         Task              @relation(fields: [taskId], references: [id])
+  platformRole PlatformRole?     @relation(fields: [platformRoleId], references: [id])
   assignments  RoleAssignment[]
   applications TaskApplication[]
 
@@ -189,17 +246,23 @@ model TaskRole {
 }
 
 model RoleAssignment {
-  id         BigInt           @id @default(autoincrement())
-  taskRoleId BigInt           @map("task_role_id")
-  workerId   BigInt           @map("worker_id")
-  slotIndex  Int              @map("slot_index")
-  status     AssignmentStatus @default(invited)
-  invitedAt  DateTime         @default(now()) @map("invited_at")
-  acceptedAt DateTime?        @map("accepted_at")
-  rejectedAt DateTime?        @map("rejected_at")
-  expiredAt  DateTime?        @map("expired_at")
-  progress   Int              @default(0)
-  updatedAt  DateTime         @updatedAt @map("updated_at")
+  id           BigInt           @id @default(autoincrement())
+  taskRoleId   BigInt           @map("task_role_id")
+  workerId     BigInt           @map("worker_id")
+  slotIndex    Int              @map("slot_index")
+  status       AssignmentStatus @default(invited)
+  invitedAt    DateTime         @default(now()) @map("invited_at")
+  respondedAt  DateTime?        @map("responded_at")
+  acceptedAt   DateTime?        @map("accepted_at")
+  rejectedAt   DateTime?        @map("rejected_at")
+  rejectReason String?          @map("reject_reason") @db.VarChar(200)
+  expiredAt    DateTime?        @map("expired_at")
+  contractHash String?          @map("contract_hash") @db.VarChar(64)
+  signedAt     DateTime?        @map("signed_at")
+  signedIp     String?          @map("signed_ip") @db.VarChar(45)
+  signedUa     String?          @map("signed_ua") @db.Text
+  progress     Int              @default(0)
+  updatedAt    DateTime         @updatedAt @map("updated_at")
 
   taskRole TaskRole @relation(fields: [taskRoleId], references: [id])
   worker   Worker   @relation(fields: [workerId], references: [id])
@@ -210,31 +273,81 @@ model RoleAssignment {
 }
 
 // ============================================================
-// 4. 交付物表
+// 4. 交付物表 (PRD §10.2 — 拆分为 deliverables + deliverable_files)
 // ============================================================
 
 model Deliverable {
-  id           BigInt             @id @default(autoincrement())
-  taskId       BigInt             @map("task_id")
-  assignmentId BigInt             @map("assignment_id")
-  fileUrl      String             @map("file_url") @db.VarChar(500)
-  fileName     String             @map("file_name") @db.VarChar(200)
-  fileSize     BigInt?            @map("file_size")
-  fileType     String?            @map("file_type") @db.VarChar(20)
-  version      Int                @default(1)
-  status       DeliverableStatus  @default(submitted)
-  reviewNote   String?            @map("review_note") @db.VarChar(500)
-  submittedAt  DateTime           @default(now()) @map("submitted_at")
-  reviewedAt   DateTime?          @map("reviewed_at")
+  id                 BigInt            @id @default(autoincrement())
+  taskId             BigInt            @map("task_id") // 冗余FK便于查询
+  taskRoleId         BigInt            @default(0) @map("task_role_id")
+  assignmentId       BigInt            @map("assignment_id")
+  name               String            @default("") @db.VarChar(100) // 交付物名称
+  acceptanceCriteria String?           @map("acceptance_criteria") @db.Text
+  deadline           DateTime?         @db.Date
+  status             DeliverableStatus @default(pending)
+  currentVersion     Int               @default(0) @map("current_version")
+  // 兼容旧字段(单文件模式)
+  fileUrl            String?           @map("file_url") @db.VarChar(500)
+  fileName           String?           @map("file_name") @db.VarChar(200)
+  fileSize           BigInt?           @map("file_size")
+  fileType           String?           @map("file_type") @db.VarChar(20)
+  version            Int               @default(1) // 旧版本号兼容
+  reviewNote         String?           @map("review_note") @db.VarChar(500)
+  submittedAt        DateTime?         @map("submitted_at")
+  reviewedAt         DateTime?         @map("reviewed_at")
+  createdAt          DateTime          @default(now()) @map("created_at")
 
-  task Task @relation(fields: [taskId], references: [id])
+  task  Task              @relation(fields: [taskId], references: [id])
+  files DeliverableFile[]
 
   @@index([taskId, assignmentId])
+  @@index([taskRoleId])
   @@map("deliverables")
 }
 
+model DeliverableFile {
+  id            BigInt   @id @default(autoincrement())
+  deliverableId BigInt   @map("deliverable_id")
+  version       Int
+  fileUrl       String   @map("file_url") @db.VarChar(500)
+  fileName      String   @map("file_name") @db.VarChar(200)
+  fileSize      BigInt?  @map("file_size")
+  description   String?  @db.VarChar(300)
+  uploadedAt    DateTime @default(now()) @map("uploaded_at")
+
+  deliverable Deliverable @relation(fields: [deliverableId], references: [id])
+
+  @@index([deliverableId, version])
+  @@map("deliverable_files")
+}
+
 // ============================================================
-// 5. 财务相关表
+// 5. 进度更新记录 (PRD §10.2 + V3.7)
+// ============================================================
+
+model ProgressUpdate {
+  id           BigInt   @id @default(autoincrement())
+  taskId       BigInt   @map("task_id") // 冗余FK便于查询
+  taskRoleId   BigInt   @map("task_role_id")
+  assignmentId BigInt   @map("assignment_id")
+  workerId     BigInt   @map("worker_id")
+  progressPct  Int      @map("progress_pct") // 完成百分比 0-100
+  content      String?  @db.Text // 今日完成内容
+  issues       String?  @db.Text // 遇到的问题
+  screenshots  Json? // JSON: 截图URL数组
+  dailySummary String?  @map("daily_summary") @db.VarChar(500) // V3.7
+  tomorrowPlan String?  @map("tomorrow_plan") @db.Text // V3.7
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  task Task @relation(fields: [taskId], references: [id])
+
+  @@index([taskRoleId, createdAt(sort: Desc)])
+  @@index([taskId, workerId])
+  @@map("progress_updates")
+}
+
+// ============================================================
+// 6. 财务相关表
 // ============================================================
 
 model Wallet {
@@ -243,11 +356,12 @@ model Wallet {
   availableBalance Decimal  @default(0) @map("available_balance") @db.Decimal(12, 2)
   frozenBalance    Decimal  @default(0) @map("frozen_balance") @db.Decimal(12, 2)
   totalEarned      Decimal  @default(0) @map("total_earned") @db.Decimal(12, 2)
-  version          Int      @default(0)
+  version          Int      @default(0) // 乐观锁
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
-  worker Worker @relation(fields: [workerId], references: [id])
+  worker          Worker           @relation(fields: [workerId], references: [id])
+  withdrawRecords WithdrawRecord[]
 
   @@map("wallets")
 }
@@ -279,7 +393,11 @@ model Invoice {
   invoiceNo     String?       @unique @map("invoice_no") @db.VarChar(32)
   amount        Decimal       @db.Decimal(12, 2)
   taxRate       Decimal       @default(0.06) @map("tax_rate") @db.Decimal(4, 2)
-  invoiceType   String        @default("专票") @map("invoice_type") @db.VarChar(10)
+  invoiceType   String        @default("electronic_normal") @map("invoice_type") @db.VarChar(30)
+  title         String?       @db.VarChar(100) // 发票抬头
+  taxNo         String?       @map("tax_no") @db.VarChar(20) // 纳税人识别号
+  email         String?       @db.VarChar(100) // 接收邮箱
+  relatedPeriod String?       @map("related_period") @db.VarChar(20) // 关联账期
   status        InvoiceStatus @default(pending)
   pdfUrl        String?       @map("pdf_url") @db.VarChar(500)
   appliedAt     DateTime      @default(now()) @map("applied_at")
@@ -289,82 +407,155 @@ model Invoice {
   @@map("invoices")
 }
 
+model WeeklySettlement {
+  id           BigInt        @id @default(autoincrement())
+  assignmentId BigInt        @map("assignment_id")
+  weekStart    DateTime      @map("week_start") @db.Date
+  weekEnd      DateTime      @map("week_end") @db.Date
+  totalDays    Decimal       @map("total_days") @db.Decimal(4, 1)
+  dailyRate    Decimal       @map("daily_rate") @db.Decimal(10, 2)
+  grossAmount  Decimal       @map("gross_amount") @db.Decimal(12, 2)
+  netAmount    Decimal       @map("net_amount") @db.Decimal(12, 2)
+  status       PaymentStatus @default(pending)
+  settledAt    DateTime?     @map("settled_at")
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  @@index([assignmentId, weekStart])
+  @@map("weekly_settlements")
+}
+
+model WithdrawRecord {
+  id            BigInt         @id @default(autoincrement())
+  workerId      BigInt         @map("worker_id")
+  walletId      BigInt         @map("wallet_id")
+  amount        Decimal        @db.Decimal(12, 2)
+  status        WithdrawStatus @default(processing)
+  failureReason String?        @map("failure_reason") @db.Text
+  createdAt     DateTime       @default(now()) @map("created_at")
+  completedAt   DateTime?      @map("completed_at")
+
+  wallet Wallet @relation(fields: [walletId], references: [id])
+
+  @@index([workerId, status])
+  @@map("withdraw_records")
+}
+
 // ============================================================
-// 6. 评价表
+// 7. 评价表 (PRD §6.3 — 增强维度评分)
 // ============================================================
 
 model Review {
-  id           BigInt     @id @default(autoincrement())
-  taskId       BigInt     @map("task_id")
-  assignmentId BigInt     @map("assignment_id")
-  reviewerType ReviewerType @map("reviewer_type")
-  reviewerId   BigInt     @map("reviewer_id")
-  targetId     BigInt     @map("target_id")
-  rating       Int
-  comment      String?    @db.VarChar(500)
-  createdAt    DateTime   @default(now()) @map("created_at")
+  id              BigInt       @id @default(autoincrement())
+  taskId          BigInt       @map("task_id")
+  taskRoleId      BigInt       @map("task_role_id")
+  assignmentId    BigInt       @map("assignment_id")
+  reviewerType    ReviewerType @map("reviewer_type")
+  reviewerId      BigInt       @map("reviewer_id")
+  revieweeId      BigInt       @map("reviewee_id")
+  dimensionScores Json?        @map("dimension_scores") // {"quality":5,"punctuality":4,...}
+  overallScore    Decimal?     @map("overall_score") @db.Decimal(3, 2) // 加权综合分
+  rating          Int? // 兼容旧简单评分
+  comment         String?      @db.VarChar(500)
+  positiveTags    Json?        @map("positive_tags") // JSON: 正向标签数组
+  isVisible       Boolean      @default(false) @map("is_visible") // 双方都评后可见
+  createdAt       DateTime     @default(now()) @map("created_at")
 
   @@unique([assignmentId, reviewerType])
+  @@index([revieweeId, reviewerType])
   @@map("reviews")
 }
 
 // ============================================================
-// 7. 消息与通知表
+// 8. 消息与通知表
 // ============================================================
 
 model Conversation {
-  id           BigInt   @id @default(autoincrement())
-  taskId       BigInt   @map("task_id")
-  companyUserId BigInt  @map("company_user_id")
-  workerId     BigInt   @map("worker_id")
-  lastMsgAt    DateTime? @map("last_msg_at")
-  createdAt    DateTime @default(now()) @map("created_at")
+  id            BigInt    @id @default(autoincrement())
+  taskId        BigInt    @map("task_id")
+  companyUserId BigInt    @map("company_user_id")
+  workerId      BigInt    @map("worker_id")
+  lastMsgAt     DateTime? @map("last_msg_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
 
   @@unique([taskId, companyUserId, workerId])
   @@map("conversations")
 }
 
+// 零工端+通用通知(站外推送)
 model Notification {
-  id         BigInt           @id @default(autoincrement())
-  userId     BigInt           @map("user_id")
-  userType   UserType         @map("user_type")
-  type       NotificationType
-  title      String           @db.VarChar(100)
-  content    String           @db.VarChar(500)
-  relatedId  BigInt?          @map("related_id")
-  isRead     Boolean          @default(false) @map("is_read")
-  createdAt  DateTime         @default(now()) @map("created_at")
+  id            BigInt           @id @default(autoincrement())
+  recipientType UserType         @map("recipient_type") // company_user / worker
+  recipientId   BigInt           @map("recipient_id")
+  channel       NotifyChannel    @default(in_app)
+  templateCode  String?          @map("template_code") @db.VarChar(30) // T1-T7
+  type          NotificationType
+  title         String           @db.VarChar(100)
+  content       String           @db.VarChar(500)
+  relatedTaskId BigInt?          @map("related_task_id")
+  isRead        Boolean          @default(false) @map("is_read")
+  sentStatus    SentStatus       @default(pending) @map("sent_status")
+  sentAt        DateTime?        @map("sent_at")
+  createdAt     DateTime         @default(now()) @map("created_at")
 
-  @@index([userId, userType, isRead])
+  @@index([recipientType, recipientId, isRead])
   @@map("notifications")
 }
 
+// 企业端站内通知中心 (V3.7)
+model CompanyNotification {
+  id        BigInt                  @id @default(autoincrement())
+  companyId BigInt                  @map("company_id")
+  userId    BigInt                  @map("user_id") // company_users.id
+  type      CompanyNotificationType
+  title     String                  @db.VarChar(100)
+  content   String                  @db.VarChar(500)
+  refType   String?                 @map("ref_type") @db.VarChar(20) // task/project/checkpoint/comment
+  refId     BigInt?                 @map("ref_id")
+  isRead    Boolean                 @default(false) @map("is_read")
+  createdAt DateTime                @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@index([userId, isRead, createdAt(sort: Desc)])
+  @@index([companyId, createdAt(sort: Desc)])
+  @@map("company_notifications")
+}
+
 // ============================================================
-// 8. 合同表
+// 9. 合同表 (PRD §10.3 — 增强字段)
 // ============================================================
 
 model Contract {
-  id           BigInt   @id @default(autoincrement())
-  assignmentId BigInt   @map("assignment_id")
-  companyId    BigInt   @map("company_id")
-  workerId     BigInt   @map("worker_id")
-  contractHash String   @map("contract_hash") @db.VarChar(64)
-  pdfUrl       String?  @map("pdf_url") @db.VarChar(500)
-  signedAt     DateTime @default(now()) @map("signed_at")
+  id           BigInt         @id @default(autoincrement())
+  contractNo   String?        @unique @map("contract_no") @db.VarChar(32) // WC-YYYYMMDDNNNNN
+  taskRoleId   BigInt?        @map("task_role_id")
+  assignmentId BigInt         @map("assignment_id")
+  companyId    BigInt         @map("company_id")
+  workerId     BigInt         @map("worker_id")
+  contractType ContractType?  @map("contract_type")
+  contractHash String         @map("contract_hash") @db.VarChar(64) // SHA-256
+  pdfUrl       String?        @map("pdf_url") @db.VarChar(500)
+  status       ContractStatus @default(active)
+  signedAt     DateTime       @default(now()) @map("signed_at")
+  completedAt  DateTime?      @map("completed_at")
 
   @@index([workerId])
+  @@index([taskRoleId])
   @@map("contracts")
 }
 
 // ============================================================
-// 9. 辅助表
+// 10. 辅助表
 // ============================================================
 
 model SkillTag {
-  id       BigInt  @id @default(autoincrement())
-  name     String  @unique @db.VarChar(50)
-  category String? @db.VarChar(50)
-  hot      Boolean @default(false)
+  id         BigInt   @id @default(autoincrement())
+  name       String   @unique @db.VarChar(50)
+  category   String?  @db.VarChar(50)
+  usageCount Int      @default(0) @map("usage_count")
+  isActive   Boolean  @default(true) @map("is_active")
+  hot        Boolean  @default(false) // 兼容
+  createdAt  DateTime @default(now()) @map("created_at")
 
   @@map("skill_tags")
 }
@@ -377,85 +568,407 @@ model PlatformRole {
   suggestedDaily Decimal? @map("suggested_daily") @db.Decimal(10, 2)
   skillTags      String?  @map("skill_tags") @db.VarChar(500)
 
+  workerRoles WorkerRole[]
+  taskRoles   TaskRole[]
+
   @@map("platform_roles")
 }
 
 model LoginLog {
-  id        BigInt   @id @default(autoincrement())
-  userId    BigInt   @map("user_id")
-  userType  UserType @map("user_type")
-  ip        String   @db.VarChar(45)
-  userAgent String?  @map("user_agent") @db.VarChar(500)
-  createdAt DateTime @default(now()) @map("created_at")
+  id          BigInt      @id @default(autoincrement())
+  userType    UserType    @map("user_type") // company_user / worker
+  userId      BigInt      @map("user_id")
+  loginMethod LoginMethod @default(password) @map("login_method")
+  ip          String      @db.VarChar(45)
+  userAgent   String?     @map("user_agent") @db.Text
+  result      LoginResult @default(success)
+  createdAt   DateTime    @default(now()) @map("created_at")
 
-  @@index([userId, userType])
+  @@index([userType, userId, createdAt])
   @@map("login_logs")
 }
 
 // ============================================================
-// 10. 人天模式相关表
+// 11. 人天模式相关表
 // ============================================================
 
 model DailyCheckin {
-  id           BigInt        @id @default(autoincrement())
-  assignmentId BigInt        @map("assignment_id")
-  workerId     BigInt        @map("worker_id")
-  checkinDate  DateTime      @map("checkin_date") @db.Date
-  checkinTime  DateTime?     @map("checkin_time")
-  checkoutTime DateTime?     @map("checkout_time")
-  gpsLat       Decimal?      @map("gps_lat") @db.Decimal(10, 7)
-  gpsLng       Decimal?      @map("gps_lng") @db.Decimal(10, 7)
-  screenshotUrl String?      @map("screenshot_url") @db.VarChar(500)
-  workLog      String?       @map("work_log") @db.Text
-  status       CheckinStatus @default(pending)
-  confirmedAt  DateTime?     @map("confirmed_at")
-  createdAt    DateTime      @default(now()) @map("created_at")
+  id            BigInt        @id @default(autoincrement())
+  assignmentId  BigInt        @map("assignment_id")
+  workerId      BigInt        @map("worker_id")
+  checkinDate   DateTime      @map("checkin_date") @db.Date
+  checkinType   CheckinType?  @map("checkin_type") // gps/screenshot
+  checkinTime   DateTime?     @map("checkin_time")
+  checkoutTime  DateTime?     @map("checkout_time")
+  gpsLat        Decimal?      @map("gps_lat") @db.Decimal(10, 7)
+  gpsLng        Decimal?      @map("gps_lng") @db.Decimal(10, 7)
+  screenshotUrl String?       @map("screenshot_url") @db.VarChar(500)
+  workSummary   String?       @map("work_summary") @db.Text
+  todoItems     Json?         @map("todo_items") // JSON: 完成事项
+  workLog       String?       @map("work_log") @db.Text // 兼容旧字段
+  screenshots   Json? // JSON: 工作截图数组
+  tomorrowPlan  String?       @map("tomorrow_plan") @db.Text
+  status        CheckinStatus @default(pending)
+  confirmedAt   DateTime?     @map("confirmed_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
 
   @@unique([assignmentId, checkinDate])
   @@index([workerId, checkinDate])
   @@map("daily_checkins")
 }
 
-model WeeklySettlement {
-  id           BigInt   @id @default(autoincrement())
-  assignmentId BigInt   @map("assignment_id")
-  weekStart    DateTime @map("week_start") @db.Date
-  weekEnd      DateTime @map("week_end") @db.Date
-  totalDays    Decimal  @map("total_days") @db.Decimal(4, 1)
-  dailyRate    Decimal  @map("daily_rate") @db.Decimal(10, 2)
-  grossAmount  Decimal  @map("gross_amount") @db.Decimal(12, 2)
-  netAmount    Decimal  @map("net_amount") @db.Decimal(12, 2)
-  status       PaymentStatus @default(pending)
-  settledAt    DateTime?     @map("settled_at")
-  createdAt    DateTime      @default(now()) @map("created_at")
-
-  @@index([assignmentId, weekStart])
-  @@map("weekly_settlements")
-}
-
 // ============================================================
-// 11. 争议仲裁表
+// 12. 争议仲裁表
 // ============================================================
 
 model Dispute {
-  id           BigInt        @id @default(autoincrement())
-  taskId       BigInt        @map("task_id")
-  assignmentId BigInt        @map("assignment_id")
-  initiatorType UserType     @map("initiator_type")
-  initiatorId  BigInt        @map("initiator_id")
-  reason       String        @db.VarChar(500)
-  evidenceUrls String?       @map("evidence_urls") @db.Text
-  status       DisputeStatus @default(pending)
-  resolution   String?       @db.VarChar(500)
-  resolvedAt   DateTime?     @map("resolved_at")
-  createdAt    DateTime      @default(now()) @map("created_at")
+  id            BigInt        @id @default(autoincrement())
+  taskId        BigInt        @map("task_id")
+  assignmentId  BigInt        @map("assignment_id")
+  initiatorType UserType      @map("initiator_type")
+  initiatorId   BigInt        @map("initiator_id")
+  reason        String        @db.VarChar(500)
+  evidenceUrls  String?       @map("evidence_urls") @db.Text
+  status        DisputeStatus @default(pending)
+  resolution    String?       @db.VarChar(500)
+  resolvedAt    DateTime?     @map("resolved_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
 
   @@index([taskId])
   @@map("disputes")
 }
 
 // ============================================================
-// Enums
+// 13. 服务广场报名 (V3.3)
+// ============================================================
+
+model TaskApplication {
+  id           BigInt            @id @default(autoincrement())
+  taskRoleId   BigInt            @map("task_role_id")
+  workerId     BigInt            @map("worker_id")
+  intro        String            @db.VarChar(200)
+  expectPay    Decimal?          @map("expect_pay") @db.Decimal(10, 2)
+  availableAt  DateTime?         @map("available_at")
+  status       ApplicationStatus @default(pending)
+  rejectReason String?           @map("reject_reason") @db.VarChar(200)
+  reviewedAt   DateTime?         @map("reviewed_at")
+  reviewedBy   BigInt?           @map("reviewed_by")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+
+  taskRole TaskRole @relation(fields: [taskRoleId], references: [id])
+  worker   Worker   @relation(fields: [workerId], references: [id])
+
+  @@unique([taskRoleId, workerId])
+  @@index([workerId, status])
+  @@index([taskRoleId, status])
+  @@map("task_applications")
+}
+
+// ============================================================
+// 14. 企业零工库 (V3.4)
+// ============================================================
+
+model CompanyWorkerPool {
+  id           BigInt           @id @default(autoincrement())
+  companyId    BigInt           @map("company_id")
+  workerId     BigInt?          @map("worker_id")
+  preName      String           @map("pre_name") @db.VarChar(20)
+  prePhone     String           @map("pre_phone") @db.VarChar(11)
+  customTags   Json?            @map("custom_tags")
+  internalNote String?          @map("internal_note") @db.VarChar(200)
+  inviteStatus PoolInviteStatus @default(pending) @map("invite_status")
+  invitedAt    DateTime         @default(now()) @map("invited_at")
+  createdAt    DateTime         @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id])
+  worker  Worker? @relation(fields: [workerId], references: [id])
+
+  @@unique([companyId, prePhone])
+  @@index([workerId, inviteStatus])
+  @@map("company_worker_pool")
+}
+
+// ============================================================
+// 15. 平台运营管理 (V3.2)
+// ============================================================
+
+model PlatformAdmin {
+  id           BigInt            @id @default(autoincrement())
+  username     String            @unique @db.VarChar(50)
+  passwordHash String            @map("password_hash") @db.VarChar(255)
+  displayName  String            @map("display_name") @db.VarChar(100)
+  role         PlatformAdminRole @default(platform_viewer)
+  status       UserStatus        @default(active)
+  lastLoginAt  DateTime?         @map("last_login_at")
+  lastLoginIp  String?           @map("last_login_ip") @db.VarChar(45)
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+
+  auditLogs AuditLog[]
+
+  @@map("platform_admins")
+}
+
+model AuditLog {
+  id         BigInt   @id @default(autoincrement())
+  adminId    BigInt   @map("admin_id")
+  action     String   @db.VarChar(50)
+  targetType String   @map("target_type") @db.VarChar(50)
+  targetId   BigInt?  @map("target_id")
+  detail     String?  @db.Text
+  ip         String?  @db.VarChar(45)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  admin PlatformAdmin @relation(fields: [adminId], references: [id])
+
+  @@index([adminId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ============================================================
+// 16. V3.6 项目管理 (R2-a)
+// ============================================================
+
+model Project {
+  id                   BigInt        @id @default(autoincrement())
+  companyId            BigInt        @map("company_id")
+  projectNo            String        @unique @map("project_no") @db.VarChar(20) // PRJ-YYYYMMDD-NNN
+  name                 String        @db.VarChar(100)
+  clientLocation       String?       @map("client_location") @db.VarChar(50)
+  managerId            BigInt        @map("manager_id") // company_users.id
+  description          String?       @db.VarChar(500)
+  status               ProjectStatus @default(planning) // V3.7: 5-state
+  phase                ProjectPhase  @default(requirement) // V3.7
+  expectedDeliveryDate DateTime?     @map("expected_delivery_date") @db.Date // V3.7
+  riskLevel            RiskLevel     @default(green) @map("risk_level") // V3.7
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
+
+  company    Company     @relation(fields: [companyId], references: [id])
+  tasks      Task[]
+  milestones Milestone[]
+
+  @@index([companyId, status])
+  @@map("projects")
+}
+
+model Milestone {
+  id          BigInt          @id @default(autoincrement())
+  projectId   BigInt          @map("project_id")
+  name        String          @db.VarChar(50)
+  description String?         @db.VarChar(200)
+  plannedDate DateTime        @map("planned_date") @db.Date
+  completedAt DateTime?       @map("completed_at")
+  status      MilestoneStatus @default(pending)
+  sortOrder   Int             @map("sort_order")
+  createdBy   BigInt          @map("created_by")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  project     Project               @relation(fields: [projectId], references: [id])
+  attachments MilestoneAttachment[]
+
+  @@index([projectId, sortOrder])
+  @@map("milestones")
+}
+
+model MilestoneAttachment {
+  id          BigInt   @id @default(autoincrement())
+  milestoneId BigInt   @map("milestone_id")
+  fileName    String   @map("file_name") @db.VarChar(200)
+  fileUrl     String   @map("file_url") @db.VarChar(500)
+  fileSize    BigInt   @map("file_size")
+  fileType    String   @map("file_type") @db.VarChar(20)
+  uploadedBy  BigInt   @map("uploaded_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  milestone Milestone @relation(fields: [milestoneId], references: [id])
+
+  @@index([milestoneId])
+  @@map("milestone_attachments")
+}
+
+// ============================================================
+// 17. V3.6 AI 系统 (R2-b)
+// ============================================================
+
+model LlmConfig {
+  id                            BigInt          @id @default(autoincrement())
+  companyId                     BigInt          @unique @map("company_id")
+  provider                      LlmProvider
+  apiKeyEncrypted               String          @map("api_key_encrypted") @db.VarChar(512)
+  baseUrl                       String?         @map("base_url") @db.VarChar(500)
+  defaultModel                  String          @map("default_model") @db.VarChar(100)
+  // Custom HTTP protocol (V3.6)
+  customProtocol                CustomProtocol? @map("custom_protocol")
+  customMethod                  String          @default("POST") @map("custom_method") @db.VarChar(10)
+  customChatUrl                 String?         @map("custom_chat_url") @db.VarChar(500)
+  customAuthType                CustomAuthType? @map("custom_auth_type")
+  customAuthHeader              String?         @map("custom_auth_header") @db.VarChar(100)
+  customAuthCredentialEncrypted String?         @map("custom_auth_credential_encrypted") @db.VarChar(512)
+  customRequestTemplate         String?         @map("custom_request_template") @db.Text
+  customResponsePath            String?         @map("custom_response_path") @db.VarChar(200)
+  customHeaders                 Json?           @map("custom_headers")
+  customStream                  Boolean         @default(false) @map("custom_stream")
+  // Parameters
+  temperature                   Decimal         @default(0.70) @db.Decimal(3, 2)
+  maxTokens                     Int             @default(4096) @map("max_tokens")
+  topP                          Decimal         @default(1.00) @map("top_p") @db.Decimal(3, 2)
+  frequencyPenalty              Decimal         @default(0.00) @map("frequency_penalty") @db.Decimal(3, 2)
+  // Usage tracking
+  monthlyCallCount              Int             @default(0) @map("monthly_call_count")
+  monthlyTokenCount             BigInt          @default(0) @map("monthly_token_count")
+  isActive                      Boolean         @default(true) @map("is_active")
+  createdAt                     DateTime        @default(now()) @map("created_at")
+  updatedAt                     DateTime        @updatedAt @map("updated_at")
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@map("llm_configs")
+}
+
+model AiAgent {
+  id               BigInt   @id @default(autoincrement())
+  companyId        BigInt   @map("company_id")
+  name             String   @db.VarChar(40)
+  avatarUrl        String?  @map("avatar_url") @db.VarChar(500)
+  description      String   @db.VarChar(200)
+  systemPrompt     String   @map("system_prompt") @db.Text
+  modelName        String?  @map("model_name") @db.VarChar(100)
+  temperature      Decimal? @db.Decimal(3, 2)
+  tools            Json? // JSON: 启用的工具能力数组
+  isActive         Boolean  @default(true) @map("is_active")
+  isPreset         Boolean  @default(false) @map("is_preset")
+  createdBy        BigInt   @map("created_by")
+  monthlyCallCount Int      @default(0) @map("monthly_call_count")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  company  Company         @relation(fields: [companyId], references: [id])
+  sessions AiChatSession[]
+
+  @@unique([companyId, name])
+  @@map("ai_agents")
+}
+
+model AiChatSession {
+  id           BigInt            @id @default(autoincrement())
+  sessionUuid  String            @unique @map("session_uuid") @db.VarChar(36)
+  companyId    BigInt            @map("company_id")
+  userId       BigInt            @map("user_id")
+  agentId      BigInt            @map("agent_id")
+  taskDraftId  BigInt?           @map("task_draft_id")
+  messageCount Int               @default(0) @map("message_count")
+  totalTokens  BigInt            @default(0) @map("total_tokens")
+  status       ChatSessionStatus @default(active)
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+
+  company Company @relation(fields: [companyId], references: [id])
+  agent   AiAgent @relation(fields: [agentId], references: [id])
+
+  @@index([companyId, userId, createdAt(sort: Desc)])
+  @@index([agentId, createdAt(sort: Desc)])
+  @@map("ai_chat_sessions")
+}
+
+// ============================================================
+// 18. V3.6 任务附件
+// ============================================================
+
+model TaskAttachment {
+  id         BigInt   @id @default(autoincrement())
+  taskId     BigInt   @map("task_id")
+  fileName   String   @map("file_name") @db.VarChar(200)
+  fileUrl    String   @map("file_url") @db.VarChar(500)
+  fileSize   BigInt   @map("file_size")
+  fileType   String   @map("file_type") @db.VarChar(20)
+  uploadedBy BigInt   @map("uploaded_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  task Task @relation(fields: [taskId], references: [id])
+
+  @@index([taskId])
+  @@map("task_attachments")
+}
+
+// ============================================================
+// 19. V3.7 检查点 · 评论 · 问题上报
+// ============================================================
+
+model TaskCheckpoint {
+  id                BigInt           @id @default(autoincrement())
+  taskId            BigInt           @map("task_id")
+  name              String           @db.VarChar(50)
+  type              CheckpointType
+  plannedDate       DateTime         @map("planned_date") @db.Date
+  reviewerId        BigInt           @map("reviewer_id") // company_users.id
+  description       String?          @db.VarChar(200)
+  status            CheckpointStatus @default(pending)
+  submitContent     String?          @map("submit_content") @db.Text
+  submitAttachments Json?            @map("submit_attachments") // JSON: URL数组
+  submittedAt       DateTime?        @map("submitted_at")
+  reviewComment     String?          @map("review_comment") @db.Text
+  reviewedAt        DateTime?        @map("reviewed_at")
+  revisionCount     Int              @default(0) @map("revision_count")
+  sortOrder         Int              @map("sort_order")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+
+  task Task @relation(fields: [taskId], references: [id])
+
+  @@index([taskId, sortOrder])
+  @@map("task_checkpoints")
+}
+
+model TaskComment {
+  id          BigInt     @id @default(autoincrement())
+  taskId      BigInt     @map("task_id")
+  parentId    BigInt?    @map("parent_id")
+  authorType  AuthorType @map("author_type")
+  authorId    BigInt     @map("author_id")
+  content     String     @db.Text // 最长1000字
+  attachments Json? // JSON: 附件URL数组
+  isImportant Boolean    @default(false) @map("is_important")
+  isDeleted   Boolean    @default(false) @map("is_deleted")
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  task Task @relation(fields: [taskId], references: [id])
+
+  @@index([taskId, createdAt(sort: Desc)])
+  @@index([parentId])
+  @@map("task_comments")
+}
+
+model TaskIssue {
+  id              BigInt      @id @default(autoincrement())
+  taskId          BigInt      @map("task_id")
+  reporterType    AuthorType  @map("reporter_type")
+  reporterId      BigInt      @map("reporter_id")
+  title           String      @db.VarChar(100)
+  type            IssueType
+  description     String      @db.Text
+  attachments     Json? // JSON: 附件URL数组
+  status          IssueStatus @default(open)
+  firstResponseAt DateTime?   @map("first_response_at")
+  resolvedAt      DateTime?   @map("resolved_at")
+  slaBreached     Boolean     @default(false) @map("sla_breached")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  task Task @relation(fields: [taskId], references: [id])
+
+  @@index([taskId, status])
+  @@map("task_issues")
+}
+
+// ============================================================
+// ══════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════
 // ============================================================
 
 enum CompanyStatus {
@@ -488,6 +1001,23 @@ enum WorkerStatus {
   suspended
 }
 
+enum RoleLevel {
+  junior
+  mid
+  senior
+  expert
+}
+
+enum PortfolioFileType {
+  image
+  document
+}
+
+enum Visibility {
+  public_visible
+  private_visible
+}
+
 enum TaskMode {
   task_package
   daily_rate
@@ -504,6 +1034,43 @@ enum TaskStatus {
   cancelled
 }
 
+enum TaskPriority {
+  p0
+  p1
+  p2
+}
+
+enum WorkMode {
+  remote
+  onsite
+  hybrid
+}
+
+enum RiskLevel {
+  green
+  yellow
+  red
+}
+
+enum AcceptanceStatus {
+  pending
+  partial
+  all_passed
+}
+
+enum BillingType {
+  fixed
+  daily
+}
+
+enum TaskRoleStatus {
+  pending
+  assigned
+  in_progress
+  reviewing
+  completed
+}
+
 enum AssignmentStatus {
   invited
   accepted
@@ -514,6 +1081,7 @@ enum AssignmentStatus {
 }
 
 enum DeliverableStatus {
+  pending
   submitted
   approved
   rejected
@@ -540,11 +1108,18 @@ enum PaymentStatus {
   failed
 }
 
+enum WithdrawStatus {
+  processing
+  completed
+  failed
+}
+
 enum InvoiceStatus {
   pending
   processing
   issued
   rejected
+  failed
 }
 
 enum ReviewerType {
@@ -568,6 +1143,58 @@ enum NotificationType {
   system
 }
 
+enum NotifyChannel {
+  in_app
+  wechat_subscribe
+  sms
+}
+
+enum SentStatus {
+  pending
+  sent
+  failed
+}
+
+enum CompanyNotificationType {
+  issue_report
+  risk_alert
+  milestone_remind
+  acceptance
+  checkpoint
+  comment_mention
+  daily_missing
+  status_change
+}
+
+enum ContractType {
+  task_package
+  daily_rate
+}
+
+enum ContractStatus {
+  active
+  completed
+  terminated
+}
+
+enum LoginMethod {
+  password
+  sms_code
+  wechat
+}
+
+enum LoginResult {
+  success
+  wrong_password
+  account_locked
+  account_disabled
+}
+
+enum CheckinType {
+  gps
+  screenshot
+}
+
 enum CheckinStatus {
   pending
   confirmed
@@ -584,72 +1211,17 @@ enum DisputeStatus {
   cancelled
 }
 
-// ══════════════════════════════════════════════════════════════════
-// V3.3 NEW — 服务广场报名投递
-// ══════════════════════════════════════════════════════════════════
-
 enum ApplicationStatus {
   pending
   approved
   rejected
 }
 
-model TaskApplication {
-  id          BigInt            @id @default(autoincrement())
-  taskRoleId  BigInt            @map("task_role_id")
-  workerId    BigInt            @map("worker_id")
-  intro       String            @db.VarChar(200)
-  expectPay   Decimal?          @map("expect_pay") @db.Decimal(10, 2)
-  availableAt DateTime?         @map("available_at")
-  status       ApplicationStatus @default(pending)
-  rejectReason String?           @map("reject_reason") @db.VarChar(200)
-  reviewedAt   DateTime?         @map("reviewed_at")
-  reviewedBy   BigInt?           @map("reviewed_by")
-  createdAt    DateTime          @default(now()) @map("created_at")
-  updatedAt    DateTime          @updatedAt @map("updated_at")
-
-  taskRole TaskRole @relation(fields: [taskRoleId], references: [id])
-  worker   Worker   @relation(fields: [workerId], references: [id])
-
-  @@unique([taskRoleId, workerId])
-  @@index([workerId, status])
-  @@index([taskRoleId, status])
-  @@map("task_applications")
-}
-
-// ══════════════════════════════════════════════════════════════════
-// V3.4 NEW — 企业零工库 (company_worker_pool)
-// ══════════════════════════════════════════════════════════════════
-
 enum PoolInviteStatus {
   pending
   registered
   verified
 }
-
-model CompanyWorkerPool {
-  id           BigInt           @id @default(autoincrement())
-  companyId    BigInt           @map("company_id")
-  workerId     BigInt?          @map("worker_id")
-  preName      String           @map("pre_name") @db.VarChar(20)
-  prePhone     String           @map("pre_phone") @db.VarChar(11)
-  customTags   Json?            @map("custom_tags")
-  internalNote String?          @map("internal_note") @db.VarChar(200)
-  inviteStatus PoolInviteStatus @default(pending) @map("invite_status")
-  invitedAt    DateTime         @default(now()) @map("invited_at")
-  createdAt    DateTime         @default(now()) @map("created_at")
-
-  company Company  @relation(fields: [companyId], references: [id])
-  worker  Worker?  @relation(fields: [workerId], references: [id])
-
-  @@unique([companyId, prePhone])
-  @@index([workerId, inviteStatus])
-  @@map("company_worker_pool")
-}
-
-// ══════════════════════════════════════════════════════════════════
-// V3.2 NEW — 平台运营管理后台
-// ══════════════════════════════════════════════════════════════════
 
 enum PlatformAdminRole {
   platform_super_admin
@@ -659,37 +1231,85 @@ enum PlatformAdminRole {
   platform_viewer
 }
 
-model PlatformAdmin {
-  id           BigInt            @id @default(autoincrement())
-  username     String            @unique @db.VarChar(50)
-  passwordHash String            @map("password_hash") @db.VarChar(255)
-  displayName  String            @map("display_name") @db.VarChar(100)
-  role         PlatformAdminRole @default(platform_viewer)
-  status       UserStatus        @default(active)
-  lastLoginAt  DateTime?         @map("last_login_at")
-  lastLoginIp  String?           @map("last_login_ip") @db.VarChar(45)
-  createdAt    DateTime          @default(now()) @map("created_at")
-  updatedAt    DateTime          @updatedAt @map("updated_at")
-
-  auditLogs AuditLog[]
-
-  @@map("platform_admins")
+// V3.6 Project
+enum ProjectStatus {
+  planning
+  active
+  suspended
+  completed
+  archived
 }
 
-model AuditLog {
-  id           BigInt   @id @default(autoincrement())
-  adminId      BigInt   @map("admin_id")
-  action       String   @db.VarChar(50)
-  targetType   String   @map("target_type") @db.VarChar(50)
-  targetId     BigInt?  @map("target_id")
-  detail       String?  @db.Text
-  ip           String?  @db.VarChar(45)
-  createdAt    DateTime @default(now()) @map("created_at")
+enum ProjectPhase {
+  requirement
+  execution
+  acceptance
+}
 
-  admin PlatformAdmin @relation(fields: [adminId], references: [id])
+// V3.6 AI
+enum LlmProvider {
+  openai
+  azure_openai
+  claude
+  qwen
+  zhipu
+  deepseek
+  custom
+}
 
-  @@index([adminId])
-  @@index([targetType, targetId])
-  @@index([createdAt])
-  @@map("audit_logs")
+enum CustomProtocol {
+  openai_compatible
+  custom_http
+}
+
+enum CustomAuthType {
+  bearer
+  header
+  query
+  none
+}
+
+enum ChatSessionStatus {
+  active
+  completed
+  expired
+}
+
+// V3.7
+enum MilestoneStatus {
+  pending
+  completed
+  overdue
+}
+
+enum CheckpointType {
+  progress_check
+  quality_gate
+}
+
+enum CheckpointStatus {
+  pending
+  submitted
+  passed
+  rejected
+  overdue
+}
+
+enum AuthorType {
+  company_user
+  worker
+}
+
+enum IssueType {
+  requirement_unclear
+  technical_block
+  resource_missing
+  other
+}
+
+enum IssueStatus {
+  open
+  in_progress
+  resolved
+  closed
 }
