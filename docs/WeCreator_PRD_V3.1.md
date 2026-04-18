@@ -35,7 +35,7 @@
 
 | 序号 | 变更内容 | 类型 | 所在章节 |
 |------|----------|------|----------|
-| 1 | 🔴 系统管理新增「大模型配置」页面:管理员可配置LLM Provider、API Key、模型参数 | 功能新增 | §4.8 NEW |
+| 1 | 🔴 系统管理新增「大模型配置」页面:管理员可配置LLM Provider、API Key、模型参数;支持自定义HTTP接口(请求模板+响应提取+多种认证方式) | 功能新增 | §4.8 NEW |
 | 2 | 🔴 系统管理新增「智能体管理」页面:管理员可创建/编辑/启停企业级AI Agent,本企业所有用户共享 | 功能新增 | §4.8 NEW |
 | 3 | 🔴 发布任务新增「AI任务顾问」:在发布向导中接入AI Agent进行对话式任务定义,讨论完毕一键生成任务单 | 功能新增 | §4.2.1 Step2 增强 |
 | 4 | ✨ 发布任务Step2新增附件上传功能:支持多文件上传需求文档、参考资料等 | 功能增强 | §4.2.1 Step2 |
@@ -1100,11 +1100,63 @@
 | Provider | 单选 | ✅ | OpenAI / Azure OpenAI / Claude / 通义千问 / 智谱AI / DeepSeek / 自定义 |
 | API Key | 密码框 | ✅ | AES-256加密存储,界面脱敏显示 `sk-••••••` |
 | Base URL | URL | 条件 | Provider=自定义时必填;其他自动填充官方Endpoint |
-| 默认模型 | 下拉 | ✅ | 根据Provider动态加载可用模型列表 |
+| 默认模型 | 下拉/手动输入 | ✅ | 已知Provider动态加载可用列表;自定义时手动输入模型名称 |
 | Temperature | 滑动条 | ✅ | 0.0-2.0,默认0.7 |
 | Max Tokens | 数字 | ✅ | 256-128000,默认4096 |
 | Top P | 滑动条 | ✅ | 0.0-1.0,默认1.0 |
 | 频率惩罚 | 滑动条 | ✅ | 0.0-2.0,默认0.0 |
+
+**自定义接口配置(仅Provider=自定义时显示):** ← V3.6 增强
+
+> **设计说明:** 当企业使用私有部署模型、内部API网关或不兼容OpenAI格式的第三方服务时,需要完全自定义接口的请求/响应格式。选择Provider=「自定义」后,表单展开以下高级配置区域。
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| 接口协议 | 单选 | ✅ | `openai_compatible`(兼容OpenAI Chat Completion格式) / `custom_http`(完全自定义HTTP接口) |
+| 请求方法 | 单选 | ✅ | POST(默认) / GET |
+| Chat 路径 | URL | ✅ | 对话接口完整URL,如 `https://my-llm.internal/v1/chat` |
+| 认证方式 | 单选 | ✅ | `bearer`(Bearer Token,默认) / `header`(自定义Header) / `query`(查询参数) / `none`(无认证) |
+| 认证Header名 | 文本 | 条件 | 认证方式=header时必填,如 `X-API-Key` / `Authorization` |
+| 认证凭证 | 密码框 | 条件 | 认证方式非none时必填,AES-256加密存储 |
+| 请求体模板 | JSON编辑器 | 条件 | 接口协议=custom_http时必填;支持变量插值 `{{model}}` `{{messages}}` `{{temperature}}` `{{max_tokens}}` |
+| 响应提取路径 | JSON Path | 条件 | 接口协议=custom_http时必填;指定从响应JSON中提取AI回复内容的路径,如 `data.choices[0].message.content` 或 `result.text` |
+| 自定义Headers | KV对 | ❌ | 额外的自定义请求头,如 `X-Tenant-Id: abc123` |
+| 流式响应 | 开关 | ❌ | 是否支持SSE流式返回,默认关闭 |
+
+**接口协议说明:**
+
+| 协议 | 适用场景 | 配置复杂度 |
+|------|----------|------------|
+| `openai_compatible` | 兼容OpenAI API格式的服务(如vLLM、Ollama、LiteLLM、FastChat、各云厂商OpenAI兼容接口) | 低 — 只需填Base URL+API Key+模型名 |
+| `custom_http` | 完全非标准接口(企业内部AI网关、自研模型服务、特殊协议的三方服务) | 高 — 需配置请求模板+响应提取路径 |
+
+**请求体模板示例(自定义HTTP):**
+
+```json
+// 变量插值: {{model}} {{messages}} {{temperature}} {{max_tokens}}
+// messages 格式固定为 [{"role":"system","content":"..."},{"role":"user","content":"..."}]
+{
+  "model_name": "{{model}}",
+  "input": {
+    "messages": {{messages}}
+  },
+  "parameters": {
+    "temperature": {{temperature}},
+    "max_output_tokens": {{max_tokens}}
+  }
+}
+```
+
+**响应提取路径示例:**
+- OpenAI标准: `choices[0].message.content`
+- 通义千问: `output.choices[0].message.content`
+- 自研服务: `data.reply` 或 `result.text` 等
+
+**前端交互:**
+- 选择 `openai_compatible` 时,仅显示 Base URL + API Key + 模型名(简单模式)
+- 选择 `custom_http` 时,展开完整配置表单(含请求模板 JSON编辑器 + 响应提取路径)
+- JSON编辑器使用 Monaco Editor(已集成于Vue项目),带语法高亮和格式校验
+- 「测试连接」按钮对自定义接口同样有效,会用配置的模板发送测试消息并验证响应提取
 
 **「测试连接」功能:**
 - 点击后发送测试消息到LLM API
@@ -3197,6 +3249,16 @@ async function lockFunds(companyId: bigint, amount: number) {
 | api_key_encrypted | VARCHAR(512) | API Key(AES-256加密存储) |
 | base_url | VARCHAR(500) NULL | 自定义Endpoint(非OpenAI时使用) |
 | default_model | VARCHAR(100) | 默认模型名称 |
+| custom_protocol | ENUM NULL | openai_compatible / custom_http(仅custom时使用) ✨V3.6 |
+| custom_method | VARCHAR(10) DEFAULT 'POST' | 请求方法 ✨V3.6 |
+| custom_chat_url | VARCHAR(500) NULL | 对话接口完整URL ✨V3.6 |
+| custom_auth_type | ENUM NULL | bearer/header/query/none ✨V3.6 |
+| custom_auth_header | VARCHAR(100) NULL | 自定义认证Header名 ✨V3.6 |
+| custom_auth_credential_encrypted | VARCHAR(512) NULL | 认证凭证(AES-256加密) ✨V3.6 |
+| custom_request_template | TEXT NULL | 请求体JSON模板(含变量插值) ✨V3.6 |
+| custom_response_path | VARCHAR(200) NULL | 响应内容提取JSON Path ✨V3.6 |
+| custom_headers | JSON NULL | 额外自定义请求头 ✨V3.6 |
+| custom_stream | BOOLEAN DEFAULT FALSE | 是否支持SSE流式 ✨V3.6 |
 | temperature | DECIMAL(3,2) DEFAULT 0.70 | 温度参数 |
 | max_tokens | INT DEFAULT 4096 | 最大Token数 |
 | top_p | DECIMAL(3,2) DEFAULT 1.00 | Top P |
@@ -4125,9 +4187,17 @@ NestJS AI Module
     ├── 1. 查询企业LLM配置(llm_configs表,解密API Key)
     ├── 2. 加载智能体System Prompt(ai_agents表)
     ├── 3. 拼装Prompt(System + 对话历史 + 用户消息)
-    ├── 4. 调用LLM API(OpenAI兼容接口格式)
-    │       → 支持OpenAI / Claude / 通义 / 智谱 / DeepSeek
-    │       → 统一使用OpenAI Chat Completion API格式
+    ├── 4. LLM Adapter 路由(根据 provider + custom_protocol 选择适配器)
+    │       ├─ OpenAI Adapter      → OpenAI / DeepSeek / 智谱
+    │       ├─ Claude Adapter      → Anthropic Messages API
+    │       ├─ Azure Adapter       → Azure OpenAI
+    │       ├─ QwenAdapter         → 通义千问 DashScope API
+    │       ├─ OpenAI-Compat       → 兼容接口(vLLM/Ollama/LiteLLM/FastChat等)
+    │       └─ CustomHTTP Adapter  → 完全自定义接口(企业私有部署/内部网关)
+    │           │  → 读取 custom_request_template, 插值变量
+    │           │  → 按 custom_auth_type 注入认证
+    │           │  → 按 custom_headers 添加自定义请求头
+    │           └─ → 按 custom_response_path 提取响应内容
     ├── 5. 解析响应,判断是否需要工具调用
     │       → 工具调用: 查询平台角色库 / 查询历史任务数据
     │       → 最终轮次: 要求输出结构化JSON
@@ -4135,7 +4205,66 @@ NestJS AI Module
     └── 7. 返回前端(流式SSE或完整响应)
 ```
 
-### 19.2 AI对话协议
+### 19.2 LLM 适配器架构(自定义接口支持) ← V3.6 增强
+
+> **设计原则:** 采用策略模式(Strategy Pattern),每种 LLM Provider 对应一个 Adapter 实现。所有 Adapter 实现统一的 `LLMAdapter` 接口,AI Module 根据企业配置自动路由。
+
+**统一接口定义:**
+
+```typescript
+interface LLMAdapter {
+  // 发送对话请求,返回AI回复文本
+  chat(params: {
+    model: string;
+    messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
+    temperature?: number;
+    maxTokens?: number;
+  }): Promise<{ content: string; usage: { promptTokens: number; completionTokens: number } }>;
+
+  // 测试连接是否可用
+  testConnection(): Promise<{ ok: boolean; error?: string }>;
+}
+```
+
+**各适配器职责:**
+
+| 适配器 | 触发条件 | 职责 |
+|---------|----------|------|
+| `OpenAIAdapter` | provider = openai / deepseek / zhipu | 直接调用 OpenAI Chat Completion API |
+| `ClaudeAdapter` | provider = claude | 调用 Anthropic Messages API,转换请求/响应格式 |
+| `AzureAdapter` | provider = azure_openai | 调用 Azure OpenAI API(含 deployment 路由) |
+| `QwenAdapter` | provider = qwen | 调用 DashScope API,转换请求/响应格式 |
+| `OpenAICompatAdapter` | provider = custom AND custom_protocol = openai_compatible | 使用用户配置的 base_url,调用 OpenAI兼容格式 |
+| `CustomHTTPAdapter` | provider = custom AND custom_protocol = custom_http | 读取请求模板插值变量,按配置的认证方式和响应提取路径处理 |
+
+**CustomHTTPAdapter 详细流程:**
+
+```
+1. 读取 custom_request_template (JSON模板字符串)
+2. 插值变量: {{model}} → 实际模型名
+              {{messages}} → JSON数组
+              {{temperature}} → 数值
+              {{max_tokens}} → 数值
+3. 根据 custom_auth_type 注入认证:
+   - bearer: Header 「Authorization: Bearer <credential>」
+   - header: Header 「<custom_auth_header>: <credential>」
+   - query:  URL拼接 ?api_key=<credential>
+   - none:   不添加认证
+4. 添加 custom_headers (额外自定义请求头)
+5. 发送 HTTP 请求到 custom_chat_url
+6. 从响应JSON中按 custom_response_path 提取内容
+   例: "data.choices[0].message.content" → _.get(response, path)
+7. 返回统一格式 { content, usage }
+   (usage 无法提取时按字符数估算)
+```
+
+**安全约束:**
+- 自定义接口 URL 必须为 HTTPS(或内网IP `10.x` / `172.16-31.x` / `192.168.x`)
+- 请求模板中禁止包含 `{{api_key}}` 等密钥变量(认证统一走 auth 配置)
+- 响应超时 30s,防止恶意服务堵塞
+- 自定义接口的调用同样纳入频率限制和Token统计
+
+### 19.3 AI对话协议
 
 **请求格式:**
 
@@ -4200,7 +4329,7 @@ NestJS AI Module
 }
 ```
 
-### 19.3 预置智能体System Prompt模板
+### 19.4 预置智能体System Prompt模板
 
 **「任务顾问」默认System Prompt:**
 
@@ -4230,7 +4359,7 @@ NestJS AI Module
 当讨论充分后,输出JSON格式的任务建议(包含title/background/objective/roles等字段)
 ```
 
-### 19.4 安全与限制
+### 19.5 安全与限制
 
 | 规则 | 说明 |
 |------|------|
@@ -4242,7 +4371,7 @@ NestJS AI Module
 | 数据隔离 | 每个企业的对话数据完全隔离,不跨企业使用 |
 | 审计日志 | 记录每次AI调用的时间、Token消耗、调用人、智能体ID |
 
-### 19.5 埋点事件
+### 19.6 埋点事件
 
 | 事件名称 | 触发时机 | 核心参数 |
 |---------|---------|---------|
