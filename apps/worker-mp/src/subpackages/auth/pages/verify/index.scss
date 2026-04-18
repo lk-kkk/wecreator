@@ -1,75 +1,66 @@
+@use '../../../../styles/variables' as *;
+@use '../../../../styles/mixins' as *;
+
 .page {
-  padding: 24px;
-  background: #f5f5f5;
-  min-height: 100vh;
+  padding: $space-md;
+  @include page-base;
 }
 
 .verify-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 32px 24px;
-  margin-bottom: 32px;
+  @include card($radius-md);
+  padding: $space-lg $space-md;
+  margin-bottom: $space-lg;
 }
 
 .card-title {
-  font-size: 36px;
-  font-weight: 700;
-  color: #333;
+  font-size: 36rpx;
+  font-weight: $weight-bold;
+  color: $color-text-regular;
   display: block;
 }
 
 .card-desc {
-  font-size: 26px;
-  color: #999;
-  margin-top: 8px;
-  margin-bottom: 32px;
+  font-size: $font-base;
+  color: $color-text-placeholder;
+  margin-top: $space-xs;
+  margin-bottom: $space-lg;
   display: block;
 }
 
-.form-item {
-  margin-bottom: 24px;
-}
+.form-item { margin-bottom: $space-md; }
 
 .label {
-  font-size: 28px;
-  color: #666;
-  margin-bottom: 8px;
+  font-size: $font-base;
+  color: $color-text-secondary;
+  margin-bottom: $space-xs;
   display: block;
 }
 
 .input {
-  width: 100%;
-  height: 80px;
-  border: 1px solid #e8e8e8;
-  border-radius: 8px;
-  padding: 0 16px;
-  font-size: 28px;
+  @include form-input;
+  height: 80rpx;
+  padding: 0 $space-sm;
 }
 
 .verify-notice {
-  background: #FFF7E6;
-  border-radius: 8px;
-  padding: 16px;
-  margin-top: 16px;
+  background: $color-warning-bg;
+  border-radius: $radius-sm;
+  padding: $space-sm;
+  margin-top: $space-sm;
 }
 
 .notice-text {
-  font-size: 24px;
-  color: #D48806;
-  line-height: 1.6;
+  font-size: $font-sm;
+  color: $color-gold-dark;
+  line-height: $line-height-loose;
 }
 
 .action-btn {
-  height: 88px;
-  background: #5B4CDB;
-  border-radius: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  @include btn-primary(88rpx);
 }
 
 .action-btn-text {
-  font-size: 32px;
-  font-weight: 600;
-  color: #fff;
+  font-size: $font-lg;
+  font-weight: $weight-semibold;
+  color: $color-text-white;
 }

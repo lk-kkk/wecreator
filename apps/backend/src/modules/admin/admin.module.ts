@@ -6,12 +6,14 @@ import {
   TaskTemplateController,
   CustomRoleController,
 } from './admin.controller';
+import { AuthModule }          from '../auth/auth.module';
 import { SubaccountService }   from '../auth/subaccount.service';
 import { DashboardService }    from '../task/dashboard.service';
 import { InvoiceService }      from '../finance/invoice.service';
 import { TaskTemplateService } from '../task/task-template.service';
 
 @Module({
+  imports: [AuthModule], // 提供 CryptoUtil 依赖
   controllers: [
     SubaccountController,
     DashboardController,

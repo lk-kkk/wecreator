@@ -1,10 +1,22 @@
+/**
+ * ReviewService — 评价管理
+ *
+ * Schema V2 字段变更:
+ *  - targetId → revieweeId
+ *  - +taskRoleId (新增必填)
+ *  - +dimensionScores (JSON)
+ *  - +overallScore (加权综合)
+ *  - +positiveTags (JSON)
+ *  - +isVisible (双盲)
+ *  - rating 变为 nullable（兼容旧数据）
+ */
 import {
   Injectable,
   BadRequestException,
   Logger,
 } from '@nestjs/common';
 import {
-  IsInt, Min, Max, IsString, IsOptional, IsNumber,
+  IsInt, Min, Max, IsString, IsOptional, IsNumber, IsArray,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
@@ -29,6 +41,7 @@ export class CreateReviewV2Dto {
   @ApiProperty({ description: '按时交付 1-5' }) @IsNumber() @Min(1) @Max(5) @Type(() => Number) deliveryScore: number;
   @ApiProperty({ description: '整体满意度 1-5' }) @IsNumber() @Min(1) @Max(5) @Type(() => Number) overallScore: number;
   @ApiPropertyOptional({ description: '文字评价', maxLength: 500 }) @IsOptional() @IsString() comment?: string;
+  @ApiPropertyOptional({ description: '正向标签', type: [String] }) @IsOptional() @IsArray() @IsString({ each: true }) positiveTags?: string[];
 }
 
 // ── Service ──────────────────────────────────────
@@ -49,9 +62,10 @@ export class ReviewService {
     dto: CreateReviewDto,
   ) {
     return this._submitReview(assignmentId, reviewerType, reviewerId, targetId, {
-      rating:  dto.rating,
+      rating: dto.rating,
       comment: dto.comment,
       dimensions: null,
+      positiveTags: null,
     });
   }
 
@@ -67,26 +81,28 @@ export class ReviewService {
   ) {
     // 综合评分 = 加权均值
     const weights = { quality: 0.25, communication: 0.2, attitude: 0.2, delivery: 0.2, overall: 0.15 };
-    const rating = Math.round(
+    const weightedScore =
       dto.qualityScore * weights.quality +
       dto.communicationScore * weights.communication +
       dto.attitudeScore * weights.attitude +
       dto.deliveryScore * weights.delivery +
-      dto.overallScore * weights.overall,
-    );
+      dto.overallScore * weights.overall;
+    const rating = Math.round(weightedScore);
 
-    const dimensionsJson = JSON.stringify({
-      quality:       dto.qualityScore,
+    const dimensionScores = {
+      quality: dto.qualityScore,
       communication: dto.communicationScore,
-      attitude:      dto.attitudeScore,
-      delivery:      dto.deliveryScore,
-      overall:       dto.overallScore,
-    });
+      attitude: dto.attitudeScore,
+      delivery: dto.deliveryScore,
+      overall: dto.overallScore,
+    };
 
     return this._submitReview(assignmentId, reviewerType, reviewerId, targetId, {
       rating,
       comment: dto.comment,
-      dimensions: dimensionsJson,
+      dimensions: dimensionScores,
+      overallScore: weightedScore,
+      positiveTags: dto.positiveTags ?? null,
     });
   }
 
@@ -98,7 +114,13 @@ export class ReviewService {
     reviewerType: 'company' | 'worker',
     reviewerId: number,
     targetId: number,
-    data: { rating: number; comment?: string; dimensions: string | null },
+    data: {
+      rating: number;
+      comment?: string;
+      dimensions: Record<string, number> | null;
+      overallScore?: number;
+      positiveTags?: string[] | null;
+    },
   ) {
     const assignment = await this.prisma.roleAssignment.findUnique({
       where: { id: BigInt(assignmentId) },
@@ -118,17 +140,41 @@ export class ReviewService {
     });
     if (existing) throw new BadRequestException('已评价，不可重复提交');
 
-    const review = await this.prisma.review.create({
-      data: {
-        taskId:       (assignment as any).taskRole.taskId,
-        assignmentId: BigInt(assignmentId),
-        reviewerType,
-        reviewerId:   BigInt(reviewerId),
-        targetId:     BigInt(targetId),
-        rating:       data.rating,
-        comment:      data.comment ?? null,
+    // 检查对方是否已评 → 如果双方都评，则设置 isVisible=true
+    const otherSide = reviewerType === 'company' ? 'worker' : 'company';
+    const otherReview = await this.prisma.review.findUnique({
+      where: {
+        assignmentId_reviewerType: {
+          assignmentId: BigInt(assignmentId),
+          reviewerType: otherSide,
+        },
       },
     });
+
+    const review = await this.prisma.review.create({
+      data: {
+        taskId: assignment.taskRole.taskId,
+        taskRoleId: assignment.taskRoleId,
+        assignmentId: BigInt(assignmentId),
+        reviewerType,
+        reviewerId: BigInt(reviewerId),
+        revieweeId: BigInt(targetId),
+        rating: data.rating,
+        comment: data.comment ?? null,
+        dimensionScores: data.dimensions ?? undefined,
+        overallScore: data.overallScore ?? data.rating,
+        positiveTags: data.positiveTags ?? undefined,
+        isVisible: !!otherReview, // 对方已评则双方可见
+      },
+    });
+
+    // 如果对方已评，将对方的也设为可见
+    if (otherReview && !otherReview.isVisible) {
+      await this.prisma.review.update({
+        where: { id: otherReview.id },
+        data: { isVisible: true },
+      });
+    }
 
     // 更新零工平均评分（企业评价时）
     if (reviewerType === 'company') {
@@ -140,12 +186,15 @@ export class ReviewService {
     );
 
     return {
-      reviewId:     Number(review.id),
-      rating:       review.rating,
-      comment:      review.comment,
+      reviewId: Number(review.id),
+      rating: review.rating,
+      overallScore: review.overallScore ? Number(review.overallScore) : null,
+      comment: review.comment,
       reviewerType: review.reviewerType,
-      dimensions:   data.dimensions ? JSON.parse(data.dimensions) : null,
-      createdAt:    review.createdAt,
+      dimensions: data.dimensions,
+      positiveTags: data.positiveTags,
+      isVisible: review.isVisible,
+      createdAt: review.createdAt,
     };
   }
 
@@ -153,12 +202,12 @@ export class ReviewService {
   private async updateWorkerAvgRating(workerId: number) {
     const result = await this.prisma.review.aggregate({
       _avg: { rating: true },
-      where: { targetId: BigInt(workerId), reviewerType: 'company' },
+      where: { revieweeId: BigInt(workerId), reviewerType: 'company' },
     });
-    const avg = result._avg.rating ?? 0;
+    const avg = result._avg?.rating ?? 0;
     await this.prisma.worker.update({
       where: { id: BigInt(workerId) },
-      data:  { avgRating: avg },
+      data: { avgRating: avg },
     });
   }
 
@@ -170,11 +219,14 @@ export class ReviewService {
       where: { assignmentId: BigInt(assignmentId) },
     });
     return reviews.map((r) => ({
-      reviewId:     Number(r.id),
+      reviewId: Number(r.id),
       reviewerType: r.reviewerType,
-      rating:       r.rating,
-      comment:      r.comment,
-      createdAt:    r.createdAt,
+      rating: r.rating,
+      overallScore: r.overallScore ? Number(r.overallScore) : null,
+      dimensionScores: r.dimensionScores,
+      comment: r.comment,
+      isVisible: r.isVisible,
+      createdAt: r.createdAt,
     }));
   }
 
@@ -185,22 +237,27 @@ export class ReviewService {
     const skip = (page - 1) * pageSize;
     const [list, total] = await Promise.all([
       this.prisma.review.findMany({
-        where:   { targetId: BigInt(workerId), reviewerType: 'company' },
+        where: { revieweeId: BigInt(workerId), reviewerType: 'company', isVisible: true },
         orderBy: { createdAt: 'desc' },
         skip,
         take: pageSize,
       }),
       this.prisma.review.count({
-        where: { targetId: BigInt(workerId), reviewerType: 'company' },
+        where: { revieweeId: BigInt(workerId), reviewerType: 'company', isVisible: true },
       }),
     ]);
     return {
-      total, page, pageSize,
+      total,
+      page,
+      pageSize,
       list: list.map((r) => ({
-        reviewId:  Number(r.id),
-        taskId:    Number(r.taskId),
-        rating:    r.rating,
-        comment:   r.comment,
+        reviewId: Number(r.id),
+        taskId: Number(r.taskId),
+        rating: r.rating,
+        overallScore: r.overallScore ? Number(r.overallScore) : null,
+        dimensionScores: r.dimensionScores,
+        positiveTags: r.positiveTags,
+        comment: r.comment,
         createdAt: r.createdAt,
       })),
     };

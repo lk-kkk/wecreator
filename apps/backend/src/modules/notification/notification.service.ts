@@ -1,15 +1,24 @@
+/**
+ * NotificationService — 通知中心
+ *
+ * Schema V2 字段变更:
+ *  - userId    → recipientId
+ *  - userType  → recipientType
+ *  - relatedId → relatedTaskId
+ */
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma';
 import { NotificationType, UserType } from '@prisma/client';
 import { MessageGateway } from '../message/message.gateway';
 
 export interface CreateNotificationDto {
-  userId:    bigint;
-  userType:  UserType;
-  type:      NotificationType;
-  title:     string;
-  content:   string;
-  relatedId?: bigint;
+  recipientId:   bigint;
+  recipientType: UserType;
+  type:          NotificationType;
+  title:         string;
+  content:       string;
+  relatedTaskId?: bigint;
+  templateCode?: string;
 }
 
 @Injectable()
@@ -25,20 +34,26 @@ export class NotificationService {
   async create(dto: CreateNotificationDto) {
     const notification = await this.prisma.notification.create({
       data: {
-        userId:    dto.userId,
-        userType:  dto.userType,
-        type:      dto.type,
-        title:     dto.title,
-        content:   dto.content,
-        relatedId: dto.relatedId ?? null,
+        recipientId:   dto.recipientId,
+        recipientType: dto.recipientType,
+        type:          dto.type,
+        title:         dto.title,
+        content:       dto.content,
+        relatedTaskId: dto.relatedTaskId ?? null,
+        templateCode:  dto.templateCode ?? null,
       },
     });
 
     // 通过 WebSocket 实时推送未读数变化
-    const unreadCount = await this.getUnreadCount(Number(dto.userId), dto.userType);
-    this.messageGateway.sendToUser(Number(dto.userId), 'notification_count', {
-      unreadCount,
-    });
+    const unreadCount = await this.getUnreadCount(
+      Number(dto.recipientId),
+      dto.recipientType,
+    );
+    this.messageGateway.sendToUser(
+      Number(dto.recipientId),
+      'notification_count',
+      { unreadCount },
+    );
 
     return notification;
   }
@@ -48,13 +63,13 @@ export class NotificationService {
   // GET /notifications
   // ──────────────────────────────────────────
   async list(
-    userId:   number,
+    userId: number,
     userType: UserType,
-    page     = 1,
+    page = 1,
     pageSize = 20,
   ) {
     const skip = (page - 1) * pageSize;
-    const where = { userId: BigInt(userId), userType };
+    const where = { recipientId: BigInt(userId), recipientType: userType };
 
     const [total, list] = await Promise.all([
       this.prisma.notification.count({ where }),
@@ -67,7 +82,12 @@ export class NotificationService {
     ]);
 
     return {
-      list: list.map((n) => ({ ...n, id: Number(n.id), userId: Number(n.userId), relatedId: n.relatedId ? Number(n.relatedId) : null })),
+      list: list.map((n) => ({
+        ...n,
+        id: Number(n.id),
+        recipientId: Number(n.recipientId),
+        relatedTaskId: n.relatedTaskId ? Number(n.relatedTaskId) : null,
+      })),
       total,
       page,
       pageSize,
@@ -80,8 +100,8 @@ export class NotificationService {
   // ──────────────────────────────────────────
   async markOneRead(id: number, userId: number, userType: UserType) {
     await this.prisma.notification.updateMany({
-      where: { id: BigInt(id), userId: BigInt(userId), userType },
-      data:  { isRead: true },
+      where: { id: BigInt(id), recipientId: BigInt(userId), recipientType: userType },
+      data: { isRead: true },
     });
     return { success: true };
   }
@@ -92,8 +112,12 @@ export class NotificationService {
   // ──────────────────────────────────────────
   async markAllRead(userId: number, userType: UserType) {
     const { count } = await this.prisma.notification.updateMany({
-      where: { userId: BigInt(userId), userType, isRead: false },
-      data:  { isRead: true },
+      where: {
+        recipientId: BigInt(userId),
+        recipientType: userType,
+        isRead: false,
+      },
+      data: { isRead: true },
     });
     return { updated: count };
   }
@@ -104,7 +128,11 @@ export class NotificationService {
   // ──────────────────────────────────────────
   async getUnreadCount(userId: number, userType: UserType): Promise<number> {
     return this.prisma.notification.count({
-      where: { userId: BigInt(userId), userType, isRead: false },
+      where: {
+        recipientId: BigInt(userId),
+        recipientType: userType,
+        isRead: false,
+      },
     });
   }
 }

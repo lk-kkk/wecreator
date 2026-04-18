@@ -1,19 +1,20 @@
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .page {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background: #f5f5f7;
+  @include flex-column;
+  @include page-base;
 }
 
 .top-bar {
-  background: #5B4CDB;
-  padding: 24rpx;
+  background: $color-primary;
+  padding: $space-md;
 }
 
 .page-title {
-  font-size: 36rpx;
-  font-weight: 700;
-  color: #fff;
+  font-size: $font-lg;
+  font-weight: $weight-bold;
+  color: $color-text-white;
   display: block;
 }
 
@@ -21,27 +22,27 @@
 .conv-item {
   display: flex;
   align-items: center;
-  padding: 24rpx 32rpx;
-  background: #fff;
-  border-bottom: 1rpx solid #f0f0f0;
+  padding: $space-md $page-padding;
+  background: $color-bg-card;
+  @include divider($color-border-light);
   gap: 20rpx;
+  transition: $transition-fast;
+  &:active { background: $color-bg-hover; }
 }
 
 .conv-avatar {
   width: 80rpx;
   height: 80rpx;
-  border-radius: 50%;
-  background: #5B4CDB22;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border-radius: $radius-round;
+  background: $color-primary-bg;
+  @include flex-center;
   flex-shrink: 0;
 }
 
 .avatar-text {
-  font-size: 28rpx;
-  color: #5B4CDB;
-  font-weight: 700;
+  font-size: $font-base;
+  color: $color-primary;
+  font-weight: $weight-bold;
 }
 
 .conv-info {
@@ -50,146 +51,132 @@
 }
 
 .conv-title {
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #222;
+  font-size: $font-base;
+  font-weight: $weight-semibold;
+  color: $color-text-primary;
   display: block;
   margin-bottom: 6rpx;
 }
 
 .conv-last-msg {
-  font-size: 24rpx;
-  color: #999;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: $font-sm;
+  color: $color-text-placeholder;
+  @include text-ellipsis;
   display: block;
 }
 
 .conv-time {
-  font-size: 22rpx;
-  color: #ccc;
+  font-size: $font-xs;
+  color: $color-text-disabled;
   flex-shrink: 0;
 }
 
 .empty {
   flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  @include flex-center;
 }
 
 .empty-text {
-  font-size: 28rpx;
-  color: #ccc;
+  font-size: $font-base;
+  color: $color-text-disabled;
 }
 
 /* ──── 聊天界面 ──── */
-.chat-page {
-  background: #ededf2;
-}
+.chat-page { background: #EDEDF2; }
 
 .chat-header {
   display: flex;
   align-items: center;
-  padding: 20rpx 32rpx;
-  background: #5B4CDB;
-  gap: 16rpx;
+  padding: 20rpx $page-padding;
+  background: $color-primary;
+  gap: $space-sm;
 }
 
 .back-btn {
   font-size: 36rpx;
   color: rgba(255, 255, 255, 0.8);
-  padding: 0 8rpx;
+  padding: 0 $space-xs;
+  transition: $transition-fast;
+  &:active { opacity: 0.7; }
 }
 
 .chat-title {
-  font-size: 30rpx;
-  font-weight: 600;
-  color: #fff;
+  font-size: $font-md;
+  font-weight: $weight-semibold;
+  color: $color-text-white;
 }
 
 .msg-scroll {
   flex: 1;
-  padding: 16rpx 20rpx;
+  padding: $space-sm 20rpx;
   overflow: hidden;
 }
 
 .msg-row {
-  display: flex;
-  flex-direction: column;
+  @include flex-column;
   margin-bottom: 20rpx;
-}
-
-.msg-row.self {
-  align-items: flex-end;
-}
-
-.msg-row.other {
-  align-items: flex-start;
+  &.self { align-items: flex-end; }
+  &.other { align-items: flex-start; }
 }
 
 .bubble {
   max-width: 70vw;
-  padding: 16rpx 22rpx;
-  border-radius: 16rpx;
-  margin-bottom: 4rpx;
+  padding: $space-sm 22rpx;
+  border-radius: $radius-md;
+  margin-bottom: $space-xxs;
 }
 
 .bubble-self {
-  background: #5B4CDB;
-  border-bottom-right-radius: 4rpx;
+  background: $color-primary;
+  border-bottom-right-radius: $radius-xs;
 }
 
 .bubble-other {
-  background: #fff;
-  border-bottom-left-radius: 4rpx;
+  background: $color-bg-card;
+  border-bottom-left-radius: $radius-xs;
 }
 
 .bubble-text {
-  font-size: 28rpx;
-  line-height: 1.6;
+  font-size: $font-base;
+  line-height: $line-height-loose;
 }
 
-.bubble-self .bubble-text {
-  color: #fff;
-}
-
-.bubble-other .bubble-text {
-  color: #333;
-}
+.bubble-self .bubble-text { color: $color-text-white; }
+.bubble-other .bubble-text { color: $color-text-regular; }
 
 .msg-time {
   font-size: 20rpx;
-  color: #aaa;
+  color: $color-text-disabled;
 }
 
 .input-bar {
   display: flex;
   align-items: center;
-  padding: 16rpx 20rpx;
-  background: #fff;
-  border-top: 1rpx solid #e8e8e8;
-  gap: 16rpx;
+  padding: $space-sm 20rpx;
+  background: $color-bg-card;
+  border-top: 1rpx solid $color-border;
+  gap: $space-sm;
 }
 
 .msg-input {
   flex: 1;
-  background: #f5f5f7;
-  border-radius: 40rpx;
-  padding: 14rpx 24rpx;
-  font-size: 28rpx;
-  color: #333;
+  background: $color-bg-page;
+  border-radius: $radius-xl;
+  padding: 14rpx $space-md;
+  font-size: $font-base;
+  color: $color-text-regular;
 }
 
 .send-btn {
-  background: #5B4CDB;
-  padding: 16rpx 28rpx;
-  border-radius: 40rpx;
+  background: $color-primary;
+  padding: $space-sm 28rpx;
+  border-radius: $radius-xl;
+  transition: $transition-fast;
+  &:active { opacity: 0.85; transform: scale(0.98); }
 }
 
 .send-text {
-  font-size: 26rpx;
-  color: #fff;
-  font-weight: 600;
+  font-size: $font-base;
+  color: $color-text-white;
+  font-weight: $weight-semibold;
 }

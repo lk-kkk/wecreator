@@ -1,58 +1,69 @@
-.page {
-  min-height: 100vh;
-  background: #f5f5f5;
-}
+@use '../../../../styles/variables' as *;
+@use '../../../../styles/mixins' as *;
+
+.page { @include page-base; }
 
 /* ── 余额 ── */
 .balance-card {
-  background: linear-gradient(135deg, #5B4CDB 0%, #7c6df5 100%);
-  padding: 40px 32px;
+  background: $gradient-wallet;
+  padding: 40rpx $page-padding;
   text-align: center;
 }
-.balance-label { font-size: 26px; color: rgba(255,255,255,0.8); display: block; }
-.balance-amount { font-size: 56px; font-weight: 700; color: #fff; display: block; margin-top: 12px; }
+
+.balance-label { font-size: $font-base; color: rgba(255, 255, 255, 0.8); display: block; }
+.balance-amount { font-size: 56rpx; font-weight: $weight-bold; color: $color-text-white; display: block; margin-top: $space-sm; }
 
 /* ── 输入 ── */
 .input-card {
-  background: #fff;
-  margin: 24px;
-  border-radius: 16px;
-  padding: 24px;
+  @include card($radius-md);
+  margin: $space-md;
+  padding: $space-md;
 }
-.input-label { font-size: 26px; color: #666; display: block; margin-bottom: 16px; }
+
+.input-label { font-size: $font-base; color: $color-text-secondary; display: block; margin-bottom: $space-sm; }
+
 .amount-row {
   display: flex;
   align-items: center;
-  border-bottom: 2px solid #5B4CDB;
-  padding-bottom: 12px;
+  border-bottom: 2rpx solid $color-primary;
+  padding-bottom: $space-sm;
 }
-.yuan-sign { font-size: 48px; font-weight: 700; color: #333; margin-right: 8px; }
-.amount-input { font-size: 48px; font-weight: 700; color: #333; flex: 1; }
+
+.yuan-sign { font-size: $font-xxl; font-weight: $weight-bold; color: $color-text-regular; margin-right: $space-xs; }
+.amount-input { font-size: $font-xxl; font-weight: $weight-bold; color: $color-text-regular; flex: 1; }
+
 .input-footer {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 12px;
+  @include flex-between;
+  margin-top: $space-sm;
 }
-.min-hint { font-size: 22px; color: #999; }
-.withdraw-all { font-size: 24px; color: #5B4CDB; font-weight: 600; }
+
+.min-hint { font-size: $font-xs; color: $color-text-placeholder; }
+
+.withdraw-all {
+  font-size: $font-sm;
+  color: $color-primary;
+  font-weight: $weight-semibold;
+  transition: $transition-fast;
+  &:active { opacity: 0.7; }
+}
 
 /* ── 说明 ── */
 .notice-card {
-  background: #fff;
-  margin: 0 24px;
-  border-radius: 16px;
-  padding: 24px;
+  @include card($radius-md);
+  margin: 0 $space-md;
+  padding: $space-md;
 }
-.notice-title { font-size: 26px; font-weight: 600; color: #333; display: block; margin-bottom: 12px; }
-.notice-text { font-size: 24px; color: #999; display: block; line-height: 2; }
+
+.notice-title { font-size: $font-base; font-weight: $weight-semibold; color: $color-text-regular; display: block; margin-bottom: $space-sm; }
+.notice-text { font-size: $font-sm; color: $color-text-placeholder; display: block; line-height: 2; }
 
 /* ── 按钮 ── */
-.submit-area { padding: 40px 24px; }
+.submit-area { padding: $space-xl $space-md; }
+
 .submit-btn {
-  background: #5B4CDB;
-  border-radius: 44px;
-  padding: 24px 0;
-  text-align: center;
-  &.disabled { opacity: 0.6; }
+  @include btn-primary;
+  padding: $space-md 0;
+  &.disabled { @include btn-disabled; }
 }
-.submit-text { font-size: 30px; color: #fff; font-weight: 600; }
+
+.submit-text { font-size: $font-md; color: $color-text-white; font-weight: $weight-semibold; }

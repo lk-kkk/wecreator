@@ -1,108 +1,121 @@
+@use '../../../../styles/variables' as *;
+@use '../../../../styles/mixins' as *;
+
 .page {
-  min-height: 100vh;
-  background: #f5f5f5;
-  padding-bottom: 120px;
+  @include page-base;
+  padding-bottom: 120rpx;
 }
-.loading-area { padding: 200px 0; text-align: center; }
-.loading-text { font-size: 28px; color: #999; }
+
+.loading-area { padding: 200rpx 0; text-align: center; }
+.loading-text { font-size: $font-base; color: $color-text-placeholder; }
 
 /* ── 头像 ── */
 .avatar-section {
-  background: #fff;
-  padding: 40px 0;
+  background: $color-bg-card;
+  padding: 40rpx 0;
   text-align: center;
-  margin-bottom: 16px;
+  margin-bottom: $space-sm;
 }
+
 .avatar-img {
-  width: 160px;
-  height: 160px;
-  border-radius: 80px;
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 80rpx;
   display: block;
   margin: 0 auto;
 }
+
 .avatar-placeholder {
-  width: 160px;
-  height: 160px;
-  border-radius: 80px;
-  background: #f0edff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 80rpx;
+  background: $color-primary-light;
+  @include flex-center;
   margin: 0 auto;
 }
-.avatar-icon { font-size: 56px; }
-.avatar-hint { font-size: 24px; color: #999; display: block; margin-top: 12px; }
+
+.avatar-icon { font-size: 56rpx; }
+.avatar-hint { font-size: $font-sm; color: $color-text-placeholder; display: block; margin-top: $space-sm; }
 
 /* ── 表单 ── */
 .form-section {
-  background: #fff;
-  margin-bottom: 16px;
-  padding: 0 32px;
+  background: $color-bg-card;
+  margin-bottom: $space-sm;
+  padding: 0 $page-padding;
 }
+
 .section-title {
-  font-size: 28px;
-  font-weight: 600;
-  color: #333;
+  font-size: $font-base;
+  font-weight: $weight-semibold;
+  color: $color-text-regular;
   display: block;
-  padding: 24px 0 8px;
+  padding: $space-md 0 $space-xs;
 }
+
 .form-item {
-  padding: 20px 0;
-  border-bottom: 1px solid #f5f5f5;
+  padding: 20rpx 0;
+  @include divider($color-border-light);
   &:last-child { border-bottom: none; }
+  &.clickable:active { background: $color-bg-hover; }
 }
-.form-item.clickable:active { background: #f8f8fa; }
+
 .label {
-  font-size: 26px;
-  color: #666;
+  font-size: $font-base;
+  color: $color-text-secondary;
   display: block;
-  margin-bottom: 12px;
+  margin-bottom: $space-sm;
 }
+
 .input {
-  font-size: 28px;
-  color: #333;
+  font-size: $font-base;
+  color: $color-text-regular;
   width: 100%;
-  padding: 12px 0;
+  padding: $space-sm 0;
 }
+
 .textarea {
-  font-size: 28px;
-  color: #333;
+  font-size: $font-base;
+  color: $color-text-regular;
   width: 100%;
-  min-height: 160px;
-  padding: 12px 0;
+  min-height: 160rpx;
+  padding: $space-sm 0;
 }
+
 .char-count {
-  font-size: 22px;
-  color: #ccc;
+  font-size: $font-xs;
+  color: $color-text-disabled;
   text-align: right;
   display: block;
-  margin-top: 4px;
+  margin-top: $space-xxs;
 }
 
 /* ── 城市选择器 ── */
 .picker-trigger {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 0;
+  @include flex-between;
+  padding: $space-sm 0;
 }
-.picker-text { font-size: 28px; color: #333; }
-.picker-text.placeholder { color: #ccc; }
-.picker-arrow { font-size: 32px; color: #ccc; }
+
+.picker-text { font-size: $font-base; color: $color-text-regular; }
+.picker-text.placeholder { color: $color-text-disabled; }
+.picker-arrow { font-size: $font-lg; color: $color-text-disabled; }
 
 /* ── 链接 ── */
-.link-area { float: right; margin-top: -40px; }
-.link-text { font-size: 26px; color: #5B4CDB; }
+.link-area { float: right; margin-top: -40rpx; }
+.link-text {
+  font-size: $font-base;
+  color: $color-primary;
+  font-weight: $weight-medium;
+  transition: $transition-fast;
+  &:active { opacity: 0.7; }
+}
 
 /* ── 保存 ── */
-.save-area {
-  padding: 32px;
-}
+.save-area { padding: $page-padding; }
+
 .save-btn {
-  background: #5B4CDB;
-  border-radius: 44px;
-  padding: 24px 0;
-  text-align: center;
-  &.disabled { opacity: 0.6; }
+  @include btn-primary;
+  padding: $space-md 0;
+  &.disabled { @include btn-disabled; }
 }
-.save-text { font-size: 30px; color: #fff; font-weight: 600; }
+
+.save-text { font-size: $font-md; color: $color-text-white; font-weight: $weight-semibold; }

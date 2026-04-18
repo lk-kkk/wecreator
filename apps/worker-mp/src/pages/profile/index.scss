@@ -1,241 +1,255 @@
-.page {
-  background: #f5f5f7;
-  min-height: 100vh;
-}
-.page.loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.loading-text, .error-text {
-  font-size: 28rpx;
-  color: #aaa;
-}
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+.page { @include page-base; }
+.page.loading { @include flex-center; }
+.loading-text, .error-text { font-size: $font-base; color: $color-text-disabled; }
 
 /* ── 封面 + 头像 ── */
 .cover-area {
   position: relative;
   height: 220rpx;
 }
+
 .cover-bg {
   width: 100%;
   height: 200rpx;
-  background: linear-gradient(135deg, #5B4CDB 0%, #9B8FEC 100%);
+  background: $gradient-primary;
 }
+
 .avatar-wrap {
   position: absolute;
   bottom: 0;
   left: 40rpx;
   display: flex;
   align-items: flex-end;
-  gap: 12rpx;
+  gap: $space-sm;
 }
+
 .avatar {
   width: 120rpx;
   height: 120rpx;
-  border-radius: 50%;
-  border: 6rpx solid #fff;
-  background: #e8e8e8;
+  border-radius: $radius-round;
+  border: 6rpx solid $color-bg-card;
+  background: $color-border;
 }
+
 .avatar-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #7B6EE8;
+  @include flex-center;
+  background: $color-primary-lighter;
 }
+
 .avatar-initial {
-  font-size: 48rpx;
-  color: #fff;
-  font-weight: 700;
+  font-size: $font-xxl;
+  color: $color-text-white;
+  font-weight: $weight-bold;
 }
+
 .level-badge {
-  padding: 6rpx 16rpx;
+  padding: 6rpx $space-sm;
   border-radius: 20rpx;
-  margin-bottom: 12rpx;
+  margin-bottom: $space-sm;
 }
+
 .level-text {
   font-size: 20rpx;
-  color: #fff;
-  font-weight: 600;
+  color: $color-text-white;
+  font-weight: $weight-semibold;
 }
 
 /* ── 信息卡片 ── */
 .info-card {
-  background: #fff;
-  margin: 12rpx 24rpx;
-  border-radius: 16rpx;
-  padding: 28rpx 24rpx;
+  @include card-section;
+  padding: 28rpx $space-md;
 }
+
 .name-row {
   display: flex;
   align-items: center;
-  gap: 12rpx;
-  margin-bottom: 8rpx;
+  gap: $space-sm;
+  margin-bottom: $space-xs;
 }
+
 .real-name {
   font-size: 36rpx;
-  font-weight: 700;
-  color: #222;
+  font-weight: $weight-bold;
+  color: $color-text-primary;
 }
+
 .verified-badge {
-  background: #e6f7ff;
-  padding: 4rpx 12rpx;
-  border-radius: 6rpx;
+  background: $color-info-bg;
+  padding: 4rpx $space-sm;
+  border-radius: $radius-sm;
 }
+
 .verified-text {
   font-size: 20rpx;
-  color: #1677ff;
+  color: $color-info;
+  font-weight: $weight-medium;
 }
+
 .city-text {
-  font-size: 24rpx;
-  color: #999;
+  font-size: $font-sm;
+  color: $color-text-placeholder;
   display: block;
-  margin-bottom: 12rpx;
+  margin-bottom: $space-sm;
 }
+
 .bio-text {
-  font-size: 26rpx;
-  color: #555;
-  line-height: 1.6;
+  font-size: $font-base;
+  color: $color-text-secondary;
+  line-height: $line-height-loose;
   display: block;
-  margin-bottom: 24rpx;
+  margin-bottom: $space-md;
 }
+
 .stats-row {
   display: flex;
   justify-content: space-around;
   align-items: center;
   padding: 20rpx 0;
-  border-top: 1rpx solid #f5f5f5;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-top: 1rpx solid $color-border-light;
+  border-bottom: 1rpx solid $color-border-light;
   margin-bottom: 20rpx;
 }
+
 .stat-item {
-  display: flex;
-  flex-direction: column;
+  @include flex-column;
   align-items: center;
   gap: 6rpx;
 }
+
 .stat-num {
   font-size: 36rpx;
-  font-weight: 700;
-  color: #5B4CDB;
+  font-weight: $weight-bold;
+  color: $color-primary;
 }
+
 .stat-label {
-  font-size: 22rpx;
-  color: #aaa;
+  font-size: $font-xs;
+  color: $color-text-disabled;
 }
+
 .stat-divider {
   width: 1rpx;
   height: 50rpx;
-  background: #f0f0f0;
+  background: $color-border-light;
 }
+
 .action-row {
   display: flex;
-  gap: 16rpx;
+  gap: $space-sm;
 }
+
 .action-btn {
   flex: 1;
   height: 72rpx;
-  background: #5B4CDB;
-  border-radius: 10rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: $color-primary;
+  border-radius: $radius-md;
+  @include flex-center;
+  transition: $transition-fast;
+  &:active { opacity: 0.85; transform: scale(0.98); }
+  &.secondary { background: $color-bg-hover; }
 }
-.action-btn.secondary {
-  background: #f5f5f5;
-}
+
 .action-text {
-  font-size: 28rpx;
-  color: #fff;
-  font-weight: 600;
+  font-size: $font-base;
+  color: $color-text-white;
+  font-weight: $weight-semibold;
 }
+
 .action-text-sec {
-  font-size: 28rpx;
-  color: #5B4CDB;
-  font-weight: 600;
+  font-size: $font-base;
+  color: $color-primary;
+  font-weight: $weight-semibold;
 }
 
 /* ── 技能 / 作品集 ── */
 .section-card {
-  background: #fff;
-  margin: 16rpx 24rpx;
-  border-radius: 16rpx;
-  padding: 24rpx;
+  @include card-section;
 }
+
 .section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16rpx;
+  @include flex-between;
+  margin-bottom: $space-sm;
 }
+
 .section-title {
-  font-size: 30rpx;
-  font-weight: 700;
-  color: #222;
+  font-size: $font-md;
+  font-weight: $weight-bold;
+  color: $color-text-primary;
   display: block;
-  margin-bottom: 16rpx;
+  margin-bottom: $space-sm;
 }
+
 .section-more {
-  font-size: 24rpx;
-  color: #5B4CDB;
+  font-size: $font-sm;
+  color: $color-primary;
+  font-weight: $weight-medium;
 }
-.role-item {
-  margin-bottom: 20rpx;
-}
+
+.role-item { margin-bottom: 20rpx; }
+
 .role-header {
-  display: flex;
-  justify-content: space-between;
+  @include flex-between;
   margin-bottom: 10rpx;
 }
+
 .role-name {
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #333;
+  font-size: $font-base;
+  font-weight: $weight-semibold;
+  color: $color-text-regular;
 }
+
 .role-exp {
-  font-size: 24rpx;
-  color: #aaa;
+  font-size: $font-sm;
+  color: $color-text-disabled;
 }
+
 .tag-wrap {
   display: flex;
   flex-wrap: wrap;
   gap: 10rpx;
 }
+
 .skill-tag {
-  background: #f0eeff;
-  padding: 6rpx 16rpx;
-  border-radius: 6rpx;
+  @include tag;
 }
+
 .tag-text {
-  font-size: 22rpx;
-  color: #5B4CDB;
+  font-size: $font-xs;
+  color: $color-primary;
 }
+
 .portfolio-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12rpx;
+  gap: $space-sm;
 }
+
 .portfolio-item {
   height: 160rpx;
-  border-radius: 10rpx;
+  border-radius: $radius-md;
   overflow: hidden;
 }
+
 .portfolio-img {
   width: 100%;
   height: 100%;
 }
+
 .portfolio-placeholder {
   width: 100%;
   height: 100%;
-  background: #f5f5f7;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: $color-bg-page;
+  @include flex-center;
 }
+
 .portfolio-title {
-  font-size: 24rpx;
-  color: #aaa;
-  padding: 8rpx;
+  font-size: $font-sm;
+  color: $color-text-disabled;
+  padding: $space-xs;
   text-align: center;
 }
+
 .bottom-space { height: 40rpx; }

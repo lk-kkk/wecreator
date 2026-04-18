@@ -1,0 +1,195 @@
+@use "variables" as *;
+// ═══════════════════════════════════════════════════════════
+// WeCreator Mixin 工具库
+// ═══════════════════════════════════════════════════════════
+
+// ── 布局 ─────────────────────────────────────────────
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+// ── 卡片 ─────────────────────────────────────────────
+@mixin card($radius: $radius-lg, $shadow: $shadow-sm) {
+  background: $color-bg-card;
+  border-radius: $radius;
+  box-shadow: $shadow;
+}
+
+@mixin card-section {
+  @include card;
+  margin: $space-sm $page-padding;
+  padding: $space-md;
+}
+
+// ── 文本截断 ──────────────────────────────────────────
+@mixin text-ellipsis($lines: 1) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  @if $lines == 1 {
+    white-space: nowrap;
+  } @else {
+    display: -webkit-box;
+    -webkit-line-clamp: $lines;
+    -webkit-box-orient: vertical;
+    white-space: normal;
+  }
+}
+
+// ── 安全区域 ──────────────────────────────────────────
+@mixin safe-bottom($extra: 0rpx) {
+  padding-bottom: calc(#{$extra} + env(safe-area-inset-bottom));
+}
+
+// ── 按钮 ─────────────────────────────────────────────
+@mixin btn-base {
+  @include flex-center;
+  border-radius: $radius-xl;
+  transition: $transition-fast;
+  &:active {
+    opacity: 0.85;
+    transform: scale(0.98);
+  }
+}
+
+@mixin btn-primary($height: 88rpx) {
+  @include btn-base;
+  height: $height;
+  background: $color-primary;
+  color: $color-text-white;
+  font-size: $font-md;
+  font-weight: $weight-semibold;
+}
+
+@mixin btn-secondary($height: 88rpx) {
+  @include btn-base;
+  height: $height;
+  background: $color-bg-hover;
+  color: $color-text-regular;
+  font-size: $font-md;
+}
+
+@mixin btn-outline($height: 88rpx) {
+  @include btn-base;
+  height: $height;
+  background: transparent;
+  border: 2rpx solid $color-primary;
+  color: $color-primary;
+  font-size: $font-md;
+  font-weight: $weight-medium;
+}
+
+@mixin btn-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+// ── 渐变头部 ──────────────────────────────────────────
+@mixin gradient-header($padding: $space-xl $page-padding $space-lg) {
+  background: $gradient-primary;
+  padding: $padding;
+}
+
+// ── 表单输入 ──────────────────────────────────────────
+@mixin form-input {
+  width: 100%;
+  border: 2rpx solid $color-border;
+  border-radius: $radius-md;
+  padding: $space-sm $space-md;
+  font-size: $font-base;
+  color: $color-text-regular;
+  box-sizing: border-box;
+  transition: border-color $duration-fast $ease-out;
+  &:focus {
+    border-color: $color-primary;
+  }
+}
+
+@mixin form-textarea($min-height: 160rpx) {
+  @include form-input;
+  min-height: $min-height;
+  line-height: $line-height-loose;
+  resize: none;
+}
+
+// ── 分割线 ─────────────────────────────────────────────
+@mixin divider($color: $color-border-light) {
+  border-bottom: 1rpx solid $color;
+}
+
+@mixin divider-dashed($color: $color-border) {
+  border-bottom: 1rpx dashed $color;
+}
+
+// ── 标签/Badge ────────────────────────────────────────
+@mixin badge($bg, $color) {
+  display: inline-flex;
+  align-items: center;
+  padding: 4rpx $space-sm;
+  border-radius: $radius-xl;
+  background: $bg;
+  font-size: $font-xs;
+  color: $color;
+  font-weight: $weight-medium;
+}
+
+@mixin tag($bg: $color-primary-bg, $color: $color-primary) {
+  display: inline-flex;
+  align-items: center;
+  padding: 6rpx $space-sm;
+  border-radius: $radius-sm;
+  background: $bg;
+  font-size: $font-sm;
+  color: $color;
+}
+
+// ── 空状态 ─────────────────────────────────────────────
+@mixin empty-state($padding-top: 200rpx) {
+  @include flex-column;
+  align-items: center;
+  padding: $padding-top $space-xl 0;
+  .empty-icon { font-size: 80rpx; margin-bottom: $space-md; }
+  .empty-text { font-size: $font-md; color: $color-text-placeholder; }
+  .empty-hint { font-size: $font-sm; color: $color-text-disabled; margin-top: $space-xs; }
+}
+
+// ── 页面基础 ──────────────────────────────────────────
+@mixin page-base {
+  min-height: 100vh;
+  background: $color-bg-page;
+}
+
+// ── 列表项按压反馈 ─────────────────────────────────────
+@mixin pressable {
+  transition: background-color $duration-fast $ease-out;
+  &:active {
+    background-color: $color-bg-hover;
+  }
+}
+
+// ── 进度条 ─────────────────────────────────────────────
+@mixin progress-bar($height: 12rpx, $bg: $color-border-light) {
+  height: $height;
+  background: $bg;
+  border-radius: calc($height / 2);
+  overflow: hidden;
+}
+
+@mixin progress-fill($color: $color-primary) {
+  height: 100%;
+  background: $color;
+  border-radius: inherit;
+  transition: width $duration-normal $ease-out;
+}

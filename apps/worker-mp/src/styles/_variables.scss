@@ -1,0 +1,110 @@
+// ═══════════════════════════════════════════════════════════
+// WeCreator Design System v1.0
+// 小程序全局设计 Token — 所有页面必须引用此文件
+// ═══════════════════════════════════════════════════════════
+
+// ── 品牌色 ──────────────────────────────────────────────
+$color-primary:       #5B4CDB;
+$color-primary-light: #EBE8FD;
+$color-primary-dark:  #4A3BC5;
+$color-primary-bg:    rgba(91, 76, 219, 0.08);
+
+// ── 功能色 ──────────────────────────────────────────────
+$color-success:       #00B578;
+$color-success-bg:    #F0FFF5;
+$color-warning:       #FF8F1F;
+$color-warning-bg:    #FFFBE8;
+$color-danger:        #FA3534;
+$color-danger-bg:     #FFF1F0;
+$color-info:          #1677FF;
+$color-info-bg:       #E8F3FF;
+$color-price:         #FF4D4F;
+$color-gold:          #FAAD14;
+
+// ── 文字色 ──────────────────────────────────────────────
+$color-text-primary:     #1A1A1A;  // 标题 / 重要文字
+$color-text-regular:     #333333;  // 正文
+$color-text-secondary:   #666666;  // 说明文字
+$color-text-placeholder: #999999;  // 提示 / 标签
+$color-text-disabled:    #CCCCCC;  // 禁用
+$color-text-white:       #FFFFFF;  // 深色背景上
+
+// ── 背景色 ──────────────────────────────────────────────
+$color-bg-page:    #F7F8FA;
+$color-bg-card:    #FFFFFF;
+$color-bg-hover:   #F5F5F5;
+$color-bg-mask:    rgba(0, 0, 0, 0.5);
+
+// ── 边框/分割 ─────────────────────────────────────────
+$color-border:       #EBEDF0;
+$color-border-light: #F5F5F5;
+
+// ── 字号（7 档，全部 rpx）─────────────────────────────
+$font-xs:    22rpx;   // 时间戳 / 辅助标签
+$font-sm:    24rpx;   // 说明文字 / badge
+$font-base:  28rpx;   // 正文默认
+$font-md:    30rpx;   // 卡片标题
+$font-lg:    34rpx;   // 页面小标题
+$font-xl:    40rpx;   // 页面大标题
+$font-xxl:   48rpx;   // 数字强调
+$font-hero:  64rpx;   // 封面 / 余额
+
+// ── 字重（4 档）─────────────────────────────────────
+$weight-normal:   400;
+$weight-medium:   500;
+$weight-semibold: 600;
+$weight-bold:     700;
+
+// ── 行高 ─────────────────────────────────────────────
+$line-height-tight:  1.3;
+$line-height-normal: 1.5;
+$line-height-loose:  1.8;
+
+// ── 圆角（5 档）─────────────────────────────────────
+$radius-xs:    4rpx;
+$radius-sm:    8rpx;
+$radius-md:    16rpx;
+$radius-lg:    24rpx;
+$radius-xl:    40rpx;   // 胶囊按钮 / pill
+$radius-round: 50%;
+
+// ── 间距（8rpx 基线网格）────────────────────────────
+$space-xxs:  4rpx;
+$space-xs:   8rpx;
+$space-sm:   16rpx;
+$space-md:   24rpx;
+$space-lg:   32rpx;
+$space-xl:   48rpx;
+$space-xxl:  64rpx;
+
+// ── 页面水平边距 ──────────────────────────────────
+$page-padding: 32rpx;
+
+// ── 阴影（3 档）─────────────────────────────────────
+$shadow-sm:  0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+$shadow-md:  0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+$shadow-lg:  0 8rpx 32rpx rgba(0, 0, 0, 0.12);
+
+// ── 过渡（3 档）─────────────────────────────────────
+$duration-fast:   0.15s;
+$duration-normal: 0.25s;
+$duration-slow:   0.35s;
+$ease-out:        cubic-bezier(0.25, 0.8, 0.25, 1);
+$transition-fast:   all $duration-fast $ease-out;
+$transition-normal: all $duration-normal $ease-out;
+$transition-slow:   all $duration-slow $ease-out;
+
+// ── 派生色（避免 lighten/darken 函数） ──────────────
+$color-primary-lighter: #9B8FEC;  // lighten($color-primary, 15%)
+$color-primary-border:  #B8AFF0;  // lighten($color-primary, 25%)
+$color-gold-dark:       #D48806;  // darken($color-gold, 10%)
+$color-gold-darker:     #AD6800;  // darken($color-gold, 20%)
+$color-gold-border:     #FFE58F;  // lighten($color-gold, 20%)
+$color-gold-border-lt:  #FFF1B8;  // lighten($color-gold, 25%)
+$color-success-light:   #95DE64;  // lighten($color-success, 25%)
+$color-success-border:  #B7EB8F;  // lighten($color-success, 30%)
+
+// ── 品牌渐变 ─────────────────────────────────────────
+$gradient-primary: linear-gradient(135deg, $color-primary 0%, $color-primary-lighter 100%);
+$gradient-header:  linear-gradient(135deg, $color-primary 0%, #7B6EE8 100%);
+$gradient-wallet:  linear-gradient(135deg, $color-primary 0%, #7B6EE8 100%);

@@ -1,37 +1,70 @@
-/* V3.3 设置页 */
-$primary: #5B4CDB;
-$bg: #f5f5f7;
+@use '../../../../styles/variables' as *;
+@use '../../../../styles/mixins' as *;
 
-.settings-page { min-height: 100vh; background: $bg; padding-bottom: 40px; }
+/* V3.3 设置页 */
+.settings-page { @include page-base; padding-bottom: 40rpx; }
 
 .menu-group {
-  margin: 16px 24px; background: #fff; border-radius: 16px; overflow: hidden;
-  .group-title { display: block; padding: 20px 24px 8px; font-size: 24px; color: #999; font-weight: 500; }
+  margin: $space-sm $space-md;
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  overflow: hidden;
+
+  .group-title {
+    display: block;
+    padding: 20rpx $space-md $space-xs;
+    font-size: $font-sm;
+    color: $color-text-placeholder;
+    font-weight: $weight-medium;
+  }
+
   .menu-item {
-    display: flex; align-items: center; padding: 24px; border-bottom: 1px solid #f5f5f5;
+    display: flex;
+    align-items: center;
+    padding: $space-md;
+    @include divider($color-border-light);
+    transition: $transition-fast;
     &:last-child { border-bottom: none; }
-    &:active { background: #fafafa; }
-    .menu-icon { font-size: 32px; margin-right: 16px; }
-    .menu-label { flex: 1; font-size: 28px; color: #333; }
+    &:active { background: $color-bg-hover; }
+
+    .menu-icon { font-size: $font-lg; margin-right: $space-sm; }
+    .menu-label { flex: 1; font-size: $font-base; color: $color-text-regular; }
+
     .menu-right {
-      display: flex; align-items: center;
+      display: flex;
+      align-items: center;
       .menu-badge {
-        font-size: 22px; padding: 2px 12px; border-radius: 12px; margin-right: 8px;
-        &.done { color: #52c41a; background: rgba(82,196,26,0.1); }
-        &.pending { color: #ff4d4f; background: rgba(255,77,79,0.1); }
+        font-size: $font-xs;
+        padding: 2rpx $space-sm;
+        border-radius: $radius-md;
+        margin-right: $space-xs;
+        &.done { color: $color-success; background: rgba($color-success, 0.1); }
+        &.pending { color: $color-danger; background: rgba($color-danger, 0.1); }
       }
-      .menu-arrow { font-size: 32px; color: #ccc; }
+      .menu-arrow { font-size: $font-lg; color: $color-text-disabled; }
     }
   }
 }
 
 .logout-area {
-  padding: 40px 24px; text-align: center;
+  padding: $space-xl $space-md;
+  text-align: center;
+
   .logout-btn {
-    margin: 0 auto; padding: 20px; background: #fff; border-radius: 16px;
-    border: 1px solid #ff4d4f;
-    &:active { background: #fff5f5; }
-    .logout-text { font-size: 28px; color: #ff4d4f; }
+    margin: 0 auto;
+    padding: 20rpx;
+    background: $color-bg-card;
+    border-radius: $radius-md;
+    border: 1rpx solid $color-danger;
+    transition: $transition-fast;
+    &:active { background: $color-danger-bg; }
+    .logout-text { font-size: $font-base; color: $color-danger; }
   }
-  .version-text { display: block; margin-top: 20px; font-size: 22px; color: #ccc; }
+
+  .version-text {
+    display: block;
+    margin-top: 20rpx;
+    font-size: $font-xs;
+    color: $color-text-disabled;
+  }
 }

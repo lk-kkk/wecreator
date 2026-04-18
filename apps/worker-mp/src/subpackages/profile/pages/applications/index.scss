@@ -1,109 +1,110 @@
-/* V3.4 我的申请记录 */
-$primary: #5B4CDB;
-$bg: #f5f5f7;
+@use '../../../../styles/variables' as *;
+@use '../../../../styles/mixins' as *;
 
-.applications-page {
-  min-height: 100vh;
-  background: $bg;
-}
+/* V3.4 我的申请记录 */
+.applications-page { @include page-base; }
 
 /* ── Tab 切换 ── */
 .app-tabs {
   display: flex;
-  background: #fff;
-  padding: 0 24px;
-  border-bottom: 1px solid #eee;
+  background: $color-bg-card;
+  padding: 0 $space-md;
+  @include divider;
 }
+
 .app-tab {
   flex: 1;
   text-align: center;
-  padding: 24px 0;
+  padding: $space-md 0;
   position: relative;
-  .app-tab-text { font-size: 28px; color: #666; }
-  &.active .app-tab-text { color: $primary; font-weight: 600; }
+  .app-tab-text {
+    font-size: $font-base;
+    color: $color-text-secondary;
+    transition: $transition-fast;
+  }
+  &.active .app-tab-text { color: $color-primary; font-weight: $weight-semibold; }
   .tab-indicator {
     position: absolute;
     bottom: 0; left: 30%; right: 30%;
-    height: 4px;
-    background: $primary;
-    border-radius: 2px;
+    height: 6rpx;
+    background: $color-primary;
+    border-radius: 3rpx;
+    transition: $transition-normal;
   }
 }
 
 /* ── 申请卡片 ── */
 .app-card {
-  margin: 16px 24px;
-  padding: 24px;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  @include card;
+  margin: $space-sm $space-md;
+  padding: $space-md;
+  transition: $transition-fast;
+  &:active { transform: scale(0.99); }
 }
+
 .app-header {
-  display: flex;
-  justify-content: space-between;
+  @include flex-between;
   align-items: flex-start;
   .app-task-title {
-    font-size: 30px;
-    font-weight: 600;
-    color: #1a1a1a;
+    font-size: $font-md;
+    font-weight: $weight-semibold;
+    color: $color-text-primary;
     flex: 1;
-    margin-right: 12px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    margin-right: $space-sm;
+    @include text-ellipsis;
   }
   .app-status-badge {
-    padding: 4px 16px;
-    border-radius: 20px;
-    .app-status-text { font-size: 22px; color: #fff; font-weight: 500; }
+    padding: 4rpx $space-sm;
+    border-radius: 20rpx;
+    .app-status-text { font-size: $font-xs; color: $color-text-white; font-weight: $weight-medium; }
   }
 }
+
 .app-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
-  .app-company, .app-role, .app-mode { font-size: 24px; color: #999; }
+  gap: $space-xs;
+  margin-top: $space-sm;
+  .app-company, .app-role, .app-mode { font-size: $font-sm; color: $color-text-placeholder; }
 }
+
 .app-content {
-  margin-top: 16px;
-  padding: 16px;
-  background: $bg;
-  border-radius: 12px;
-  .app-intro { font-size: 26px; color: #555; line-height: 1.6; font-style: italic; }
-  .app-pay { font-size: 24px; color: #ff4d4f; margin-top: 8px; display: block; }
+  margin-top: $space-sm;
+  padding: $space-sm;
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  .app-intro { font-size: $font-base; color: $color-text-secondary; line-height: $line-height-loose; font-style: italic; }
+  .app-pay { font-size: $font-sm; color: $color-price; margin-top: $space-xs; display: block; }
 }
+
 .app-footer {
-  margin-top: 12px;
-  .app-time { font-size: 22px; color: #bbb; }
+  margin-top: $space-sm;
+  .app-time { font-size: $font-xs; color: $color-text-disabled; }
 }
 
 /* ── 婉拒区域 ── */
 .reject-section {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px dashed #e8e8e8;
+  margin-top: $space-sm;
+  padding-top: $space-sm;
+  @include divider-dashed;
 }
+
 .reject-reason {
-  margin-bottom: 12px;
-  .reject-label { font-size: 24px; color: #999; }
-  .reject-text { font-size: 24px; color: #ff4d4f; }
+  margin-bottom: $space-sm;
+  .reject-label { font-size: $font-sm; color: $color-text-placeholder; }
+  .reject-text { font-size: $font-sm; color: $color-danger; }
 }
+
 .reapply-btn {
+  @include btn-outline(64rpx);
   display: inline-flex;
-  padding: 8px 32px;
-  background: #fff;
-  border: 2px solid $primary;
-  border-radius: 32px;
-  .reapply-text { font-size: 26px; color: $primary; font-weight: 500; }
-  &:active { background: #f0ebff; }
+  padding: 0 $space-lg;
+  .reapply-text { font-size: $font-base; color: $color-primary; font-weight: $weight-medium; }
 }
 
 /* ── 空状态 ── */
 .empty-state {
-  display: flex; flex-direction: column; align-items: center;
-  padding: 160px 0;
-  .empty-icon { font-size: 64px; margin-bottom: 16px; }
-  .empty-text { font-size: 28px; color: #999; }
+  @include empty-state;
 }
-.loading-text { text-align: center; padding: 40px; font-size: 26px; color: #999; }
+
+.loading-text { text-align: center; padding: 40rpx; font-size: $font-base; color: $color-text-placeholder; }

@@ -1,84 +1,100 @@
-.page { background: #f5f5f7; min-height: 100vh; }
-.page.loading { display: flex; align-items: center; justify-content: center; }
+@use '../../../../styles/variables' as *;
+@use '../../../../styles/mixins' as *;
+
+.page { @include page-base; }
+.page.loading { @include flex-center; }
 
 .summary-card {
-  background: #fff;
-  margin: 16rpx 24rpx;
-  border-radius: 16rpx;
-  padding: 24rpx;
+  @include card-section;
   display: flex;
   justify-content: space-around;
   align-items: center;
 }
-.summary-item { display: flex; flex-direction: column; align-items: center; gap: 6rpx; }
-.summary-num  { font-size: 40rpx; font-weight: 700; color: #333; }
-.summary-num.confirmed { color: #52c41a; }
-.summary-num.pending   { color: #faad14; }
-.summary-num.rejected  { color: #ff4d4f; }
-.summary-label { font-size: 22rpx; color: #aaa; }
-.summary-divider { width: 1rpx; height: 50rpx; background: #f0f0f0; }
 
-.timeline-section { padding: 16rpx 24rpx 40rpx; }
+.summary-item {
+  @include flex-column;
+  align-items: center;
+  gap: 6rpx;
+}
+
+.summary-num {
+  font-size: $font-xl;
+  font-weight: $weight-bold;
+  color: $color-text-regular;
+  &.confirmed { color: $color-success; }
+  &.pending { color: $color-warning; }
+  &.rejected { color: $color-danger; }
+}
+
+.summary-label { font-size: $font-xs; color: $color-text-disabled; }
+.summary-divider { width: 1rpx; height: 50rpx; background: $color-border-light; }
+
+.timeline-section { padding: $space-sm $space-md 40rpx; }
+
 .section-title {
-  font-size: 28rpx; font-weight: 700; color: #333;
-  display: block; margin-bottom: 20rpx;
+  font-size: $font-base;
+  font-weight: $weight-bold;
+  color: $color-text-regular;
+  display: block;
+  margin-bottom: 20rpx;
 }
 
 .timeline-item {
   position: relative;
-  padding-left: 48rpx;
-  padding-bottom: 24rpx;
+  padding-left: $space-xl;
+  padding-bottom: $space-md;
 }
+
 .timeline-line {
   position: absolute;
   left: 20rpx;
   top: 40rpx;
   bottom: 0;
   width: 2rpx;
-  background: #f0f0f0;
+  background: $color-border-light;
 }
+
 .timeline-dot {
   position: absolute;
-  left: 8rpx;
-  top: 8rpx;
+  left: $space-xs;
+  top: $space-xs;
   width: 28rpx;
   height: 28rpx;
-  border-radius: 50%;
+  border-radius: $radius-round;
   border: 2rpx solid;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: $color-bg-card;
+  @include flex-center;
 }
+
 .dot-icon { font-size: 18rpx; }
 
 .timeline-card {
-  background: #fff;
-  border-radius: 12rpx;
+  @include card($radius-md);
   padding: 20rpx;
 }
+
 .card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12rpx;
+  @include flex-between;
+  margin-bottom: $space-sm;
 }
-.date-info { display: flex; align-items: baseline; gap: 8rpx; }
-.date-main { font-size: 28rpx; font-weight: 700; color: #333; }
-.date-week { font-size: 22rpx; color: #aaa; }
+
+.date-info { display: flex; align-items: baseline; gap: $space-xs; }
+.date-main { font-size: $font-base; font-weight: $weight-bold; color: $color-text-regular; }
+.date-week { font-size: $font-xs; color: $color-text-disabled; }
+
 .status-badge {
   padding: 4rpx 14rpx;
   border-radius: 20rpx;
   border: 1rpx solid;
 }
-.status-text { font-size: 20rpx; font-weight: 600; }
+.status-text { font-size: 20rpx; font-weight: $weight-semibold; }
 
-.time-row { display: flex; gap: 32rpx; margin-bottom: 8rpx; }
-.time-item { display: flex; align-items: center; gap: 8rpx; }
-.time-label { font-size: 22rpx; color: #aaa; }
-.time-val   { font-size: 26rpx; font-weight: 600; color: #333; }
+.time-row { display: flex; gap: $space-lg; margin-bottom: $space-xs; }
+.time-item { display: flex; align-items: center; gap: $space-xs; }
+.time-label { font-size: $font-xs; color: $color-text-disabled; }
+.time-val { font-size: $font-base; font-weight: $weight-semibold; color: $color-text-regular; }
 
-.work-log { font-size: 22rpx; color: #888; line-height: 1.5; display: block; }
+.work-log { font-size: $font-xs; color: $color-text-placeholder; line-height: $line-height-normal; display: block; }
 
 .empty-box { text-align: center; padding: 60rpx; }
-.empty-text { font-size: 26rpx; color: #ccc; }
+.empty-text { font-size: $font-base; color: $color-text-disabled; }

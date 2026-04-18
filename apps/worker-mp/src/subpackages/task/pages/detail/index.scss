@@ -1,121 +1,138 @@
+@use '../../../../styles/variables' as *;
+@use '../../../../styles/mixins' as *;
+
 .page {
-  min-height: 100vh;
-  background: #f5f5f5;
-  display: flex;
-  flex-direction: column;
+  @include page-base;
+  @include flex-column;
 }
-.loading-page {
-  justify-content: center;
-  align-items: center;
-}
-.loading-text { font-size: 28px; color: #999; }
+
+.loading-page { justify-content: center; align-items: center; }
+.loading-text { font-size: $font-base; color: $color-text-placeholder; }
+
 .scroll-area {
   flex: 1;
-  padding: 24px;
-  padding-bottom: 160px;
+  padding: $space-md;
+  padding-bottom: 160rpx;
 }
 
 /* ── 头部 ── */
 .header-card {
-  background: linear-gradient(135deg, #5B4CDB 0%, #7c6df5 100%);
-  border-radius: 20px;
-  padding: 40px 32px;
-  margin-bottom: 20px;
+  @include gradient-header($space-xl $page-padding);
+  border-radius: 20rpx;
+  margin-bottom: 20rpx;
 }
+
 .invite-badge {
   display: inline-block;
-  background: rgba(255,255,255,0.2);
-  border-radius: 20px;
-  padding: 6px 20px;
-  margin-bottom: 16px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 20rpx;
+  padding: 6rpx 20rpx;
+  margin-bottom: $space-sm;
 }
-.invite-badge-text { font-size: 24px; color: #fff; }
-.task-name { font-size: 36px; font-weight: 700; color: #fff; display: block; }
-.invite-tip { font-size: 24px; color: rgba(255,255,255,0.8); display: block; margin-top: 12px; }
+
+.invite-badge-text { font-size: $font-sm; color: $color-text-white; }
+.task-name { font-size: 36rpx; font-weight: $weight-bold; color: $color-text-white; display: block; }
+.invite-tip { font-size: $font-sm; color: rgba(255, 255, 255, 0.8); display: block; margin-top: $space-sm; }
 
 /* ── 信息卡片 ── */
 .info-card {
-  background: #fff;
-  border-radius: 20px;
-  padding: 8px 24px;
-  margin-bottom: 20px;
+  @include card($radius-lg);
+  padding: $space-xs $space-md;
+  margin-bottom: 20rpx;
 }
+
 .info-row {
   display: flex;
   align-items: center;
-  padding: 20px 0;
-  border-bottom: 1px solid #f5f5f5;
+  padding: 20rpx 0;
+  @include divider($color-border-light);
   &:last-child { border-bottom: none; }
 }
-.info-icon { font-size: 36px; margin-right: 16px; }
+
+.info-icon { font-size: 36rpx; margin-right: $space-sm; }
 .info-content { flex: 1; }
-.info-label { font-size: 22px; color: #999; display: block; }
-.info-value { font-size: 30px; color: #333; font-weight: 500; display: block; margin-top: 4px; }
-.info-value.price { color: #f5a623; font-weight: 700; font-size: 34px; }
+.info-label { font-size: $font-xs; color: $color-text-placeholder; display: block; }
+.info-value {
+  font-size: $font-md;
+  color: $color-text-regular;
+  font-weight: $weight-medium;
+  display: block;
+  margin-top: $space-xxs;
+  &.price { color: $color-gold; font-weight: $weight-bold; font-size: $font-lg; }
+}
 
 /* ── 须知卡片 ── */
 .notice-card {
-  background: #fffbe6;
-  border: 1px solid #fff1b8;
-  border-radius: 20px;
-  padding: 24px;
-  margin-bottom: 20px;
+  background: $color-warning-bg;
+  border: 1rpx solid $color-gold-border-lt;
+  border-radius: 20rpx;
+  padding: $space-md;
+  margin-bottom: 20rpx;
 }
-.notice-title { font-size: 28px; font-weight: 600; color: #d48806; display: block; margin-bottom: 12px; }
-.notice-text { font-size: 24px; color: #8c6d1f; display: block; line-height: 2; }
+
+.notice-title { font-size: $font-base; font-weight: $weight-semibold; color: $color-gold-dark; display: block; margin-bottom: $space-sm; }
+.notice-text { font-size: $font-sm; color: $color-gold-darker; display: block; line-height: 2; }
 
 /* ── 进度卡片 ── */
 .progress-card {
-  background: #fff;
-  border-radius: 20px;
-  padding: 24px;
-  margin-bottom: 20px;
+  @include card($radius-lg);
+  padding: $space-md;
+  margin-bottom: 20rpx;
 }
-.progress-label { font-size: 26px; color: #666; display: block; margin-bottom: 12px; }
+
+.progress-label { font-size: $font-base; color: $color-text-secondary; display: block; margin-bottom: $space-sm; }
+
 .progress-bar-bg {
-  height: 16px; background: #f0f0f0; border-radius: 8px; overflow: hidden; margin-bottom: 8px;
+  @include progress-bar($height: 16rpx);
+  margin-bottom: $space-xs;
 }
-.progress-bar-fill { height: 100%; background: linear-gradient(90deg, #5B4CDB, #7c6df5); border-radius: 8px; }
-.progress-pct { font-size: 28px; color: #5B4CDB; font-weight: 600; display: block; margin-bottom: 16px; }
+
+.progress-bar-fill {
+  @include progress-fill;
+  background: linear-gradient(90deg, $color-primary, $color-primary-lighter);
+}
+
+.progress-pct { font-size: $font-base; color: $color-primary; font-weight: $weight-semibold; display: block; margin-bottom: $space-sm; }
+
 .go-execute-btn {
-  background: #5B4CDB;
-  border-radius: 12px;
-  padding: 16px 0;
+  background: $color-primary;
+  border-radius: $radius-md;
+  padding: $space-sm 0;
   text-align: center;
+  transition: $transition-fast;
+  &:active { opacity: 0.85; }
 }
-.go-execute-text { color: #fff; font-size: 28px; font-weight: 600; }
+
+.go-execute-text { color: $color-text-white; font-size: $font-base; font-weight: $weight-semibold; }
 
 /* ── 底部操作栏 ── */
 .action-bar {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  bottom: 0; left: 0; right: 0;
   display: flex;
-  gap: 16px;
-  padding: 20px 32px;
-  padding-bottom: calc(20px + env(safe-area-inset-bottom));
-  background: #fff;
-  box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+  gap: $space-sm;
+  padding: 20rpx $page-padding;
+  @include safe-bottom(20rpx);
+  background: $color-bg-card;
+  box-shadow: 0 -2rpx 12rpx rgba(0, 0, 0, 0.06);
 }
+
 .reject-btn {
   flex: 1;
-  height: 88px;
-  border: 2px solid #d9d9d9;
-  border-radius: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  height: 88rpx;
+  border: 2rpx solid $color-border;
+  border-radius: $radius-xl;
+  @include flex-center;
+  transition: $transition-fast;
+  &:active { background: $color-bg-hover; }
 }
-.reject-btn-text { font-size: 30px; color: #666; }
+
+.reject-btn-text { font-size: $font-md; color: $color-text-secondary; }
+
 .accept-btn {
   flex: 2;
-  height: 88px;
-  background: #5B4CDB;
-  border-radius: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  &.disabled { opacity: 0.6; }
+  @include btn-primary(88rpx);
+  &.disabled { @include btn-disabled; }
 }
-.accept-btn-text { font-size: 30px; color: #fff; font-weight: 600; }
+
+.accept-btn-text { font-size: $font-md; color: $color-text-white; font-weight: $weight-semibold; }

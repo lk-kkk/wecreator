@@ -1,93 +1,84 @@
+@use '../../../../styles/variables' as *;
+@use '../../../../styles/mixins' as *;
+
 .page {
-  padding: 24rpx;
-  background: #f5f5f7;
-  min-height: 100vh;
+  padding: $space-md;
+  @include page-base;
 }
 
 .card {
-  background: #fff;
-  border-radius: 16rpx;
-  padding: 28rpx 24rpx;
-  margin-bottom: 24rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+  @include card;
+  padding: 28rpx $space-md;
+  margin-bottom: $space-md;
 }
 
 .card-title {
-  font-size: 30rpx;
-  font-weight: 700;
-  color: #222;
+  font-size: $font-md;
+  font-weight: $weight-bold;
+  color: $color-text-primary;
   display: block;
   margin-bottom: 20rpx;
 }
 
 .info-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 12rpx;
+  @include flex-between;
+  margin-bottom: $space-sm;
 }
 
 .label {
-  font-size: 26rpx;
-  color: #999;
+  font-size: $font-base;
+  color: $color-text-placeholder;
 }
 
 .value {
-  font-size: 26rpx;
-  color: #333;
-  font-weight: 500;
+  font-size: $font-base;
+  color: $color-text-regular;
+  font-weight: $weight-medium;
+  &.red { color: $color-danger; font-weight: $weight-bold; }
 }
 
-.value.red {
-  color: #f5222d;
-  font-weight: 700;
-}
-
-.progress-row {
-  margin-bottom: 12rpx;
-}
+.progress-row { margin-bottom: $space-sm; }
 
 .progress-label {
-  font-size: 28rpx;
-  color: #5B4CDB;
-  font-weight: 600;
+  font-size: $font-base;
+  color: $color-primary;
+  font-weight: $weight-semibold;
 }
 
 .note-input {
-  margin-top: 16rpx;
-  border: 1rpx solid #e8e8e8;
-  border-radius: 10rpx;
-  padding: 14rpx 20rpx;
-  font-size: 26rpx;
-  color: #333;
+  @include form-input;
+  margin-top: $space-sm;
   margin-bottom: 20rpx;
 }
 
 .primary-btn {
-  background: #5B4CDB !important;
-  color: #fff !important;
-  border-radius: 10rpx !important;
-  font-size: 28rpx !important;
+  background: $color-primary !important;
+  color: $color-text-white !important;
+  border-radius: $radius-md !important;
+  font-size: $font-base !important;
   height: 80rpx !important;
   line-height: 80rpx !important;
+  transition: $transition-fast;
+  &:active { opacity: 0.85; }
 }
 
-.primary-btn[disabled] {
-  opacity: 0.5 !important;
-}
+.primary-btn[disabled] { @include btn-disabled; }
 
 .hint-text {
-  font-size: 24rpx;
-  color: #aaa;
+  font-size: $font-sm;
+  color: $color-text-disabled;
   display: block;
   margin-bottom: 20rpx;
 }
 
 .upload-btn {
-  background: #fff !important;
-  border: 2rpx dashed #5B4CDB !important;
-  color: #5B4CDB !important;
-  border-radius: 10rpx !important;
-  font-size: 28rpx !important;
+  background: $color-bg-card !important;
+  border: 2rpx dashed $color-primary !important;
+  color: $color-primary !important;
+  border-radius: $radius-md !important;
+  font-size: $font-base !important;
   height: 80rpx !important;
   line-height: 80rpx !important;
+  transition: $transition-fast;
+  &:active { background: $color-primary-bg !important; }
 }

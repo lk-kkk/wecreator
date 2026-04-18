@@ -189,7 +189,7 @@ export class DashboardService {
     });
 
     const avg = reviews.length > 0
-      ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
+      ? reviews.reduce((s, r) => s + (r.rating ?? 0), 0) / reviews.length
       : 0;
 
     return {
@@ -269,7 +269,7 @@ export class DashboardService {
       select: { rating: true },
     });
     const avg = reviews.length > 0
-      ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
+      ? reviews.reduce((s, r) => s + (r.rating ?? 0), 0) / reviews.length
       : 0;
     return {
       avgScore:    Math.round(avg * 10) / 10,

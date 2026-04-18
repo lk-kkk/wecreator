@@ -1,151 +1,272 @@
-/* V3.3 我的 — 仿抖音风格 */
-$primary: #5B4CDB;
-$bg: #f5f5f7;
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
 
-.my-page { min-height: 100vh; background: $bg; position: relative; }
+/* V3.3 我的 — 仿抖音风格 */
+.my-page { @include page-base; position: relative; }
 .scroll-area { height: 100vh; }
 
 .login-prompt {
-  display: flex; flex-direction: column; align-items: center; padding: 300px 0;
-  .prompt-text { font-size: 30px; color: #999; }
-  .prompt-btn { margin-top: 24px; padding: 14px 60px; background: $primary; border-radius: 40px; }
-  .prompt-btn-text { color: #fff; font-size: 28px; }
+  @include flex-column;
+  align-items: center;
+  padding: 300rpx 0;
+  .prompt-text { font-size: $font-md; color: $color-text-placeholder; }
+  .prompt-btn {
+    margin-top: $space-md;
+    padding: 14rpx 60rpx;
+    background: $color-primary;
+    border-radius: $radius-xl;
+    transition: $transition-fast;
+    &:active { opacity: 0.85; transform: scale(0.98); }
+  }
+  .prompt-btn-text { color: $color-text-white; font-size: $font-base; }
 }
 
 /* ── 设置按钮 ── */
 .settings-btn {
-  position: absolute; top: 60px; right: 24px; z-index: 10;
-  width: 64px; height: 64px; display: flex; align-items: center; justify-content: center;
-  background: rgba(0,0,0,0.2); border-radius: 50%;
-  .settings-icon { font-size: 36px; }
+  position: absolute;
+  top: 60rpx;
+  right: $space-md;
+  z-index: 10;
+  width: 64rpx;
+  height: 64rpx;
+  @include flex-center;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: $radius-round;
+  transition: $transition-fast;
+  &:active { background: rgba(0, 0, 0, 0.35); }
+  .settings-icon { font-size: 36rpx; }
 }
 
 /* ── 封面区域 ── */
 .cover-area {
-  position: relative; height: 420px; overflow: hidden;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  .cover-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+  position: relative;
+  height: 420rpx;
+  overflow: hidden;
+  background: $gradient-primary;
+
+  .cover-img {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+  }
+
   .profile-info {
-    position: absolute; bottom: 32px; left: 32px; right: 32px;
-    display: flex; align-items: flex-end;
+    position: absolute;
+    bottom: $space-lg;
+    left: $page-padding;
+    right: $page-padding;
+    display: flex;
+    align-items: flex-end;
+
     .avatar-wrap {
-      margin-right: 20px;
-      .avatar { width: 120px; height: 120px; border-radius: 50%; border: 4px solid #fff; }
+      margin-right: 20rpx;
+      .avatar {
+        width: 120rpx; height: 120rpx;
+        border-radius: $radius-round;
+        border: 4rpx solid $color-bg-card;
+      }
       .avatar-placeholder {
-        display: flex; align-items: center; justify-content: center;
-        background: rgba(255,255,255,0.3);
-        .avatar-letter { font-size: 48px; color: #fff; font-weight: 700; }
+        @include flex-center;
+        background: rgba(255, 255, 255, 0.3);
+        .avatar-letter { font-size: $font-xxl; color: $color-text-white; font-weight: $weight-bold; }
       }
     }
+
     .name-area {
       flex: 1;
-      .name { font-size: 36px; font-weight: 700; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+      .name {
+        font-size: 36rpx;
+        font-weight: $weight-bold;
+        color: $color-text-white;
+        text-shadow: 0 1rpx 4rpx rgba(0, 0, 0, 0.3);
+      }
       .badges {
-        display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: $space-xs;
+        margin-top: $space-xs;
         .badge {
-          font-size: 20px; color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.2);
-          padding: 2px 12px; border-radius: 16px;
-          &.badge-green { background: rgba(82,196,26,0.3); }
-          &.badge-gold { background: rgba(245,166,35,0.3); }
+          font-size: 20rpx;
+          color: rgba(255, 255, 255, 0.9);
+          background: rgba(255, 255, 255, 0.2);
+          padding: 2rpx $space-sm;
+          border-radius: $radius-md;
+          &.badge-green { background: rgba($color-success, 0.3); }
+          &.badge-gold { background: rgba($color-gold, 0.3); }
         }
       }
-      .sub-info { font-size: 22px; color: rgba(255,255,255,0.8); margin-top: 6px; }
+      .sub-info { font-size: $font-xs; color: rgba(255, 255, 255, 0.8); margin-top: 6rpx; }
     }
   }
 }
 
 /* ── 能力标签 ── */
 .skill-tags-area {
-  display: flex; flex-wrap: wrap; gap: 12px; padding: 20px 24px; background: #fff;
-  margin-top: -24px; border-radius: 24px 24px 0 0; position: relative; z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-sm;
+  padding: 20rpx $space-md;
+  background: $color-bg-card;
+  margin-top: -$space-md;
+  border-radius: $radius-lg $radius-lg 0 0;
+  position: relative;
+  z-index: 2;
+
   .skill-tag {
-    background: rgba(91,76,219,0.08); border-radius: 20px; padding: 8px 20px;
-    .tag-text { font-size: 24px; color: $primary; }
+    background: $color-primary-bg;
+    border-radius: 20rpx;
+    padding: $space-xs 20rpx;
+    .tag-text { font-size: $font-sm; color: $color-primary; font-weight: $weight-medium; }
   }
 }
 
 /* ── 数据面板 ── */
 .stats-panel {
-  display: flex; background: #fff; margin: 16px 24px; border-radius: 16px; padding: 28px 0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  display: flex;
+  background: $color-bg-card;
+  margin: $space-sm $space-md;
+  border-radius: $radius-md;
+  padding: 28rpx 0;
+  box-shadow: $shadow-sm;
+
   .stat-item {
-    flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center;
-    border-right: 1px solid #f0f0f0;
+    flex: 1;
+    text-align: center;
+    @include flex-column;
+    align-items: center;
+    border-right: 1rpx solid $color-border-light;
     &:last-child { border-right: none; }
-    .stat-number { font-size: 40px; font-weight: 700; color: #1a1a1a; }
-    .stat-label { font-size: 22px; color: #999; margin-top: 6px; }
+    .stat-number { font-size: $font-xl; font-weight: $weight-bold; color: $color-text-primary; }
+    .stat-label { font-size: $font-xs; color: $color-text-placeholder; margin-top: 6rpx; }
   }
 }
 
 /* ── 财务面板 ── */
 .finance-panel {
-  display: flex; background: #fff; margin: 0 24px; border-radius: 16px; padding: 28px 0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  display: flex;
+  background: $color-bg-card;
+  margin: 0 $space-md;
+  border-radius: $radius-md;
+  padding: 28rpx 0;
+  box-shadow: $shadow-sm;
+
   .fin-item {
-    flex: 1; text-align: center;
-    .fin-amount { font-size: 34px; font-weight: 700; display: block; }
-    .fin-label { font-size: 22px; color: #999; margin-top: 6px; }
+    flex: 1;
+    text-align: center;
+    .fin-amount { font-size: $font-lg; font-weight: $weight-bold; display: block; }
+    .fin-label { font-size: $font-xs; color: $color-text-placeholder; margin-top: 6rpx; }
   }
-  .fin-divider { width: 1px; background: #f0f0f0; }
+  .fin-divider { width: 1rpx; background: $color-border-light; }
 }
 
 /* ── 作品集 ── */
 .portfolio-section {
-  margin: 16px 24px; background: #fff; border-radius: 16px; padding: 24px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  @include card-section;
+
   .section-header {
-    display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
-    .section-title { font-size: 30px; font-weight: 600; color: #333; }
-    .section-more { font-size: 24px; color: $primary; }
+    @include flex-between;
+    margin-bottom: 20rpx;
+    .section-title {
+      font-size: $font-md;
+      font-weight: $weight-semibold;
+      color: $color-text-primary;
+    }
+    .section-more {
+      font-size: $font-sm;
+      color: $color-primary;
+      font-weight: $weight-medium;
+    }
   }
+
   .portfolio-grid {
-    display: flex; flex-wrap: wrap; gap: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-sm;
     .portfolio-item {
-      width: calc(50% - 8px);
-      .portfolio-img { width: 100%; height: 200px; border-radius: 12px; }
-      .portfolio-name { font-size: 24px; color: #666; margin-top: 8px; display: block;
-        overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      width: calc(50% - 8rpx);
+      .portfolio-img { width: 100%; height: 200rpx; border-radius: $radius-md; }
+      .portfolio-name {
+        font-size: $font-sm;
+        color: $color-text-secondary;
+        margin-top: $space-xs;
+        display: block;
+        @include text-ellipsis;
+      }
     }
     .portfolio-empty {
-      width: 100%; text-align: center; padding: 48px 0; background: $bg; border-radius: 12px;
-      .empty-text { font-size: 26px; color: #bbb; }
+      width: 100%;
+      text-align: center;
+      padding: $space-xl 0;
+      background: $color-bg-page;
+      border-radius: $radius-md;
+      .empty-text { font-size: $font-base; color: $color-text-disabled; }
     }
   }
 }
 
 /* ── 分享按钮 ── */
 .share-btn {
-  margin: 16px 24px; background: $primary; border-radius: 48px; padding: 24px 0; text-align: center;
-  box-shadow: 0 4px 12px rgba(91,76,219,0.3);
-  &:active { opacity: 0.85; }
-  .share-text { font-size: 30px; color: #fff; font-weight: 600; }
+  @include btn-primary;
+  margin: $space-sm $space-md;
+  padding: $space-md 0;
+  box-shadow: 0 4rpx 16rpx rgba($color-primary, 0.3);
+  .share-text { font-size: $font-md; color: $color-text-white; font-weight: $weight-semibold; }
 }
 
-.bottom-safe { height: 60px; }
+.bottom-safe { height: 60rpx; }
 
 /* ── 信用分弹窗 ── */
 .credit-mask {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5);
-  z-index: 1000; display: flex; align-items: center; justify-content: center;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: $color-bg-mask;
+  z-index: 1000;
+  @include flex-center;
 }
+
 .credit-modal {
-  width: 85%; background: #fff; border-radius: 24px; padding: 40px 32px;
-  .credit-title { font-size: 34px; font-weight: 700; text-align: center; margin-bottom: 24px; }
+  width: 85%;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: 40rpx $page-padding;
+
+  .credit-title {
+    font-size: $font-lg;
+    font-weight: $weight-bold;
+    text-align: center;
+    margin-bottom: $space-md;
+  }
+
   .credit-score-big {
-    text-align: center; margin-bottom: 32px;
-    .score-num { font-size: 72px; font-weight: 800; }
-    .score-level { font-size: 28px; color: #666; margin-left: 12px; }
+    text-align: center;
+    margin-bottom: $space-lg;
+    .score-num { font-size: 72rpx; font-weight: 800; }
+    .score-level { font-size: $font-base; color: $color-text-secondary; margin-left: $space-sm; }
   }
+
   .credit-dim {
-    display: flex; align-items: center; margin-bottom: 20px;
-    .dim-label { width: 120px; font-size: 24px; color: #666; }
-    .dim-bar-wrap { flex: 1; height: 16px; background: #f0f0f0; border-radius: 8px; overflow: hidden; margin: 0 16px; }
-    .dim-bar { height: 100%; background: $primary; border-radius: 8px; transition: width 0.3s; }
-    .dim-score { width: 48px; font-size: 24px; font-weight: 600; text-align: right; }
-    .dim-weight { width: 60px; font-size: 22px; color: #bbb; text-align: right; }
+    display: flex;
+    align-items: center;
+    margin-bottom: 20rpx;
+    .dim-label { width: 120rpx; font-size: $font-sm; color: $color-text-secondary; }
+    .dim-bar-wrap {
+      flex: 1;
+      @include progress-bar($height: 16rpx, $bg: $color-border-light);
+      margin: 0 $space-sm;
+    }
+    .dim-bar { @include progress-fill; }
+    .dim-score { width: 48rpx; font-size: $font-sm; font-weight: $weight-semibold; text-align: right; }
+    .dim-weight { width: 60rpx; font-size: $font-xs; color: $color-text-disabled; text-align: right; }
   }
+
   .credit-close {
-    margin-top: 24px; text-align: center; padding: 16px; background: $bg; border-radius: 12px;
-    .close-text { font-size: 28px; color: #666; }
+    margin-top: $space-md;
+    text-align: center;
+    padding: $space-sm;
+    background: $color-bg-page;
+    border-radius: $radius-md;
+    transition: $transition-fast;
+    &:active { background: $color-bg-hover; }
+    .close-text { font-size: $font-base; color: $color-text-secondary; }
   }
 }

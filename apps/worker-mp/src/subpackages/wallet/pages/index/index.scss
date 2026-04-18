@@ -1,181 +1,128 @@
-.page {
-  background: #f5f5f7;
-  min-height: 100vh;
-}
+@use '../../../../styles/variables' as *;
+@use '../../../../styles/mixins' as *;
+
+.page { @include page-base; }
 
 /* ── 余额卡片 ── */
 .balance-card {
-  background: linear-gradient(135deg, #5B4CDB 0%, #7B6EE8 100%);
-  margin: 24rpx;
+  background: $gradient-wallet;
+  margin: $space-md;
   border-radius: 20rpx;
-  padding: 36rpx 32rpx 28rpx;
+  padding: 36rpx $page-padding 28rpx;
 }
 
 .card-label {
-  font-size: 26rpx;
-  color: rgba(255,255,255,0.7);
+  font-size: $font-base;
+  color: rgba(255, 255, 255, 0.7);
   display: block;
-  margin-bottom: 12rpx;
+  margin-bottom: $space-sm;
 }
 
 .balance-main {
-  font-size: 64rpx;
-  font-weight: 700;
-  color: #fff;
+  font-size: $font-hero;
+  font-weight: $weight-bold;
+  color: $color-text-white;
   display: block;
-  margin-bottom: 24rpx;
+  margin-bottom: $space-md;
 }
 
 .balance-row {
-  display: flex;
-  justify-content: space-between;
+  @include flex-between;
   margin-bottom: 28rpx;
 }
 
 .balance-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4rpx;
+  @include flex-column;
+  gap: $space-xxs;
 }
 
-.item-label {
-  font-size: 22rpx;
-  color: rgba(255,255,255,0.6);
-}
-
+.item-label { font-size: $font-xs; color: rgba(255, 255, 255, 0.6); }
 .item-value {
-  font-size: 28rpx;
-  color: #fff;
-  font-weight: 600;
-}
-
-.item-value.green {
-  color: #b7eb8f;
+  font-size: $font-base;
+  color: $color-text-white;
+  font-weight: $weight-semibold;
+  &.green { color: $color-success-light; }
 }
 
 .withdraw-btn {
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 50rpx;
-  padding: 16rpx 0;
+  padding: $space-sm 0;
   text-align: center;
+  transition: $transition-fast;
+  &:active { background: rgba(255, 255, 255, 0.3); }
 }
 
 .withdraw-text {
-  font-size: 28rpx;
-  color: #fff;
-  font-weight: 600;
+  font-size: $font-base;
+  color: $color-text-white;
+  font-weight: $weight-semibold;
 }
 
 /* ── 提现表单 ── */
 .withdraw-form {
-  background: #fff;
-  margin: 0 24rpx 24rpx;
-  border-radius: 16rpx;
-  padding: 28rpx 24rpx;
+  @include card;
+  margin: 0 $space-md $space-md;
+  padding: 28rpx $space-md;
 }
 
 .form-title {
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #222;
+  font-size: $font-base;
+  font-weight: $weight-semibold;
+  color: $color-text-primary;
   display: block;
-  margin-bottom: 16rpx;
+  margin-bottom: $space-sm;
 }
 
 .amount-input {
-  border: 2rpx solid #e8e8e8;
-  border-radius: 10rpx;
-  padding: 16rpx 20rpx;
-  font-size: 32rpx;
-  color: #333;
-  width: 100%;
+  @include form-input;
+  font-size: $font-lg;
+  font-weight: $weight-medium;
   margin-bottom: 20rpx;
 }
 
 .form-actions {
   display: flex;
-  gap: 16rpx;
+  gap: $space-sm;
 }
 
 .cancel-btn, .confirm-btn {
   flex: 1;
   height: 80rpx;
-  border-radius: 10rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border-radius: $radius-md;
+  @include flex-center;
+  transition: $transition-fast;
+  &:active { opacity: 0.85; }
 }
 
-.cancel-btn {
-  background: #f5f5f5;
-}
-
-.cancel-text {
-  font-size: 28rpx;
-  color: #999;
-}
-
-.confirm-btn {
-  background: #5B4CDB;
-}
-
-.confirm-text {
-  font-size: 28rpx;
-  color: #fff;
-  font-weight: 600;
-}
+.cancel-btn { background: $color-bg-hover; }
+.cancel-text { font-size: $font-base; color: $color-text-placeholder; }
+.confirm-btn { background: $color-primary; }
+.confirm-text { font-size: $font-base; color: $color-text-white; font-weight: $weight-semibold; }
 
 /* ── 流水列表 ── */
-.section-title {
-  padding: 16rpx 32rpx 8rpx;
-}
-
-.section-text {
-  font-size: 28rpx;
-  font-weight: 700;
-  color: #333;
-}
+.section-title { padding: $space-sm $page-padding $space-xs; }
+.section-text { font-size: $font-base; font-weight: $weight-bold; color: $color-text-regular; }
 
 .tx-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 24rpx 32rpx;
-  background: #fff;
-  border-bottom: 1rpx solid #f5f5f5;
+  @include flex-between;
+  padding: $space-md $page-padding;
+  background: $color-bg-card;
+  @include divider($color-border-light);
+  transition: $transition-fast;
+  &:active { background: $color-bg-hover; }
 }
 
 .tx-left {
-  display: flex;
-  flex-direction: column;
+  @include flex-column;
   gap: 6rpx;
 }
 
-.tx-type {
-  font-size: 28rpx;
-  color: #333;
-  font-weight: 500;
-}
+.tx-type { font-size: $font-base; color: $color-text-regular; font-weight: $weight-medium; }
+.tx-time { font-size: $font-xs; color: $color-text-disabled; }
+.tx-amount { font-size: $font-lg; font-weight: $weight-bold; }
+.tx-amount.in { color: $color-success; }
+.tx-amount.out { color: $color-warning; }
 
-.tx-time {
-  font-size: 22rpx;
-  color: #aaa;
-}
-
-.tx-amount {
-  font-size: 32rpx;
-  font-weight: 700;
-}
-
-.tx-amount.in  { color: #52c41a; }
-.tx-amount.out { color: #fa8c16; }
-
-.empty {
-  padding: 80rpx 0;
-  text-align: center;
-}
-
-.empty-text {
-  font-size: 26rpx;
-  color: #ccc;
-}
+.empty { padding: 80rpx 0; text-align: center; }
+.empty-text { font-size: $font-base; color: $color-text-disabled; }
