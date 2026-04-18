@@ -17,6 +17,19 @@ export interface CreateTaskParams {
   }[]
 }
 
+export interface TaskListParams {
+  status?: string
+  keyword?: string
+  taskMode?: string
+  sortBy?: 'createdAt' | 'totalBudget' | 'publishedAt' | 'endDate'
+  sortOrder?: 'asc' | 'desc'
+  createdFrom?: string
+  createdTo?: string
+  hasPendingApplications?: boolean
+  page?: number
+  pageSize?: number
+}
+
 export const taskApi = {
   create: (data: CreateTaskParams) =>
     request.post<any, any>('/tasks', data),
@@ -33,7 +46,7 @@ export const taskApi = {
   cancel: (id: number) =>
     request.post<any, any>(`/tasks/${id}/cancel`),
 
-  list: (params?: Record<string, any>) =>
+  list: (params?: TaskListParams) =>
     request.get<any, any>('/tasks', { params }),
 
   detail: (id: number) =>

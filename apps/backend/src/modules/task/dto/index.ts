@@ -126,26 +126,53 @@ export class TaskQueryDto {
   @IsIn(['draft', 'pending_review', 'published', 'in_progress', 'reviewing', 'completed', 'closed', 'cancelled'], { message: '无效的任务状态' })
   status?: string;
 
-  @ApiPropertyOptional({ description: '关键词搜索' })
+  @ApiPropertyOptional({ description: '关键词搜索（标题/描述模糊匹配）' })
   @IsOptional()
   @IsString()
   keyword?: string;
 
-  @ApiPropertyOptional({ description: '任务模式' })
+  @ApiPropertyOptional({ description: '任务模式', enum: ['task_package', 'daily_rate'] })
   @IsOptional()
-  @IsString()
+  @IsIn(['task_package', 'daily_rate'])
   taskMode?: string;
+
+  @ApiPropertyOptional({ description: '排序字段', enum: ['createdAt', 'totalBudget', 'publishedAt', 'endDate'] })
+  @IsOptional()
+  @IsIn(['createdAt', 'totalBudget', 'publishedAt', 'endDate'])
+  sortBy?: string;
+
+  @ApiPropertyOptional({ description: '排序方向', enum: ['asc', 'desc'] })
+  @IsOptional()
+  @IsIn(['asc', 'desc'])
+  sortOrder?: 'asc' | 'desc';
+
+  @ApiPropertyOptional({ description: '创建开始日期' })
+  @IsOptional()
+  @IsDateString()
+  createdFrom?: string;
+
+  @ApiPropertyOptional({ description: '创建截止日期' })
+  @IsOptional()
+  @IsDateString()
+  createdTo?: string;
+
+  @ApiPropertyOptional({ description: '仅含有待审批报名的任务', default: false })
+  @IsOptional()
+  hasPendingApplications?: boolean;
 
   @ApiPropertyOptional({ description: '页码', default: 1 })
   @IsOptional()
   @IsNumber()
   @Min(1)
+  @Type(() => Number)
   page?: number;
 
   @ApiPropertyOptional({ description: '每页条数', default: 20 })
   @IsOptional()
   @IsNumber()
   @Min(1)
+  @Max(100)
+  @Type(() => Number)
   pageSize?: number;
 }
 

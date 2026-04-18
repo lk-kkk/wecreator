@@ -136,6 +136,20 @@ export class TaskService {
     if (!task.taskMode) throw new BadRequestException('任务模式未选择');
     if (Number(task.totalBudget) <= 0) throw new BadRequestException('总预算必须大于0');
 
+    // 日期校验
+    if (task.startDate && task.endDate) {
+      if (new Date(task.endDate) <= new Date(task.startDate)) {
+        throw new BadRequestException('结束日期必须晚于开始日期');
+      }
+    }
+    if (task.endDate) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (new Date(task.endDate) < today) {
+        throw new BadRequestException('结束日期不能早于今天');
+      }
+    }
+
     const roles = await this.prisma.taskRole.findMany({
       where: { taskId: BigInt(taskId) },
     });
@@ -162,34 +176,94 @@ export class TaskService {
   }
 
   // ================================================================
-  // 任务列表（多维筛选+分页）
+  // 任务列表（多维筛选+分页+排序）
   // ================================================================
   async getTaskList(companyId: number, query: TaskQueryDto) {
-    const { status, keyword, taskMode, page = 1, pageSize = 20 } = query;
+    const {
+      status, keyword, taskMode,
+      sortBy = 'createdAt', sortOrder = 'desc',
+      createdFrom, createdTo,
+      hasPendingApplications,
+      page = 1, pageSize = 20,
+    } = query;
 
     const where: any = { companyId: BigInt(companyId) };
     if (status) where.status = status;
     if (taskMode) where.taskMode = taskMode;
     if (keyword) {
-      where.title = { contains: keyword };
+      where.OR = [
+        { title: { contains: keyword } },
+        { description: { contains: keyword } },
+      ];
     }
+    // 日期范围筛选
+    if (createdFrom || createdTo) {
+      where.createdAt = {};
+      if (createdFrom) where.createdAt.gte = new Date(createdFrom);
+      if (createdTo)   where.createdAt.lte = new Date(createdTo);
+    }
+
+    // 排序
+    const orderBy: any = {};
+    orderBy[sortBy] = sortOrder;
 
     const [list, total] = await Promise.all([
       this.prisma.task.findMany({
         where,
         include: {
-          taskRoles: true,
+          taskRoles: {
+            include: {
+              _count: { select: { assignments: true } },
+              applications: {
+                where: { status: 'pending' },
+                select: { id: true },
+              },
+            },
+          },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),
       this.prisma.task.count({ where }),
     ]);
 
+    // 组装结果
+    let result = list.map((t: any) => {
+      const pendingCount = t.taskRoles.reduce(
+        (sum: number, r: any) => sum + (r.applications?.length ?? 0), 0,
+      );
+      const totalHeadcount = t.taskRoles.reduce(
+        (sum: number, r: any) => sum + r.headcount, 0,
+      );
+      const filledCount = t.taskRoles.reduce(
+        (sum: number, r: any) => sum + (r._count?.assignments ?? 0), 0,
+      );
+
+      return {
+        ...this.formatTask(t),
+        pendingApplications: pendingCount,
+        totalHeadcount,
+        filledCount,
+        roles: t.taskRoles.map((r: any) => ({
+          id: Number(r.id),
+          roleName: r.roleName,
+          headcount: r.headcount,
+          budget: Number(r.budget),
+          filledCount: r._count?.assignments ?? 0,
+          pendingApplications: r.applications?.length ?? 0,
+        })),
+      };
+    });
+
+    // 待审批过滤（内存级 — 后续大数据量可迁移到 SQL 子查询）
+    if (hasPendingApplications) {
+      result = result.filter((t) => t.pendingApplications > 0);
+    }
+
     return {
-      list: list.map((t) => this.formatTask(t)),
-      total,
+      list: result,
+      total: hasPendingApplications ? result.length : total,
       page,
       pageSize,
     };
@@ -207,6 +281,9 @@ export class TaskService {
             assignments: {
               include: { worker: true },
             },
+            applications: {
+              select: { id: true, status: true },
+            },
           },
         },
         deliverables: { orderBy: { submittedAt: 'desc' } },
@@ -218,18 +295,26 @@ export class TaskService {
       throw new ForbiddenException('无权查看此任务');
     }
 
-    return {
-      ...this.formatTask(task),
-      description: task.description,
-      address: task.address,
-      roles: task.taskRoles.map((r) => ({
+    // 计算聚合进度
+    let totalProgress = 0;
+    let assignmentCount = 0;
+    const roles = task.taskRoles.map((r: any) => {
+      const accepted = r.assignments.filter((a: any) => ['accepted', 'completed'].includes(a.status));
+      accepted.forEach((a: any) => {
+        totalProgress += a.progress;
+        assignmentCount++;
+      });
+
+      return {
         id: Number(r.id),
         roleName: r.roleName,
         headcount: r.headcount,
         budget: Number(r.budget),
         skillTags: r.skillTags,
         description: r.description,
-        assignments: r.assignments.map((a) => ({
+        filledCount: r.assignments.length,
+        pendingApplications: r.applications?.filter((a: any) => a.status === 'pending').length ?? 0,
+        assignments: r.assignments.map((a: any) => ({
           id: Number(a.id),
           slotIndex: a.slotIndex,
           status: a.status,
@@ -241,7 +326,21 @@ export class TaskService {
             avgRating: Number(a.worker.avgRating),
           } : null,
         })),
-      })),
+      };
+    });
+
+    const totalHeadcount = roles.reduce((s, r) => s + r.headcount, 0);
+    const filledCount = roles.reduce((s, r) => s + r.filledCount, 0);
+    const avgProgress = assignmentCount > 0 ? Math.round(totalProgress / assignmentCount) : 0;
+
+    return {
+      ...this.formatTask(task),
+      description: task.description,
+      address: task.address,
+      totalHeadcount,
+      filledCount,
+      avgProgress,
+      roles,
       deliverables: task.deliverables.map((d) => ({
         id: Number(d.id),
         fileName: d.fileName,
