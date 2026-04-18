@@ -63,6 +63,29 @@
           <span>争议仲裁</span>
         </a-menu-item>
 
+        <a-menu-item key="project" @click="$router.push('/project')">
+          <template #icon>
+            <partition-outlined />
+          </template>
+          <span>项目管理</span>
+        </a-menu-item>
+
+        <!-- AI 智能 SubMenu -->
+        <a-sub-menu key="ai-group">
+          <template #icon>
+            <robot-outlined />
+          </template>
+          <template #title>AI 智能</template>
+          <a-menu-item key="ai-agents" @click="$router.push('/ai/agents')">
+            <template #icon><robot-outlined /></template>
+            智能体管理
+          </a-menu-item>
+          <a-menu-item key="ai-config" @click="$router.push('/ai/config')">
+            <template #icon><api-outlined /></template>
+            LLM 配置
+          </a-menu-item>
+        </a-sub-menu>
+
         <div class="menu-divider" />
 
         <a-menu-item key="finance" @click="$router.push('/finance')">
@@ -124,7 +147,7 @@
 
           <!-- 通知 -->
           <a-tooltip title="消息通知">
-            <a-badge :count="0" class="header-notify">
+            <a-badge :count="0" class="header-notify" @click="$router.push('/notifications')" style="cursor:pointer">
               <bell-outlined class="header-icon" />
             </a-badge>
           </a-tooltip>
@@ -190,6 +213,10 @@ import {
   DownOutlined,
   SettingOutlined,
   LogoutOutlined,
+  PartitionOutlined,
+  RobotOutlined,
+  ApiOutlined,
+  NotificationOutlined,
 } from '@ant-design/icons-vue'
 import { useUserStore } from '@/stores/user'
 import request from '@/api/request'
@@ -218,6 +245,10 @@ const selectedKeys = computed(() => {
   if (path.includes('/finance'))          return ['finance']
   if (path.includes('/worker'))           return ['worker-pool']
   if (path.includes('/dashboard'))        return ['dashboard']
+  if (path.includes('/project'))          return ['project']
+  if (path.includes('/ai/config'))        return ['ai-config']
+  if (path.includes('/ai/agents'))        return ['ai-agents']
+  if (path.includes('/notifications'))    return ['notifications']
   if (path.includes('/admin'))            return ['subaccounts']
   return ['dashboard']
 })
@@ -236,10 +267,18 @@ const breadcrumbs = computed<Breadcrumb[]>(() => {
     '/finance/recharge':       [{ label: '财务中心', path: '/finance' }, { label: '充值' }],
     '/finance/invoices':       [{ label: '财务中心', path: '/finance' }, { label: '发票管理' }],
     '/admin/subaccounts':      [{ label: '子账号管理' }],
+    '/project':                 [{ label: '项目管理' }],
+    '/ai/config':               [{ label: 'AI 智能' }, { label: 'LLM 配置' }],
+    '/ai/agents':               [{ label: 'AI 智能' }, { label: '智能体管理' }],
+    '/notifications':           [{ label: '通知中心' }],
   }
   // 任务详情动态路由
   if (/^\/task\/\w+/.test(path) && !path.includes('/create') && !path.includes('/dispute')) {
     return [{ label: '任务管理' }, { label: '任务广场', path: '/task/square' }, { label: '任务详情' }]
+  }
+  // 项目详情动态路由
+  if (/^\/project\/\w+/.test(path)) {
+    return [{ label: '项目管理', path: '/project' }, { label: '项目详情' }]
   }
   return map[path] || []
 })
