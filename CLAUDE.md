@@ -67,7 +67,7 @@ wecreator/
 │   └── docker-compose.yml  # MySQL+Redis+MongoDB+Adminer
 ├── docs/
 │   ├── task-checklist.md   # 开发任务清单（120项）
-│   └── WeCreator_PRD_V3.1.md  # 产品需求文档
+│   └── WeCreator_PRD_V3.1.md  # 产品需求文档(V3.7)
 └── .agents/
     └── skills/             # 12个Agent角色配置
 ```

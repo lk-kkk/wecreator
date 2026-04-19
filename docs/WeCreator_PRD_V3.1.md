@@ -1,14 +1,14 @@
 # WeCreator 灵活用工撮合平台
 
-## 产品需求文档(PRD)V3.6 · 开发就绪版
+## 产品需求文档(PRD)V3.7 · 开发就绪版
 
 ---
 
 | 项目 | 内容 |
 |------|------|
-| **文档版本** | V3.6 |
-| **基于版本** | V1.0(草稿)→ V2.0(评审中)→ V3.0(终版)→ V3.1(开发就绪版)→ V3.2(运营后台补充版)→ V3.4(服务广场权限模型修正)→ V3.5(企业端任务导航重构+报名审批)→ V3.6(AI智能体+项目管理+附件系统) |
-| **发布日期** | 2026-04-18 |
+| **文档版本** | V3.7 |
+| **基于版本** | V1.0(草稿)→ V2.0(评审中)→ V3.0(终版)→ V3.1(开发就绪版)→ V3.2(运营后台补充版)→ V3.4(服务广场权限模型修正)→ V3.5(企业端任务导航重构+报名审批)→ V3.6(AI智能体+项目管理+附件系统)→ V3.7(项目任务深化+企业通知+模型预设) |
+| **发布日期** | 2026-04-19 |
 | **文档状态** | ✅ 开发就绪版 |
 | **适用范围** | 企业端 PC 后台 · 零工端微信小程序 · 平台运营后台 |
 | **文档负责人** | 产品团队 |
@@ -29,6 +29,28 @@
 | **V3.5** | **2026-04-18** | **产品+设计团队** | **企业端任务导航重构:「任务管理」+「发布任务」合并为一级菜单「任务管理」下设「任务广场」+「发布任务」二级菜单;任务广场新增报名管理与审批流程** |
 | **V3.6** | **2026-04-18** | **产品团队** | **AI智能体系统 + 项目清单管理 + 任务附件系统升级(详见下方V3.6变更清单)** |
 | **V3.6.1** | **2026-04-18** | **产品+技术团队** | **V3.6复盘修复:2个P0+8个P1(状态枚举统一/AI预算映射修正/附件API补充/AI对话存储/异常UX/SSRF防护/Sprint3排期)** |
+| **V3.7** | **2026-04-19** | **产品+技术团队** | **项目任务深化:检查点+评论+问题上报+项目里程碑+企业通知中心+LLM模型预设+Task字段增强+Project 5态升级(详见下方V3.7变更清单)** |
+
+### V3.7 变更清单(项目任务深化 + 企业通知 + 模型预设)
+
+> **V3.7 变更背景:** 随着 Sprint 3-5 开发完成,任务管理和项目管理进入深度迭代。任务管理新增检查点、评论、问题上报三大协作子系统,支撑企业与零工间的精细化过程管理;项目管理从基础清单升级为含里程碑、看板、三色预警的完整项目管控工具;企业端新增站内通知中心;AI系统新增 LLM 命名模型预设功能。
+
+| # | 变更类型 | 变更内容 | 影响章节 |
+|---|---------|---------|----------|
+| 1 | ✨ 新增 | 任务检查点系统(progress_check/quality_gate,含提交→审核→SLA追踪) | §4.2.6 + §10.5 + §11.3 |
+| 2 | ✨ 新增 | 任务评论系统(回复/@提及/标记重要/软删除) | §4.2.7 + §10.5 + §11.3 |
+| 3 | ✨ 新增 | 问题上报系统(4类型×4状态+SLA 24h) | §4.2.8 + §10.5 + §11.3 |
+| 4 | ✨ 新增 | 项目里程碑管理(CRUD+完成标记+逾期预警+附件) | §4.9 + §10.5 + §11.3 |
+| 5 | ✨ 新增 | 项目看板与统计(byStatus/byRisk/avgProgress+三色预警) | §4.9 + §11.3 |
+| 6 | ✨ 新增 | 企业端站内通知中心(8种通知类型+未读标记+批量已读) | §4.10 + §10.5 + §11.3 |
+| 7 | ✨ 新增 | LLM命名模型预设(企业保存多个模型配置供智能体选用) | §4.8 + §10.5 + §11.3 |
+| 8 | 🔄 增强 | Task 新增字段: taskNo/priority/acceptanceCriteria/riskLevel/acceptanceStatus | §4.2 + §10.2 |
+| 9 | 🔄 增强 | Project 状态从3态升为5态(+planning+suspended),新增 phase/expectedDeliveryDate/riskLevel | §4.9 + §10.4 |
+| 10 | 🔄 增强 | ProgressUpdate 新增 dailySummary/tomorrowPlan 字段 | §10.2 |
+| 11 | 🔄 增强 | DeliverableFile 独立模型(交付物文件版本分离) | §10.5 |
+| 12 | 🔄 增强 | AiAgent 新增 presetId 关联 LlmModelPreset | §10.4 |
+| 13 | ✨ 新增 | 11个新枚举: TaskPriority/RiskLevel/AcceptanceStatus/ProjectStatus(5态)/ProjectPhase/MilestoneStatus/CheckpointType/CheckpointStatus/AuthorType/IssueType/IssueStatus | §10.6 |
+| 14 | 🔄 增强 | 权限矩阵新增检查点/评论/问题/通知权限行 | §2.1 |
 
 ### V3.6 变更清单(AI智能体 + 项目管理 + 附件系统)
 
@@ -270,6 +292,11 @@
 | 大模型配置 | ✅ | ❌ | ❌ | ❌ | ← V3.6 NEW
 | 智能体管理 | ✅ | ❌ | ❌ | ❌ | ← V3.6 NEW
 | 使用智能体 | ✅ | ✅ | ❌ | ✅1 | ← V3.6 NEW
+| 检查点管理 | ✅ | ✅ | ❌ | 只读 | ← V3.7 NEW
+| 任务评论 | ✅ | ✅ | ❌ | ✅ | ← V3.7 NEW
+| 问题上报 | ✅ | ✅ | ❌ | ✅ | ← V3.7 NEW
+| 通知中心 | ✅ | ✅ | ✅ | ✅ | ← V3.7 NEW
+| 模型预设管理 | ✅ | ❌ | ❌ | ❌ | ← V3.7 NEW
 
 > **1 operator使用智能体说明:** V3.6智能体的唯一入口在发布任务Step2的AI任务顾问,operator无发布任务权限,因此当前版本无法实际使用。此权限为预留设计,供后续智能体场景扩展(如零工推荐顾问、数据分析顾问等独立入口)时启用。
 
@@ -391,7 +418,10 @@
 │   │   ├── 角色进度明细(可展开)
 │   │   ├── 交付物预览 & 下载
 │   │   ├── 企业↔零工 IM 沟通
-│   │   └── 申请管理Tab(与列表级报名管理双入口) ← V3.4/V3.5
+│   │   ├── 申请管理Tab(与列表级报名管理双入口) ← V3.4/V3.5
+│   │   ├── 检查点管理(创建/查看/提交/审核) ← V3.7 NEW
+│   │   ├── 任务评论(发表/回复/@提及/标记重要) ← V3.7 NEW
+│   │   └── 问题上报(上报/处理/SLA追踪) ← V3.7 NEW
 │   ├── 验收操作(通过/退回,含退回原因)
 │   ├── 任务评价(验收通过后 7 天内)
 │   └── 任务模板管理(保存历史任务为模板)
@@ -406,10 +436,14 @@
 │   ├── 平台角色库浏览(只读)
 │   └── 企业自定义角色(含复用机制)
 │
-├── 项目管理 ← V3.6 NEW
+├── 项目管理 ← V3.6 NEW / V3.7 增强
 │   ├── 项目清单(项目名称/编号/客户所在地/负责人)
 │   ├── 项目创建/编辑/归档
-│   └── 项目关联任务视图(查看项目下所有任务)
+│   ├── 项目关联任务视图(查看项目下所有任务)
+│   ├── 项目看板(进度条+三色预警green/yellow/red) ← V3.7 NEW
+│   ├── 项目统计(byStatus/byRisk/avgProgress) ← V3.7 NEW
+│   ├── 里程碑管理(CRUD+完成标记+逾期预警+附件) ← V3.7 NEW
+│   └── 5态状态流转(planning→active→suspended→completed→archived) ← V3.7 升级
 │
 ├── 财务中心
 │   ├── 账户余额(可用 + 锁定 + 明细)
@@ -418,11 +452,17 @@
 │   ├── 结算流水(支持导出 Excel)
 │   └── 发票申请(增值税电子普通发票)
 │
-└── 数据看板(简版)
-    ├── 核心指标卡(6 项)
-    ├── 近 30 天任务趋势(折线图)
-    └── 角色使用频次(柱状图)
-
+├── 数据看板(简版)
+│   ├── 核心指标卡(6 项)
+│   ├── 近 30 天任务趋势(折线图)
+│   └── 角色使用频次(柱状图)
+│
+├── 通知中心 ← V3.7 NEW
+│   ├── 通知列表(分页+按类型筛选)
+│   ├── 未读徽标(全局导航栏)
+│   ├── 单条已读标记
+│   └── 全部标为已读
+│
 ├── 系统管理(仅 super_admin) ← V3.6 NEW
 │   ├── 大模型配置
 │   │   ├── LLM Provider 配置(模型服务商/API Key/Endpoint)
@@ -998,6 +1038,133 @@
 
 ---
 
+#### 4.2.6 任务检查点系统 ✨V3.7 NEW
+
+> **V3.7 新增章节:** 检查点是企业对任务执行过程中的关键节点设置的质量关卡和进度检查。支持两种类型:进度检查(progress_check)和质量关卡(quality_gate)。
+
+**检查点类型:**
+
+| 类型 | 编码 | 说明 |
+|------|------|------|
+| 进度检查 | `progress_check` | 定期检查任务执行进度,确认是否按计划推进 |
+| 质量关卡 | `quality_gate` | 关键里程碑节点的质量审核,需要提交成果并经审核通过 |
+
+**状态流转:**
+
+```
+pending(待提交) → submitted(已提交) → passed(审核通过)
+                                      → rejected(审核驳回) → submitted(重新提交)
+pending → overdue(逾期,系统自动标记)
+```
+
+**创建检查点:**
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| 名称 | 文本 | ✅ | 最多50字 |
+| 类型 | 选择 | ✅ | progress_check / quality_gate |
+| 计划日期 | 日期 | ✅ | 检查点截止日期 |
+| 审核人 | 下拉 | ✅ | 企业用户(company_users.id) |
+| 说明 | 多行文本 | ❌ | 最多200字 |
+| 排序 | 数字 | ✅ | 检查点顺序 |
+
+**提交检查点(零工/企业):**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| 提交内容 | 多行文本 | 检查点完成情况描述 |
+| 附件 | 文件数组 | 提交的证据/成果URL数组 |
+
+**审核检查点(企业端):**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| 审核结果 | 选择 | passed(通过) / rejected(驳回) |
+| 审核意见 | 多行文本 | 审核说明,驳回时必填 |
+
+**SLA 规则:**
+- 检查点超过计划日期未提交,系统自动标记为 `overdue`
+- 驳回后 revisionCount +1,支持多次重新提交
+
+**业务规则:**
+- 检查点属于任务级别(不是角色级别)
+- 仅企业端(super_admin/task_admin)可创建和审核检查点
+- 检查点按 sortOrder 排序展示
+
+---
+
+#### 4.2.7 任务评论系统 ✨V3.7 NEW
+
+> **V3.7 新增章节:** 任务级别的评论系统,支持企业与零工间的结构化沟通。与 IM 消息的区别:评论是任务级公开讨论,IM 是私对私沟通。
+
+**发表评论:**
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| 内容 | 多行文本 | ✅ | 最多1000字 |
+| 回复对象 | 隐藏 | ❌ | parentId 关联父评论 |
+| 附件 | 文件数组 | ❌ | 附件URL数组 |
+
+**作者类型(AuthorType):**
+- `company_user` - 企业端用户
+- `worker` - 零工
+
+**功能特性:**
+- **回复线程:** 通过 parentId 实现一级回复(平铺展示)
+- **@提及:** 评论内容中支持 @提及他人,触发通知(comment_mention)
+- **标记重要:** isImportant 字段,标记后置顶展示
+- **软删除:** isDeleted 标记而非物理删除,删除后显示「该评论已删除」
+
+**权限:**
+- 企业端和零工端均可发表评论
+- 仅评论作者可删除自己的评论
+
+---
+
+#### 4.2.8 问题上报系统 ✨V3.7 NEW
+
+> **V3.7 新增章节:** 任务执行过程中的问题上报与追踪机制,确保阻断问题能及时发现和处理。
+
+**问题类型(IssueType):**
+
+| 类型 | 编码 | 说明 |
+|------|------|------|
+| 需求不清 | `requirement_unclear` | 任务需求描述模糊或有歧义 |
+| 技术阻断 | `technical_block` | 技术实现遇到无法解决的问题 |
+| 资源缺失 | `resource_missing` | 缺少必要的素材、账号或权限 |
+| 其他 | `other` | 其他类型的问题 |
+
+**状态流转(IssueStatus):**
+
+```
+open(待处理) → in_progress(处理中) → resolved(已解决) → closed(已关闭)
+```
+
+**创建问题:**
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| 标题 | 文本 | ✅ | 最多100字 |
+| 类型 | 选择 | ✅ | 4种类型之一 |
+| 描述 | 多行文本 | ✅ | 问题详细描述 |
+| 附件 | 文件数组 | ❌ | 截图或相关文件URL数组 |
+
+**上报人类型(AuthorType):**
+- `company_user` - 企业端用户
+- `worker` - 零工
+
+**SLA 规则:**
+- 问题创建后 24h 内应得到首次响应(firstResponseAt)
+- 超过 24h 未响应标记 slaBreached = true
+- 解决后记录 resolvedAt
+
+**业务规则:**
+- 企业和零工均可上报问题
+- 状态更新支持 status + 无额外描述字段(轻量级)
+- 问题属于任务级别
+
+---
+
 ### 4.3 角色体系管理
 
 #### 4.3.1 平台角色库(只读浏览)
@@ -1221,11 +1388,37 @@
 
 **共享规则:** super_admin创建管理,本企业所有用户可使用,子账号不可创建/编辑/删除。最多10个智能体。
 
+#### 4.8.3 LLM模型预设管理 ✨V3.7 NEW
+
+**页面路由:** `/settings/llm-presets`
+
+> **V3.7 新增说明:** 企业可保存多个不同的模型配置(例如 GPT-4o 主力、Claude 分析、本地部署引擎)，供不同智能体选用。与 llm_configs 的区别：llm_configs 是企业的全局默认配置，而 model_presets 是可复用的命名配置集。
+
+**模型预设配置表单:**
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| 显示名称 | 文本 | ✅ | 最多60字,如「GPT-4o 主力」 |
+| Provider | 下拉 | ✅ | 同 LLM 配置页的 Provider 列表 |
+| API Key | 密码框 | ✅ | AES-256加密存储 |
+| Base URL | 文本 | ❌ | 自定义 Endpoint |
+| 模型名称 | 文本 | ✅ | 如 gpt-4o / claude-3.5-sonnet |
+| 温度 | 滑动条 | ❌ | 0.0-1.0,默认 0.70 |
+| MaxTokens | 数字 | ❌ | 默认 4096 |
+| 允许不安全HTTPS | 开关 | ❌ | 跳过TLS证书验证(自签名/内网),默认关闭 |
+| 状态 | 开关 | ✅ | 启用/停用 |
+
+**与智能体的关联:** 智能体配置中的「关联模型」下拉新增模型预设选项，选择后智能体会使用预设的 Provider + API Key + 模型名称,而非全局默认配置。
+
+**权限:** 仅 super_admin 可管理模型预设。
+
 ---
 
-### 4.9 项目清单管理 ✨V3.6 NEW
+### 4.9 项目清单管理 ✨V3.6 NEW / V3.7 增强
 
 > **V3.6 新增章节:** 为使任务与项目关联,新增项目清单管理。项目是任务的上层归属单元,一个项目可包含多个任务。
+>
+> **V3.7 增强:** 项目状态从3态升为5态,新增项目阶段(phase)、预期交付日期、三色风险预警、里程碑管理、看板视图和统计分析。
 
 **页面路由:** `/project/list`
 
@@ -1235,7 +1428,7 @@
 
 | 筛选 | 选项 |
 |------|------|
-| 项目状态 | 全部 / 进行中 / 已完成 / 已归档 |
+| 项目状态 | 全部 / 规划中 / 进行中 / 已暂停 / 已完成 / 已归档 | ← V3.7 升级为5态
 | 负责人 | 下拉选择(企业用户) |
 | 关键词 | 项目名称/编号搜索 |
 
@@ -1249,7 +1442,10 @@
 | 项目负责人 | 企业用户名称 |
 | 关联任务数 | 该项目下的任务总数 |
 | 总预算 | 关联任务的预算汇总 |
-| 状态 | 进行中 / 已完成 / 已归档 |
+| 状态 | 规划中 / 进行中 / 已暂停 / 已完成 / 已归档 | ← V3.7 升级为5态
+| 项目阶段 | 需求阶段 / 执行阶段 / 验收阶段 | ← V3.7 NEW
+| 风险等级 | 🟢正常 / 🟡警告 / 🔴紧急 | ← V3.7 NEW
+| 预期交付日 | 日期 | ← V3.7 NEW
 | 创建时间 | - |
 | 操作 | 编辑 / 归档 |
 
@@ -1269,9 +1465,17 @@
 
 **业务规则:**
 - 项目负责人默认为创建项目的用户(即发布任务的人员)
-- 项目编号由系统自动生成,保证全局唯一
-- 项目状态流转: `进行中` → `已完成` → `已归档`(单向流转)
-- 归档后只读,不可编辑和新增关联任务
+- 项目编号由系统自动生成，保证全局唯一
+- 项目状态流转(V3.7 升级为5态): ← V3.7 升级
+
+```
+planning(规划中) → active(进行中) → completed(已完成) → archived(已归档)
+                     → suspended(已暂停) → active(恢复)
+```
+
+- 项目阶段(ProjectPhase): `requirement`(需求阶段) → `execution`(执行阶段) → `acceptance`(验收阶段) ← V3.7 NEW
+- 风险等级(RiskLevel): `green`(正常) / `yellow`(警告) / `red`(紧急)，看板中以三色标记展示 ← V3.7 NEW
+- 归档后只读，不可编辑和新增关联任务
 - 每个企业最多 500 个项目(含已归档)
 - super_admin 和 task_admin 均可创建和编辑项目
 
@@ -1300,6 +1504,101 @@
 - 「新建关联任务」跳转到发布任务向导,自动预填 `project_id`
 - 项目详情页展示所有关联任务的列表和预算汇总
 - 点击任务名称跳转到任务详情页
+
+#### 4.9.4 项目里程碑管理 ✨V3.7 NEW
+
+> **V3.7 新增章节:** 项目里程碑是项目的关键节点标记，用于追踪项目大的进度节点。支持创建、编辑、删除、完成标记，以及逾期自动预警。
+
+**里程碑状态(MilestoneStatus):**
+- `pending` — 待完成
+- `completed` — 已完成
+- `overdue` — 逾期(系统自动标记)
+
+**创建里程碑:**
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| 名称 | 文本 | ✅ | 最多50字 |
+| 描述 | 多行文本 | ❌ | 最多200字 |
+| 计划日期 | 日期 | ✅ | 里程碑截止日期 |
+| 排序 | 数字 | ✅ | 里程碑顺序 |
+
+**里程碑附件:**
+- 每个里程碑可上传多个附件(MilestoneAttachment)
+- 附件字段: fileName / fileUrl / fileSize / fileType / uploadedBy
+
+**完成标记:**
+- 企业用户可标记里程碑为已完成，记录 completedAt
+- 超过计划日期未完成，系统自动标记为 overdue
+
+**业务规则:**
+- 里程碑属于项目级别
+- 仅企业端(super_admin/task_admin)可管理里程碑
+- 里程碑按 sortOrder 排序展示
+
+#### 4.9.5 项目看板 ✨V3.7 NEW
+
+> **V3.7 新增章节:** 项目看板提供可视化的项目进度概览，包含进度条和三色风险预警。
+
+**API:** `GET /api/v1/projects/board`
+
+**看板展示内容:**
+- 每个项目卡片含: 项目名称 / 状态 / 阶段 / 进度条 / 风险颜色
+- 三色预警: 🟢 green(正常) / 🟡 yellow(警告) / 🔴 red(紧急)
+- 支持按状态分组展示
+
+#### 4.9.6 项目统计 ✨V3.7 NEW
+
+> **V3.7 新增章节:** 项目统计提供企业级别的项目数据概览。
+
+**API:** `GET /api/v1/projects/stats`
+
+**统计指标:**
+- 项目总数(total)
+- 按状态分布(byStatus): planning/active/suspended/completed/archived 各多少
+- 按风险分布(byRisk): green/yellow/red 各多少
+- 平均进度(avgProgress): 所有活跃项目的平均完成百分比
+
+---
+
+### 4.10 企业端通知中心 ✨V3.7 NEW
+
+> **V3.7 新增章节:** 企业端站内通知中心，聚合展示任务、项目、检查点、评论等各类事件通知。
+
+**页面路由:** `/notifications`
+
+**通知类型(CompanyNotificationType):**
+
+| 类型编码 | 说明 | 触发场景 |
+|---------|------|----------|
+| `issue_report` | 问题上报 | 零工或企业用户上报了新问题 |
+| `risk_alert` | 风险预警 | 项目或任务风险等级变更 |
+| `milestone_remind` | 里程碑提醒 | 里程碑即将到期或已逾期 |
+| `acceptance` | 验收通知 | 任务验收状态变更 |
+| `checkpoint` | 检查点通知 | 检查点提交、审核结果等 |
+| `comment_mention` | 评论@提及 | 有人在评论中@了你 |
+| `daily_missing` | 日报缺失 | 零工连续未提交进度更新 |
+| `status_change` | 状态变更 | 任务或项目状态发生变化 |
+
+**通知字段:**
+
+| 字段 | 说明 |
+|------|------|
+| 标题 | 通知标题(最多100字) |
+| 内容 | 通知详细内容(最多500字) |
+| 关联类型 | refType: task/project/checkpoint/comment |
+| 关联ID | refId: 关联对象的ID |
+| 已读状态 | isRead: 是否已读 |
+
+**功能特性:**
+- **通知列表:** 分页展示，支持按类型筛选
+- **未读徽标:** 全局导航栏显示未读通知数量
+- **单条已读:** 点击通知标记为已读，同时跳转到关联对象
+- **全部已读:** 一键标记所有未读通知为已读
+
+**权限:**
+- 所有企业用户角色均可查看自己的通知
+- 通知按 userId 隔离，只能看到自己的
 
 ---
 
@@ -2815,6 +3114,11 @@ async function lockFunds(companyId: bigint, amount: number) {
 | total_budget | DECIMAL(12,2) | 总预算(不含服务费) |
 | locked_amount | DECIMAL(12,2) | 已锁定金额(含服务费) |
 | overall_progress | INT DEFAULT 0 | 整体进度 0-100 |
+| task_no | VARCHAR(20) UNIQUE NULL | 任务编号(自动生成,格式 TSK-YYYYMMDD-NNN) ✨V3.7 |
+| priority | ENUM DEFAULT p2 | 优先级: p0(紧急)/p1(高)/p2(普通) ✨V3.7 |
+| acceptance_criteria | TEXT NULL | 任务级验收标准 ✨V3.7 |
+| risk_level | ENUM DEFAULT green | 风险等级: green/yellow/red ✨V3.7 |
+| acceptance_status | ENUM NULL | 验收进度: pending/partial/all_passed ✨V3.7 |
 | created_at | TIMESTAMP | 创建时间 |
 | published_at | TIMESTAMP | 发布时间 |
 | completed_at | TIMESTAMP | 完成时间 |
@@ -2961,6 +3265,8 @@ async function lockFunds(companyId: bigint, amount: number) {
 | content | TEXT | 今日完成内容 |
 | issues | TEXT NULL | 遇到的问题 |
 | screenshots | JSON NULL | 截图地址数组 |
+| daily_summary | VARCHAR(500) NULL | 每日小结 ✨V3.7 |
+| tomorrow_plan | TEXT NULL | 明日计划 ✨V3.7 |
 | created_at | TIMESTAMP | 提交时间 |
 
 #### 表:daily_checkins(人天模式打卡记录)✨ V3.0 补全
@@ -3251,7 +3557,7 @@ async function lockFunds(companyId: bigint, amount: number) {
 
 ### 10.4 V3.6 新增数据表 ✨V3.6 NEW
 
-#### 表:projects(项目清单) ✨V3.6 NEW
+#### 表:projects(项目清单) ✨V3.6 NEW / V3.7 增强
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
@@ -3262,7 +3568,10 @@ async function lockFunds(companyId: bigint, amount: number) {
 | client_location | VARCHAR(50) NULL | 客户所在地(城市/地区) |
 | manager_id | BIGINT FK | 项目负责人(company_users.id,默认为创建人) |
 | description | VARCHAR(500) NULL | 项目描述 |
-| status | ENUM | active/completed/archived |
+| status | ENUM | planning/active/suspended/completed/archived ✨V3.7 升级为5态 |
+| phase | ENUM DEFAULT requirement | requirement/execution/acceptance ✨V3.7 |
+| expected_delivery_date | DATE NULL | 预期交付日期 ✨V3.7 |
+| risk_level | ENUM DEFAULT green | green/yellow/red 三色风险预警 ✨V3.7 |
 | created_at | TIMESTAMP | 创建时间 |
 | updated_at | TIMESTAMP | 更新时间 |
 | INDEX | (company_id, status) | 企业查看项目列表 |
@@ -3287,6 +3596,7 @@ async function lockFunds(companyId: bigint, amount: number) {
 | custom_response_path | VARCHAR(200) NULL | 响应内容提取JSON Path ✨V3.6 |
 | custom_headers | JSON NULL | 额外自定义请求头 ✨V3.6 |
 | custom_stream | BOOLEAN DEFAULT FALSE | 是否支持SSE流式 ✨V3.6 |
+| allow_insecure_https | BOOLEAN DEFAULT FALSE | 允许跳过TLS证书验证(自签名/内网) ✨V3.7 |
 | temperature | DECIMAL(3,2) DEFAULT 0.70 | 温度参数 |
 | max_tokens | INT DEFAULT 4096 | 最大Token数 |
 | top_p | DECIMAL(3,2) DEFAULT 1.00 | Top P |
@@ -3308,6 +3618,7 @@ async function lockFunds(companyId: bigint, amount: number) {
 | description | VARCHAR(200) | 功能描述 |
 | system_prompt | TEXT | System Prompt(50-5000字) |
 | model_name | VARCHAR(100) NULL | 关联模型(留空用企业默认模型) |
+| preset_id | BIGINT FK NULL | 关联LLM模型预设(llm_model_presets.id,优先于 model_name) ✨V3.7 |
 | temperature | DECIMAL(3,2) NULL | 温度覆盖(留空用全局配置) |
 | tools | JSON | 启用的工具能力数组 |
 | is_active | BOOLEAN DEFAULT TRUE | 是否启用 |
@@ -3367,7 +3678,182 @@ async function lockFunds(companyId: bigint, amount: number) {
 
 ---
 
-### 10.5 数据库索引规划 ✨V3.1 新增
+### 10.5 V3.7 新增数据表 ✨V3.7 NEW
+
+#### 表:task_checkpoints(任务检查点) ✨V3.7 NEW
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT PK | 检查点 ID |
+| task_id | BIGINT FK | 关联任务 |
+| name | VARCHAR(50) | 检查点名称 |
+| type | ENUM | progress_check(进度检查) / quality_gate(质量关卡) |
+| planned_date | DATE | 计划日期 |
+| reviewer_id | BIGINT | 审核人(company_users.id) |
+| description | VARCHAR(200) NULL | 检查点说明 |
+| status | ENUM DEFAULT pending | pending/submitted/passed/rejected/overdue |
+| submit_content | TEXT NULL | 提交内容 |
+| submit_attachments | JSON NULL | 提交附件URL数组 |
+| submitted_at | TIMESTAMP NULL | 提交时间 |
+| review_comment | TEXT NULL | 审核意见 |
+| reviewed_at | TIMESTAMP NULL | 审核时间 |
+| revision_count | INT DEFAULT 0 | 修订次数(驳回后重新提交计数) |
+| sort_order | INT | 检查点顺序 |
+| created_at | TIMESTAMP | 创建时间 |
+| updated_at | TIMESTAMP | 更新时间 |
+| INDEX | (task_id, sort_order) | 按任务查看检查点列表 |
+
+#### 表:task_comments(任务评论) ✨V3.7 NEW
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT PK | 评论 ID |
+| task_id | BIGINT FK | 关联任务 |
+| parent_id | BIGINT NULL | 父评论 ID(回复线程) |
+| author_type | ENUM | company_user / worker |
+| author_id | BIGINT | 作者 ID |
+| content | TEXT | 评论内容(最多1000字) |
+| attachments | JSON NULL | 附件URL数组 |
+| is_important | BOOLEAN DEFAULT FALSE | 是否标记重要 |
+| is_deleted | BOOLEAN DEFAULT FALSE | 是否软删除 |
+| created_at | TIMESTAMP | 创建时间 |
+| INDEX | (task_id, created_at DESC) | 按任务查看评论列表 |
+| INDEX | (parent_id) | 查询回复线程 |
+
+#### 表:task_issues(问题上报) ✨V3.7 NEW
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT PK | 问题 ID |
+| task_id | BIGINT FK | 关联任务 |
+| reporter_type | ENUM | company_user / worker |
+| reporter_id | BIGINT | 上报人 ID |
+| title | VARCHAR(100) | 问题标题 |
+| type | ENUM | requirement_unclear / technical_block / resource_missing / other |
+| description | TEXT | 问题详细描述 |
+| attachments | JSON NULL | 附件URL数组 |
+| status | ENUM DEFAULT open | open / in_progress / resolved / closed |
+| first_response_at | TIMESTAMP NULL | 首次响应时间 |
+| resolved_at | TIMESTAMP NULL | 解决时间 |
+| sla_breached | BOOLEAN DEFAULT FALSE | 是否 SLA 超时(24h 未响应) |
+| created_at | TIMESTAMP | 创建时间 |
+| updated_at | TIMESTAMP | 更新时间 |
+| INDEX | (task_id, status) | 按任务查看问题列表 |
+
+#### 表:milestones(项目里程碑) ✨V3.7 NEW
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT PK | 里程碑 ID |
+| project_id | BIGINT FK | 关联项目 |
+| name | VARCHAR(50) | 里程碑名称 |
+| description | VARCHAR(200) NULL | 里程碑描述 |
+| planned_date | DATE | 计划日期 |
+| completed_at | TIMESTAMP NULL | 完成时间 |
+| status | ENUM DEFAULT pending | pending / completed / overdue |
+| sort_order | INT | 里程碑顺序 |
+| created_by | BIGINT FK | 创建人(company_users.id) |
+| created_at | TIMESTAMP | 创建时间 |
+| updated_at | TIMESTAMP | 更新时间 |
+| INDEX | (project_id, sort_order) | 按项目查看里程碑 |
+
+#### 表:milestone_attachments(里程碑附件) ✨V3.7 NEW
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT PK | 附件 ID |
+| milestone_id | BIGINT FK | 关联里程碑 |
+| file_name | VARCHAR(200) | 原始文件名 |
+| file_url | VARCHAR(500) | OSS 文件地址 |
+| file_size | BIGINT | 文件大小(字节) |
+| file_type | VARCHAR(20) | 文件扩展名 |
+| uploaded_by | BIGINT FK | 上传人(company_users.id) |
+| created_at | TIMESTAMP | 上传时间 |
+| INDEX | (milestone_id) | 查询里程碑附件 |
+
+#### 表:company_notifications(企业端站内通知) ✨V3.7 NEW
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT PK | 通知 ID |
+| company_id | BIGINT FK | 所属企业 |
+| user_id | BIGINT FK | 接收人(company_users.id) |
+| type | ENUM | issue_report/risk_alert/milestone_remind/acceptance/checkpoint/comment_mention/daily_missing/status_change |
+| title | VARCHAR(100) | 通知标题 |
+| content | VARCHAR(500) | 通知内容 |
+| ref_type | VARCHAR(20) NULL | 关联类型(task/project/checkpoint/comment) |
+| ref_id | BIGINT NULL | 关联对象 ID |
+| is_read | BOOLEAN DEFAULT FALSE | 是否已读 |
+| created_at | TIMESTAMP | 创建时间 |
+| INDEX | (user_id, is_read, created_at DESC) | 查询用户未读通知 |
+| INDEX | (company_id, created_at DESC) | 企业级通知查询 |
+
+#### 表:deliverable_files(交付物文件版本) ✨V3.7 独立模型
+
+> **V3.7 说明:** V3.0 将交付物文件嵌套在 deliverables 表中，V3.7 拆分为独立模型支持多版本管理。
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT PK | 文件 ID |
+| deliverable_id | BIGINT FK | 关联交付物 |
+| version | INT | 版本号 |
+| file_url | VARCHAR(500) | OSS 文件地址 |
+| file_name | VARCHAR(200) | 原始文件名 |
+| file_size | BIGINT NULL | 文件大小(字节) |
+| description | VARCHAR(300) NULL | 提交说明 |
+| uploaded_at | TIMESTAMP | 上传时间 |
+| INDEX | (deliverable_id, version) | 按交付物查看文件版本 |
+
+#### 表:llm_model_presets(LLM命名模型预设) ✨V3.7 NEW
+
+> **V3.7 新增说明:** 企业可保存多个不同的模型配置(例如 GPT-4o 配置、Claude 配置、本地部署配置)，供不同智能体选用。
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT PK | 预设 ID |
+| company_id | BIGINT FK | 所属企业 |
+| display_name | VARCHAR(60) | 显示名称(如「GPT-4o 主力」) |
+| provider | ENUM | 模型服务商(同 llm_configs.provider) |
+| api_key_encrypted | VARCHAR(512) | API Key(AES-256加密) |
+| base_url | VARCHAR(500) NULL | 自定义Endpoint |
+| model_name | VARCHAR(100) | 模型名称 |
+| temperature | DECIMAL(3,2) DEFAULT 0.70 | 温度参数 |
+| max_tokens | INT DEFAULT 4096 | 最大Token数 |
+| custom_protocol | ENUM NULL | openai_compatible / custom_http |
+| custom_method | VARCHAR(10) DEFAULT 'POST' | 请求方法 |
+| custom_chat_url | VARCHAR(500) NULL | 对话接口URL |
+| custom_auth_type | ENUM NULL | bearer/header/query/none |
+| custom_auth_header | VARCHAR(100) NULL | 自定义认证Header名 |
+| custom_request_template | TEXT NULL | 请求体JSON模板 |
+| custom_response_path | VARCHAR(200) NULL | 响应内容JSON Path |
+| custom_headers | JSON NULL | 额外自定义请求头 |
+| allow_insecure_https | BOOLEAN DEFAULT FALSE | 允许跳过TLS证书验证(自签名/内网) |
+| is_active | BOOLEAN DEFAULT TRUE | 是否启用 |
+| created_at | TIMESTAMP | 创建时间 |
+| updated_at | TIMESTAMP | 更新时间 |
+
+---
+
+### 10.6 V3.7 新增枚举定义 ✨V3.7 NEW
+
+| 枚举名 | 值 | 说明 |
+|--------|---|------|
+| `TaskPriority` | p0 / p1 / p2 | 任务优先级: p0紧急 / p1高 / p2普通 |
+| `RiskLevel` | green / yellow / red | 风险等级: 正常/警告/紧急 |
+| `AcceptanceStatus` | pending / partial / all_passed | 验收状态: 待验收/部分通过/全部通过 |
+| `ProjectStatus` | planning / active / suspended / completed / archived | 项目状态(V3.7升级为5态) |
+| `ProjectPhase` | requirement / execution / acceptance | 项目阶段: 需求/执行/验收 |
+| `MilestoneStatus` | pending / completed / overdue | 里程碑状态 |
+| `CheckpointType` | progress_check / quality_gate | 检查点类型 |
+| `CheckpointStatus` | pending / submitted / passed / rejected / overdue | 检查点状态 |
+| `AuthorType` | company_user / worker | 评论/问题的作者类型 |
+| `IssueType` | requirement_unclear / technical_block / resource_missing / other | 问题类型 |
+| `IssueStatus` | open / in_progress / resolved / closed | 问题状态 |
+| `CompanyNotificationType` | issue_report / risk_alert / milestone_remind / acceptance / checkpoint / comment_mention / daily_missing / status_change | 企业通知类型 |
+
+---
+
+### 10.7 数据库索引规划 ✨V3.1 新增
 
 > **V3.1 新增说明:** V3.0 仅定义了主键和少数唯一索引,未覆盖高频查询场景。此处补全核心索引。
 
@@ -3520,7 +4006,7 @@ async function lockFunds(companyId: bigint, amount: number) {
 | GET | /api/v1/projects | 项目列表(分页+筛选+搜索,含关联任务数和预算汇总) |
 | POST | /api/v1/projects | 创建项目(名称+客户所在地+负责人+描述) |
 | PUT | /api/v1/projects/:id | 更新项目信息 |
-| PATCH | /api/v1/projects/:id/status | 更新项目状态(active→completed→archived) |
+| PATCH | /api/v1/projects/:id/status | 更新项目状态/阶段(V3.7: 5态状态planning/active/suspended/completed/archived + 3阶段requirement/execution/acceptance) |
 
 **AI大模型配置(3个):**
 
@@ -3551,6 +4037,60 @@ async function lockFunds(companyId: bigint, amount: number) {
 |------|------|------|
 | POST | /api/v1/tasks/:id/attachments | 保存任务附件元数据(file_name/file_url/file_size/file_type,OSS直传完成后调用) |
 | DELETE | /api/v1/tasks/:id/attachments/:attachmentId | 删除任务附件(同时删除OSS文件,仅附件上传人或super_admin可操作) |
+
+#### V3.7 新增接口(22 个) ✨V3.7 NEW
+
+**任务检查点(5个):**
+
+| 方法 | 路径 | 描述 |
+|------|------|------|
+| GET | /api/v1/tasks/:taskId/checkpoints | 检查点列表(按sortOrder排序) |
+| POST | /api/v1/tasks/:taskId/checkpoints | 创建检查点(name/type/plannedDate/reviewerId/description/sortOrder) |
+| POST | /api/v1/tasks/:taskId/checkpoints/:id/submit | 提交检查点(submitContent/submitAttachments) |
+| POST | /api/v1/tasks/:taskId/checkpoints/:id/review | 审核检查点(passed/rejected + reviewComment) |
+| DELETE | /api/v1/tasks/:taskId/checkpoints/:id | 删除检查点 |
+
+**任务评论(3个):**
+
+| 方法 | 路径 | 描述 |
+|------|------|------|
+| GET | /api/v1/tasks/:taskId/comments | 评论列表(按时间倒序,含回复线程) |
+| POST | /api/v1/tasks/:taskId/comments | 发表评论(content/parentId/attachments) |
+| DELETE | /api/v1/tasks/:taskId/comments/:id | 删除评论(软删除,仅作者可操作) |
+
+**问题上报(3个):**
+
+| 方法 | 路径 | 描述 |
+|------|------|------|
+| GET | /api/v1/tasks/:taskId/issues | 问题列表(按状态筛选) |
+| POST | /api/v1/tasks/:taskId/issues | 上报问题(title/type/description/attachments) |
+| PUT | /api/v1/tasks/:taskId/issues/:id | 更新问题状态(status) |
+
+**项目里程碑(5个):**
+
+| 方法 | 路径 | 描述 |
+|------|------|------|
+| GET | /api/v1/projects/:id/milestones | 里程碑列表(按sortOrder排序) |
+| POST | /api/v1/projects/:id/milestones | 创建里程碑(name/description/plannedDate/sortOrder) |
+| PUT | /api/v1/projects/:id/milestones/:mid | 更新里程碑 |
+| DELETE | /api/v1/projects/:id/milestones/:mid | 删除里程碑 |
+| POST | /api/v1/projects/:id/milestones/:mid/complete | 完成里程碑(记录completedAt) |
+
+**项目看板与统计(2个):**
+
+| 方法 | 路径 | 描述 |
+|------|------|------|
+| GET | /api/v1/projects/board | 项目看板(进度条+三色预警+按状态分组) |
+| GET | /api/v1/projects/stats | 项目统计(total/byStatus/byRisk/avgProgress) |
+
+**企业通知中心(4个):**
+
+| 方法 | 路径 | 描述 |
+|------|------|------|
+| GET | /api/v1/notifications | 通知列表(分页+按类型筛选) |
+| GET | /api/v1/notifications/unread-count | 未读通知数量 |
+| PATCH | /api/v1/notifications/:id/read | 单条标记已读 |
+| PATCH | /api/v1/notifications/read-all | 全部标记已读 |
 
 ## 12. MVP 裁剪方案与开发排期 ✨V3.0 新增
 
@@ -3896,8 +4436,8 @@ async function lockFunds(companyId: bigint, amount: number) {
 
 ---
 
-**文档版本:V3.6 AI智能体+项目管理+附件系统 · 第18章输出完成**
-**总计:19 章 · 约 50,000+ 字 · 89 个接口 · 33 张数据库表 · 33 个埋点事件 · 18 条核心索引**
+**文档版本:V3.7 项目任务深化+企业通知+模型预设 · 第18章输出完成**
+**总计:19 章 · 约 60,000+ 字 · 125 个接口 · 41 张数据库表 · 51 个枚举 · 33 个埋点事件 · 18 条核心索引**
 ---
 
 ## 18. 平台运营管理后台 · 详细需求 ✨V3.2 NEW
@@ -4258,8 +4798,6 @@ async function lockFunds(companyId: bigint, amount: number) {
 
 ---
 
-**文档版本:V3.6 AI智能体+项目管理+附件系统 · 第18章输出完成**
-
 ---
 
 ## 19. AI 智能体系统 · 详细需求 ✨V3.6 NEW
@@ -4348,8 +4886,8 @@ interface LLMAdapter {
 ```
 
 **安全约束:**
-- 自定义接口 URL 必须为 HTTPS（或企业内网IP `10.x` / `172.16-31.x` / `192.168.x`）
-- **SSRF防护黑名单:** 禁止访问 `127.0.0.0/8`(loopback) / `169.254.0.0/16`(云元数据) / `0.0.0.0/8` / `::1`(IPv6 loopback)；禁止目标端口为 `3306/6379/27017/5432`(数据库常见端口) ← V3.6 复盘补充
+- 自定义接口 URL 必须为 HTTPS(或企业内网IP `10.x` / `172.16-31.x` / `192.168.x`)
+- **SSRF防护黑名单:** 禁止访问 `127.0.0.0/8`(loopback) / `169.254.0.0/16`(云元数据) / `0.0.0.0/8` / `::1`(IPv6 loopback);禁止目标端口为 `3306/6379/27017/5432`(数据库常见端口) ← V3.6 复盘补充
 - 请求模板中禁止包含 `{{api_key}}` 等密钥变量(认证统一走 auth 配置)
 - 响应超时 30s,防止恶意服务堵塞
 - 自定义接口的调用同样纳入频率限制和Token统计
@@ -4475,5 +5013,5 @@ interface LLMAdapter {
 
 ---
 
-**文档版本:V3.6 AI智能体+项目管理+附件系统 · 全部输出完成(含复盘修复)**
-**总计:19 章 · 约 50,000+ 字 · 89 个接口 · 33 张数据库表 · 33 个埋点事件 · 18 条核心索引**
+**文档版本:V3.7 项目任务深化+企业通知+模型预设 · 全部输出完成(含复盘修复)**
+**总计:19 章 · 约 60,000+ 字 · 125 个接口 · 41 张数据库表 · 51 个枚举 · 33 个埋点事件 · 18 条核心索引**
