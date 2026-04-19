@@ -582,9 +582,10 @@ onMounted(loadBalance)
   background: var(--color-bg-page);
 }
 
-/* 全屏页面（如任务创建）：不需要 padding，自行控制高度 */
+/* 发布任务页面：去掉 padding，保留滚动 */
 .main-content:has(.tcp-page) {
   padding: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 </style>

@@ -1,366 +1,256 @@
 <template>
   <div class="tcp-page">
 
-    <!-- ══ 顶部步骤导航 ══ -->
-    <div class="tcp-steps-bar">
-      <div class="tcp-steps-left">
-        <span class="tcp-page-title">{{ isEditMode ? '编辑任务' : '发布新任务' }}</span>
-        <transition name="fade">
-          <span v-if="lastSavedAt" class="tcp-saved-tag">
-            <check-circle-outlined /> {{ lastSavedAt }}
-          </span>
-        </transition>
-      </div>
+    <!-- ══ 页面头部：返回 + 标题 ══ -->
+    <div class="tcp-header">
+      <button class="tcp-back" @click="$router.push('/task/square')">
+        <left-outlined /> 返回
+      </button>
+      <h1 class="tcp-title">{{ isEditMode ? '编辑任务' : '发布新任务' }}</h1>
+      <transition name="fade">
+        <span v-if="lastSavedAt" class="tcp-saved-tag">
+          <check-circle-outlined /> {{ lastSavedAt }}
+        </span>
+      </transition>
+      <div style="flex:1"></div>
+      <a-button v-if="hasLlm" class="tcp-ai-btn" @click="aiDrawerOpen = true">🤖 AI 顾问</a-button>
+    </div>
 
-      <div class="tcp-steps-center">
-        <div
-          v-for="(step, idx) in steps"
-          :key="idx"
-          class="tcp-step"
-          :class="{
-            active: currentStep === idx,
-            done: currentStep > idx,
-            clickable: currentStep > idx || idx === 0 || stepsDone[idx - 1]
-          }"
-          @click="goToStep(idx)"
-        >
-          <div class="tcp-step-circle">
-            <check-outlined v-if="currentStep > idx" style="font-size:13px" />
-            <span v-else>{{ idx + 1 }}</span>
+    <!-- ══ 表单内容区（原生滚动） ══ -->
+    <div class="tcp-body">
+      <div class="tcp-container">
+
+        <!-- § 1 基本信息 -->
+        <section class="tcp-card">
+          <div class="tcp-card-title">基本信息</div>
+          <a-form layout="vertical" class="tcp-form">
+            <a-form-item required>
+              <template #label><span class="tcp-fl">任务标题</span></template>
+              <a-input v-model:value="form.title" placeholder="一句话说清任务，如：双11产品主图拍摄 · 50款SKU" :maxlength="100" show-count size="large" />
+            </a-form-item>
+            <a-form-item>
+              <template #label>
+                <span class="tcp-fl">任务描述</span>
+                <span class="tcp-fl-opt">选填</span>
+              </template>
+              <a-textarea v-model:value="form.description" :rows="4" placeholder="告诉零工需要做什么、做到什么程度、有哪些注意事项…" :maxlength="2000" show-count />
+            </a-form-item>
+          </a-form>
+        </section>
+
+        <!-- § 2 工作模式 -->
+        <section class="tcp-card">
+          <div class="tcp-card-title">工作模式</div>
+          <div class="tcp-mode-row">
+            <div class="tcp-mode-card" :class="{ sel: form.taskMode === 'task_package' }" @click="form.taskMode = 'task_package'">
+              <div class="tcp-mode-top">
+                <span class="tcp-mode-ico">📦</span>
+                <div class="tcp-mode-radio" :class="{ sel: form.taskMode === 'task_package' }"><div v-if="form.taskMode === 'task_package'" class="tcp-mode-dot"></div></div>
+              </div>
+              <div class="tcp-mode-name">任务包模式</div>
+              <div class="tcp-mode-desc">按交付成果验收，完成即结算</div>
+              <div class="tcp-mode-tags"><span class="tcp-tag blue">交付导向</span><span class="tcp-tag green">结果付费</span></div>
+            </div>
+            <div class="tcp-mode-card" :class="{ sel: form.taskMode === 'daily_rate' }" @click="form.taskMode = 'daily_rate'">
+              <div class="tcp-mode-top">
+                <span class="tcp-mode-ico">📅</span>
+                <div class="tcp-mode-radio" :class="{ sel: form.taskMode === 'daily_rate' }"><div v-if="form.taskMode === 'daily_rate'" class="tcp-mode-dot"></div></div>
+              </div>
+              <div class="tcp-mode-name">人天模式</div>
+              <div class="tcp-mode-desc">按实际工时计费，灵活弹性工期</div>
+              <div class="tcp-mode-tags"><span class="tcp-tag orange">按天计费</span><span class="tcp-tag purple">弹性工期</span></div>
+            </div>
           </div>
-          <span class="tcp-step-label">{{ step.label }}</span>
-          <div v-if="idx < steps.length - 1" class="tcp-step-line" :class="{ done: currentStep > idx }"></div>
-        </div>
-      </div>
+        </section>
 
-      <div class="tcp-steps-right">
-        <a-button v-if="hasLlm" class="tcp-ai-btn" @click="aiDrawerOpen = true">
-          🤖 AI 顾问
-        </a-button>
-        <a-button @click="handleSaveDraft" :loading="saving">保存草稿</a-button>
-        <a-button
-          v-if="currentStep < steps.length - 1"
-          type="primary"
-          @click="handleNext"
-          class="tcp-next-btn"
-        >
-          下一步 <right-outlined />
-        </a-button>
-        <a-button
-          v-else
-          type="primary"
-          :loading="publishing"
-          :disabled="!canPublish"
-          @click="handlePublish"
-          class="tcp-pub-btn"
-        >
+        <!-- § 3 角色配置 -->
+        <section class="tcp-card">
+          <div class="tcp-card-title">角色配置</div>
+          <div class="tcp-card-hint">至少添加一个角色才能发布任务</div>
+
+          <div v-if="platformRoles.length > 0" class="tcp-quick-bar">
+            <span class="tcp-quick-lbl">快速添加：</span>
+            <button v-for="r in platformRoles.slice(0, 10)" :key="r.roleName" class="tcp-chip" @click="quickAddRole(r)">+ {{ r.roleName }}</button>
+          </div>
+
+          <div v-if="form.roles.length === 0" class="tcp-empty">
+            <div style="font-size:28px;margin-bottom:6px;opacity:.5">👥</div>
+            <p>点击上方按钮快速添加，或手动创建角色</p>
+          </div>
+
+          <div v-for="(role, idx) in form.roles" :key="idx" class="tcp-role-card">
+            <div class="tcp-role-top">
+              <span class="tcp-role-num">{{ idx + 1 }}</span>
+              <a-select v-model:value="role.roleName" placeholder="选择角色" show-search :filter-option="filterOption" style="width:160px" @change="(v: string) => onRoleSelect(idx, v)">
+                <a-select-option v-for="r in platformRoles" :key="r.roleName" :value="r.roleName">{{ r.roleName }}</a-select-option>
+              </a-select>
+              <span class="tcp-role-lbl">人数</span>
+              <a-input-number v-model:value="role.headcount" :min="1" :max="50" style="width:72px" />
+              <span class="tcp-role-lbl">单人预算</span>
+              <a-input-number v-model:value="role.budget" :min="0" :step="500" :formatter="(v: any) => v ? `¥${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : ''" :parser="(v: any) => v.replace(/[¥,\s]/g, '')" style="width:130px" />
+              <a-popconfirm title="删除该角色？" @confirm="removeRole(idx)">
+                <button class="tcp-role-del"><close-outlined /></button>
+              </a-popconfirm>
+            </div>
+            <div class="tcp-role-mid">
+              <a-select v-model:value="role.skillTagsArr" mode="multiple" placeholder="技能要求（选填）" :options="skillTagOptions" allow-clear :max-tag-count="5" style="flex:1" />
+              <a-input v-model:value="role.description" placeholder="补充说明（选填）" :maxlength="100" style="width:200px" />
+            </div>
+            <div v-if="role.budget > 0 && role.headcount > 0" class="tcp-role-sub">
+              {{ role.roleName || '此角色' }} × {{ role.headcount }}人 = <strong>¥{{ ((role.budget||0)*(role.headcount||1)).toLocaleString() }}</strong>
+            </div>
+          </div>
+
+          <button class="tcp-add-btn" @click="addRole"><plus-outlined /> 添加角色岗位</button>
+        </section>
+
+        <!-- § 4 执行检查点 -->
+        <section class="tcp-card">
+          <div class="tcp-card-title">执行检查点 <span class="tcp-opt-badge">可选</span></div>
+          <div class="tcp-card-hint">里程碑节点，零工需上传阶段交付物供企业验收；不设则一次性验收</div>
+
+          <div class="tcp-tpl-row">
+            <span class="tcp-tpl-lbl">套用模板：</span>
+            <button v-for="t in cpTemplateKeys" :key="t.key" class="tcp-tpl-btn" @click="applyTemplate(t.key)">{{ t.icon }} {{ t.label }}</button>
+          </div>
+
+          <div class="tcp-timeline">
+            <div class="tcp-tl-item start"><div class="tcp-tl-dot start"></div><div class="tcp-tl-text"><strong>任务开始</strong><span>0%</span></div></div>
+            <template v-for="(cp, idx) in checkpoints" :key="idx">
+              <div class="tcp-tl-stem"></div>
+              <div class="tcp-tl-item cp">
+                <div class="tcp-tl-dot cp" :style="{ background: cpColor(cp.progress) }">{{ idx+1 }}</div>
+                <div class="tcp-tl-body">
+                  <div class="tcp-tl-head">
+                    <a-input v-model:value="cp.name" placeholder="检查点名称" class="tcp-cp-input" :maxlength="50" />
+                    <span class="tcp-cp-pct" :style="{ background: cpColorBg(cp.progress), color: cpColor(cp.progress) }">{{ cp.progress }}%</span>
+                    <button class="tcp-cp-btn" :disabled="idx===0" @click="moveCP(idx,-1)">↑</button>
+                    <button class="tcp-cp-btn" :disabled="idx===checkpoints.length-1" @click="moveCP(idx,1)">↓</button>
+                    <a-popconfirm title="删除？" @confirm="removeCP(idx)"><button class="tcp-cp-btn del">✕</button></a-popconfirm>
+                  </div>
+                  <a-slider v-model:value="cp.progress" :min="5" :max="95" :step="5" :tooltip-formatter="(v: number) => v+'%'" style="margin:4px 0 0" />
+                  <div class="tcp-cp-toggle" @click="cp._expanded = !cp._expanded">
+                    {{ cp._expanded ? '▾' : '▸' }} 交付物设置
+                    <span v-if="cp.deliverableDesc && !cp._expanded" class="tcp-cp-hint">{{ cp.deliverableDesc.slice(0,30) }}…</span>
+                  </div>
+                  <div v-if="cp._expanded" class="tcp-cp-detail">
+                    <a-textarea v-model:value="cp.deliverableDesc" :rows="2" placeholder="描述交付物要求" :maxlength="300" />
+                    <a-select v-model:value="cp.allowedFormats" mode="multiple" placeholder="允许格式（不限则留空）" :options="deliverableFormats" allow-clear style="margin-top:6px;width:100%" />
+                  </div>
+                </div>
+              </div>
+            </template>
+            <div class="tcp-tl-stem" v-if="checkpoints.length > 0"></div>
+            <div class="tcp-tl-item end"><div class="tcp-tl-dot end">✓</div><div class="tcp-tl-text"><strong>最终交付</strong><span>100% · 全款结算</span></div></div>
+          </div>
+          <button class="tcp-add-btn" @click="addCP"><plus-outlined /> 添加检查点</button>
+        </section>
+
+        <!-- § 5 时间与预算 -->
+        <section class="tcp-card">
+          <div class="tcp-card-title">时间与预算</div>
+          <a-form layout="vertical" class="tcp-form">
+            <a-row :gutter="16">
+              <a-col :span="8">
+                <a-form-item><template #label><span class="tcp-fl">开始日期</span></template>
+                  <a-date-picker v-model:value="startDate" style="width:100%" placeholder="选择开始日期" />
+                </a-form-item>
+              </a-col>
+              <a-col :span="8">
+                <a-form-item><template #label><span class="tcp-fl">截止日期</span></template>
+                  <a-date-picker v-model:value="endDate" style="width:100%" placeholder="选择截止日期" :disabled-date="disabledEndDate" />
+                </a-form-item>
+              </a-col>
+              <a-col :span="8">
+                <a-form-item><template #label><span class="tcp-fl">工作城市</span></template>
+                  <a-cascader v-model:value="addressCascade" :options="regionOptions" placeholder="省份 / 城市" style="width:100%" change-on-select />
+                </a-form-item>
+              </a-col>
+            </a-row>
+            <div v-if="taskDurationDays > 0" class="tcp-dur-tag">
+              <clock-circle-outlined /> 工期 <strong>{{ taskDurationDays }}</strong> 天
+            </div>
+            <a-row :gutter="16">
+              <a-col :span="8">
+                <a-form-item required><template #label><span class="tcp-fl">任务总预算</span></template>
+                  <a-input-number v-model:value="form.totalBudget" :min="1" :step="1000" :formatter="(v: any) => v ? `¥ ${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : ''" :parser="(v: any) => v.replace(/[¥\s,]/g, '')" placeholder="输入总预算" style="width:100%" size="large" />
+                </a-form-item>
+              </a-col>
+              <a-col :span="8">
+                <a-form-item><template #label><span class="tcp-fl">详细地址</span><span class="tcp-fl-opt">选填</span></template>
+                  <a-input v-model:value="form.addressDetail" placeholder="楼栋/楼层" :maxlength="200" />
+                </a-form-item>
+              </a-col>
+              <a-col :span="8">
+                <a-form-item><template #label><span class="tcp-fl">关联项目</span><span class="tcp-fl-opt">选填</span></template>
+                  <a-select v-model:value="form.projectId" placeholder="搜索或选择项目…" allow-clear show-search :filter-option="filterProjectOption" :options="projectOptions" @focus="loadProjects" style="width:100%" />
+                </a-form-item>
+              </a-col>
+            </a-row>
+            <a-button v-if="suggestedBudget > 0 && form.totalBudget !== suggestedBudget" type="link" size="small" @click="form.totalBudget = suggestedBudget" style="font-size:12px;padding:0;margin-top:-8px">
+              用角色估算值 ¥{{ suggestedBudget.toLocaleString() }}
+            </a-button>
+          </a-form>
+
+          <div v-if="form.totalBudget > 0" class="tcp-fee-box">
+            <div v-for="(r, i) in form.roles" :key="i" class="tcp-fee-line">
+              <span>{{ r.roleName || '角色'+(i+1) }} × {{ r.headcount }}人</span>
+              <span>¥{{ ((r.budget||0)*(r.headcount||1)).toLocaleString() }}</span>
+            </div>
+            <div class="tcp-fee-line muted"><span>平台服务费 (8%)</span><span>¥{{ Math.round(form.totalBudget * 0.08).toLocaleString() }}</span></div>
+            <div class="tcp-fee-total"><span>锁定金额</span><span>¥{{ Math.round(form.totalBudget * 1.08).toLocaleString() }}</span></div>
+            <a-alert v-if="rolesBudgetSum > form.totalBudget" message="角色预算合计超过总预算，请调整" type="error" :show-icon="false" banner style="margin-top:8px;border-radius:6px" />
+          </div>
+        </section>
+
+        <!-- § 6 需求附件 -->
+        <section class="tcp-card">
+          <div class="tcp-card-title">需求附件 <span class="tcp-opt-badge">可选</span></div>
+          <div class="tcp-upload" :class="{ dragover: isDragOver }" @drop.prevent="onFileDrop" @dragover.prevent @dragenter.prevent="isDragOver=true" @dragleave.prevent="isDragOver=false" @click="attachments.length===0 && triggerFileInput()">
+            <div v-if="attachments.length === 0" class="tcp-upload-empty">
+              <inbox-outlined style="font-size:28px;color:#bbb" />
+              <div>拖拽文件到此处，或 <a @click.stop="triggerFileInput">点击上传</a></div>
+              <div class="tcp-upload-hint">PDF·Word·Excel·PPT·ZIP·图片·PSD，≤50MB/个，最多10个</div>
+            </div>
+            <div v-else class="tcp-file-list">
+              <div v-for="(f, i) in attachments" :key="i" class="tcp-file-row">
+                <span class="tcp-file-ico">{{ fileIcon(f.fileType) }}</span>
+                <span class="tcp-file-name" :title="f.fileName">{{ f.fileName }}</span>
+                <span class="tcp-file-sz">{{ formatSize(f.fileSize) }}</span>
+                <a-tag v-if="f.uploading" color="processing" size="small">处理中</a-tag>
+                <a-tag v-else-if="f.error" color="error" size="small">失败</a-tag>
+                <a-tag v-else color="success" size="small">就绪</a-tag>
+                <button class="tcp-file-del" @click.stop="removeAttachment(i)">✕</button>
+              </div>
+              <a v-if="attachments.length < 10" class="tcp-file-add" @click.stop="triggerFileInput">+ 继续添加</a>
+            </div>
+          </div>
+          <input ref="fileInputRef" type="file" multiple style="display:none" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.jpg,.jpeg,.png,.psd,.ai,.sketch" @change="onFileSelect" />
+        </section>
+
+        <!-- 底部留白（给固定操作栏让位） -->
+        <div style="height:80px"></div>
+
+      </div><!-- /tcp-container -->
+    </div><!-- /tcp-body -->
+
+    <!-- ══ 底部固定操作栏 ══ -->
+    <div class="tcp-footer">
+      <div class="tcp-footer-inner">
+        <div v-if="!canPublish" class="tcp-footer-tips">
+          <span v-if="!form.title">· 填写任务标题</span>
+          <span v-if="form.roles.length === 0">· 添加角色</span>
+          <span v-if="form.roles.some(r => !r.roleName)">· 选择角色名称</span>
+          <span v-if="form.roles.some(r => r.budget <= 0)">· 填写角色预算</span>
+          <span v-if="!form.totalBudget">· 设置总预算</span>
+        </div>
+        <div style="flex:1"></div>
+        <a-button size="large" @click="handleSaveDraft" :loading="saving">保存草稿</a-button>
+        <a-button type="primary" size="large" :loading="publishing" :disabled="!canPublish" @click="handlePublish" class="tcp-pub-btn">
           确认发布
         </a-button>
       </div>
     </div>
-
-    <!-- ══ 步骤内容区 ══ -->
-    <div class="tcp-content">
-
-      <!-- ─ Step 0: 基本信息 + 附件 ─ -->
-      <div v-show="currentStep === 0" class="tcp-step-panel">
-        <div class="tcp-panel-scroll">
-          <div class="tcp-section">
-            <div class="tcp-sec-head">
-              <div class="tcp-sec-icon">📋</div>
-              <div>
-                <div class="tcp-sec-title">基本信息</div>
-                <div class="tcp-sec-sub">任务的核心描述，零工会在报名页看到这些内容</div>
-              </div>
-            </div>
-
-            <a-form layout="vertical" class="tcp-form">
-              <a-form-item required>
-                <template #label><span class="tcp-fl">任务标题</span></template>
-                <a-input v-model:value="form.title" placeholder="一句话说清任务，如：双11产品主图拍摄 · 50款SKU" :maxlength="100" show-count size="large" />
-              </a-form-item>
-
-              <a-form-item>
-                <template #label>
-                  <span class="tcp-fl">任务描述</span>
-                  <span class="tcp-fl-hint">详细说明背景、交付物标准和注意事项</span>
-                </template>
-                <a-textarea v-model:value="form.description" :rows="4" placeholder="告诉零工需要做什么、做到什么程度、有哪些注意事项…" :maxlength="2000" show-count />
-              </a-form-item>
-
-              <!-- 工作模式 -->
-              <a-form-item required>
-                <template #label><span class="tcp-fl">工作模式</span></template>
-                <div class="tcp-mode-row">
-                  <div class="tcp-mode-card" :class="{ sel: form.taskMode === 'task_package' }" @click="form.taskMode = 'task_package'">
-                    <div class="tcp-mode-head">
-                      <span class="tcp-mode-ico">📦</span>
-                      <div class="tcp-mode-radio" :class="{ sel: form.taskMode === 'task_package' }"><div v-if="form.taskMode === 'task_package'" class="tcp-mode-radio-dot"></div></div>
-                    </div>
-                    <div class="tcp-mode-name">任务包模式</div>
-                    <div class="tcp-mode-desc">按交付成果验收，完成即结算</div>
-                    <div class="tcp-mode-tags"><span class="tcp-mtag blue">交付导向</span><span class="tcp-mtag green">结果付费</span></div>
-                  </div>
-                  <div class="tcp-mode-card" :class="{ sel: form.taskMode === 'daily_rate' }" @click="form.taskMode = 'daily_rate'">
-                    <div class="tcp-mode-head">
-                      <span class="tcp-mode-ico">📅</span>
-                      <div class="tcp-mode-radio" :class="{ sel: form.taskMode === 'daily_rate' }"><div v-if="form.taskMode === 'daily_rate'" class="tcp-mode-radio-dot"></div></div>
-                    </div>
-                    <div class="tcp-mode-name">人天模式</div>
-                    <div class="tcp-mode-desc">按实际工时计费，灵活弹性工期</div>
-                    <div class="tcp-mode-tags"><span class="tcp-mtag orange">按天计费</span><span class="tcp-mtag purple">弹性工期</span></div>
-                  </div>
-                </div>
-              </a-form-item>
-
-              <!-- 关联项目 -->
-              <a-form-item>
-                <template #label>
-                  <span class="tcp-fl">关联项目</span>
-                  <span class="tcp-fl-hint">可选，将任务归入已有项目</span>
-                </template>
-                <a-select v-model:value="form.projectId" placeholder="搜索或选择项目…" allow-clear show-search :filter-option="filterProjectOption" :options="projectOptions" @focus="loadProjects" style="width:380px" />
-              </a-form-item>
-            </a-form>
-          </div>
-
-          <!-- 附件区 -->
-          <div class="tcp-section" style="margin-top:16px">
-            <div class="tcp-sec-head">
-              <div class="tcp-sec-icon">📎</div>
-              <div>
-                <div class="tcp-sec-title">需求附件 <span class="tcp-optional">可选</span></div>
-                <div class="tcp-sec-sub">上传参考文件、设计稿、需求文档等</div>
-              </div>
-            </div>
-
-            <div class="tcp-upload" :class="{ dragover: isDragOver }" @drop.prevent="onFileDrop" @dragover.prevent @dragenter.prevent="isDragOver=true" @dragleave.prevent="isDragOver=false" @click="attachments.length===0 && triggerFileInput()">
-              <div v-if="attachments.length === 0" class="tcp-upload-empty">
-                <inbox-outlined style="font-size:28px;color:#bbb" />
-                <div>拖拽文件到此处，或 <a @click.stop="triggerFileInput">点击上传</a></div>
-                <div class="tcp-upload-hint">PDF·Word·Excel·PPT·ZIP·图片·PSD，≤50MB/个，最多10个</div>
-              </div>
-              <div v-else class="tcp-file-list">
-                <div v-for="(f, i) in attachments" :key="i" class="tcp-file-row">
-                  <span class="tcp-file-ico">{{ fileIcon(f.fileType) }}</span>
-                  <span class="tcp-file-name" :title="f.fileName">{{ f.fileName }}</span>
-                  <span class="tcp-file-sz">{{ formatSize(f.fileSize) }}</span>
-                  <a-tag v-if="f.uploading" color="processing" size="small">处理中</a-tag>
-                  <a-tag v-else-if="f.error" color="error" size="small">失败</a-tag>
-                  <a-tag v-else color="success" size="small">就绪</a-tag>
-                  <button class="tcp-file-del" @click.stop="removeAttachment(i)">✕</button>
-                </div>
-                <a v-if="attachments.length < 10" class="tcp-file-add" @click.stop="triggerFileInput">+ 继续添加</a>
-              </div>
-            </div>
-            <input ref="fileInputRef" type="file" multiple style="display:none" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.jpg,.jpeg,.png,.psd,.ai,.sketch" @change="onFileSelect" />
-          </div>
-        </div>
-      </div>
-
-      <!-- ─ Step 1: 角色配置 ─ -->
-      <div v-show="currentStep === 1" class="tcp-step-panel">
-        <div class="tcp-panel-scroll">
-          <div class="tcp-section">
-            <div class="tcp-sec-head">
-              <div class="tcp-sec-icon">👥</div>
-              <div>
-                <div class="tcp-sec-title">角色配置</div>
-                <div class="tcp-sec-sub">至少添加一个角色才能发布任务</div>
-              </div>
-            </div>
-
-            <!-- 快速添加 -->
-            <div v-if="platformRoles.length > 0" class="tcp-quick-bar">
-              <span class="tcp-quick-label">快速添加：</span>
-              <button v-for="r in platformRoles.slice(0, 10)" :key="r.roleName" class="tcp-chip" @click="quickAddRole(r)">+ {{ r.roleName }}</button>
-            </div>
-
-            <!-- 空态 -->
-            <div v-if="form.roles.length === 0" class="tcp-roles-empty">
-              <div style="font-size:32px;margin-bottom:8px">👥</div>
-              <p>点击上方按钮快速添加，或手动创建角色</p>
-            </div>
-
-            <!-- 角色列表 -->
-            <div v-for="(role, idx) in form.roles" :key="idx" class="tcp-role-card">
-              <div class="tcp-role-row1">
-                <span class="tcp-role-idx">{{ idx + 1 }}</span>
-                <a-select v-model:value="role.roleName" placeholder="选择角色" show-search :filter-option="filterOption" style="width:160px" @change="(v: string) => onRoleSelect(idx, v)">
-                  <a-select-option v-for="r in platformRoles" :key="r.roleName" :value="r.roleName">{{ r.roleName }}</a-select-option>
-                </a-select>
-                <span class="tcp-role-lbl">人数</span>
-                <a-input-number v-model:value="role.headcount" :min="1" :max="50" style="width:72px" />
-                <span class="tcp-role-lbl">单人预算</span>
-                <a-input-number v-model:value="role.budget" :min="0" :step="500" :formatter="(v: any) => v ? `¥${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : ''" :parser="(v: any) => v.replace(/[¥,\s]/g, '')" style="width:130px" />
-                <a-popconfirm title="删除该角色？" @confirm="removeRole(idx)">
-                  <button class="tcp-role-del"><close-outlined /></button>
-                </a-popconfirm>
-              </div>
-              <div class="tcp-role-row2">
-                <a-select v-model:value="role.skillTagsArr" mode="multiple" placeholder="技能要求（选填）" :options="skillTagOptions" allow-clear :max-tag-count="5" style="flex:1" />
-                <a-input v-model:value="role.description" placeholder="补充说明（选填）" :maxlength="100" style="width:200px" />
-              </div>
-              <div v-if="role.budget > 0 && role.headcount > 0" class="tcp-role-sub">
-                {{ role.roleName || '此角色' }} × {{ role.headcount }}人 = <strong>¥{{ ((role.budget||0)*(role.headcount||1)).toLocaleString() }}</strong>
-              </div>
-            </div>
-
-            <button class="tcp-add-btn" @click="addRole"><plus-outlined /> 添加角色岗位</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ─ Step 2: 执行检查点 ─ -->
-      <div v-show="currentStep === 2" class="tcp-step-panel">
-        <div class="tcp-panel-scroll">
-          <div class="tcp-section">
-            <div class="tcp-sec-head">
-              <div class="tcp-sec-icon">🏁</div>
-              <div>
-                <div class="tcp-sec-title">执行检查点 <span class="tcp-optional">可选</span></div>
-                <div class="tcp-sec-sub">里程碑节点，零工需上传阶段交付物供企业验收；不设则一次性验收</div>
-              </div>
-            </div>
-
-            <!-- 模板 -->
-            <div class="tcp-tpl-bar">
-              <span class="tcp-tpl-label">套用模板：</span>
-              <button v-for="t in cpTemplateKeys" :key="t.key" class="tcp-tpl-btn" @click="applyTemplate(t.key)">{{ t.icon }} {{ t.label }}</button>
-            </div>
-
-            <!-- 时间线 -->
-            <div class="tcp-timeline">
-              <div class="tcp-tl-node start"><div class="tcp-tl-dot start"></div><div class="tcp-tl-text"><strong>任务开始</strong><span>0%</span></div></div>
-
-              <template v-for="(cp, idx) in checkpoints" :key="idx">
-                <div class="tcp-tl-stem"></div>
-                <div class="tcp-tl-node cp">
-                  <div class="tcp-tl-dot cp" :style="{ background: cpColor(cp.progress) }">{{ idx+1 }}</div>
-                  <div class="tcp-tl-cp-body">
-                    <div class="tcp-tl-cp-top">
-                      <a-input v-model:value="cp.name" placeholder="检查点名称" class="tcp-cp-name" :maxlength="50" />
-                      <span class="tcp-cp-badge" :style="{ background: cpColorBg(cp.progress), color: cpColor(cp.progress) }">{{ cp.progress }}%</span>
-                      <button class="tcp-cp-btn" :disabled="idx===0" @click="moveCP(idx,-1)">↑</button>
-                      <button class="tcp-cp-btn" :disabled="idx===checkpoints.length-1" @click="moveCP(idx,1)">↓</button>
-                      <a-popconfirm title="删除？" @confirm="removeCP(idx)"><button class="tcp-cp-btn del">✕</button></a-popconfirm>
-                    </div>
-                    <a-slider v-model:value="cp.progress" :min="5" :max="95" :step="5" :tooltip-formatter="(v: number) => v+'%'" style="margin:4px 0 0" />
-                    <div class="tcp-cp-expand" @click="cp._expanded = !cp._expanded">
-                      {{ cp._expanded ? '▾' : '▸' }} 交付物设置
-                      <span v-if="cp.deliverableDesc && !cp._expanded" class="tcp-cp-expand-hint">{{ cp.deliverableDesc.slice(0,30) }}…</span>
-                    </div>
-                    <div v-if="cp._expanded" class="tcp-cp-detail">
-                      <a-textarea v-model:value="cp.deliverableDesc" :rows="2" placeholder="描述交付物要求" :maxlength="300" />
-                      <a-select v-model:value="cp.allowedFormats" mode="multiple" placeholder="允许格式（不限则留空）" :options="deliverableFormats" allow-clear style="margin-top:6px;width:100%" />
-                    </div>
-                  </div>
-                </div>
-              </template>
-
-              <div class="tcp-tl-stem" v-if="checkpoints.length > 0"></div>
-              <div class="tcp-tl-node end"><div class="tcp-tl-dot end">✓</div><div class="tcp-tl-text"><strong>最终交付</strong><span>100% · 全款结算</span></div></div>
-            </div>
-
-            <button class="tcp-add-btn" @click="addCP"><plus-outlined /> 添加检查点</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ─ Step 3: 时间与地点 ─ -->
-      <div v-show="currentStep === 3" class="tcp-step-panel">
-        <div class="tcp-panel-scroll">
-          <div class="tcp-section">
-            <div class="tcp-sec-head">
-              <div class="tcp-sec-icon">📅</div>
-              <div>
-                <div class="tcp-sec-title">时间与地点</div>
-                <div class="tcp-sec-sub">任务的执行周期和工作地点</div>
-              </div>
-            </div>
-
-            <a-form layout="vertical" class="tcp-form">
-              <a-row :gutter="16">
-                <a-col :span="12">
-                  <a-form-item><template #label><span class="tcp-fl">开始日期</span></template>
-                    <a-date-picker v-model:value="startDate" style="width:100%" placeholder="选择开始日期" />
-                  </a-form-item>
-                </a-col>
-                <a-col :span="12">
-                  <a-form-item><template #label><span class="tcp-fl">截止日期</span></template>
-                    <a-date-picker v-model:value="endDate" style="width:100%" placeholder="选择截止日期" :disabled-date="disabledEndDate" />
-                  </a-form-item>
-                </a-col>
-              </a-row>
-              <div v-if="taskDurationDays > 0" class="tcp-duration">
-                <clock-circle-outlined /> 工期 <strong>{{ taskDurationDays }}</strong> 天
-              </div>
-              <a-row :gutter="16">
-                <a-col :span="12">
-                  <a-form-item><template #label><span class="tcp-fl">工作城市</span></template>
-                    <a-cascader v-model:value="addressCascade" :options="regionOptions" placeholder="省份 / 城市" style="width:100%" change-on-select />
-                  </a-form-item>
-                </a-col>
-                <a-col :span="12">
-                  <a-form-item><template #label><span class="tcp-fl">详细地址</span><span class="tcp-fl-hint">选填</span></template>
-                    <a-input v-model:value="form.addressDetail" placeholder="楼栋/楼层" :maxlength="200" />
-                  </a-form-item>
-                </a-col>
-              </a-row>
-            </a-form>
-          </div>
-        </div>
-      </div>
-
-      <!-- ─ Step 4: 预算设定 ─ -->
-      <div v-show="currentStep === 4" class="tcp-step-panel">
-        <div class="tcp-panel-scroll">
-          <div class="tcp-section">
-            <div class="tcp-sec-head">
-              <div class="tcp-sec-icon">💰</div>
-              <div>
-                <div class="tcp-sec-title">预算设定</div>
-                <div class="tcp-sec-sub">发布后将锁定对应金额至企业账户余额</div>
-              </div>
-            </div>
-
-            <a-form layout="vertical" class="tcp-form">
-              <a-form-item required>
-                <template #label><span class="tcp-fl">任务总预算</span></template>
-                <div class="tcp-budget-row">
-                  <a-input-number v-model:value="form.totalBudget" :min="1" :step="1000" :formatter="(v: any) => v ? `¥ ${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : ''" :parser="(v: any) => v.replace(/[¥\s,]/g, '')" placeholder="输入总预算" style="width:240px" size="large" />
-                  <a-button v-if="suggestedBudget > 0" type="link" @click="form.totalBudget = suggestedBudget" style="font-size:12px">
-                    用角色估算值 ¥{{ suggestedBudget.toLocaleString() }}
-                  </a-button>
-                </div>
-              </a-form-item>
-            </a-form>
-
-            <!-- 费用分解 -->
-            <div v-if="form.totalBudget > 0" class="tcp-fee-box">
-              <div v-for="(r, i) in form.roles" :key="i" class="tcp-fee-line">
-                <span>{{ r.roleName || '角色'+(i+1) }} × {{ r.headcount }}人</span>
-                <span>¥{{ ((r.budget||0)*(r.headcount||1)).toLocaleString() }}</span>
-              </div>
-              <div class="tcp-fee-line sub"><span>平台服务费 (8%)</span><span>¥{{ Math.round(form.totalBudget * 0.08).toLocaleString() }}</span></div>
-              <div class="tcp-fee-total"><span>锁定金额</span><span>¥{{ Math.round(form.totalBudget * 1.08).toLocaleString() }}</span></div>
-              <a-alert v-if="rolesBudgetSum > form.totalBudget" message="角色预算合计超过总预算，请调整" type="error" :show-icon="false" banner style="margin-top:8px;border-radius:6px" />
-            </div>
-
-            <!-- 校验提示 -->
-            <div v-if="!canPublish" class="tcp-checklist">
-              <div class="tcp-checklist-title">发布前需完成：</div>
-              <div v-if="!form.title" class="tcp-checklist-item">· 填写任务标题（第 1 步）</div>
-              <div v-if="form.roles.length === 0" class="tcp-checklist-item">· 添加角色配置（第 2 步）</div>
-              <div v-if="form.roles.some(r => !r.roleName)" class="tcp-checklist-item">· 为所有角色选择名称（第 2 步）</div>
-              <div v-if="form.roles.some(r => r.budget <= 0)" class="tcp-checklist-item">· 填写所有角色预算（第 2 步）</div>
-              <div v-if="!form.totalBudget" class="tcp-checklist-item">· 设置任务总预算（当前步骤）</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /tcp-content -->
 
     <!-- ══ AI 顾问 Drawer ══ -->
     <a-drawer v-model:open="aiDrawerOpen" title="🤖 AI 任务顾问" placement="right" :width="560" :body-style="{ padding:0, display:'flex', flexDirection:'column', height:'100%' }">
@@ -401,8 +291,8 @@ import { ref, reactive, computed, onMounted, onUnmounted, watch, nextTick } from
 import { useRouter, useRoute } from 'vue-router'
 import { message, Modal } from 'ant-design-vue'
 import {
-  PlusOutlined, CheckOutlined, CheckCircleOutlined,
-  CloseOutlined, ClockCircleOutlined, InboxOutlined, RightOutlined,
+  PlusOutlined, LeftOutlined, CheckOutlined, CheckCircleOutlined,
+  CloseOutlined, ClockCircleOutlined, InboxOutlined,
 } from '@ant-design/icons-vue'
 import dayjs from 'dayjs'
 import { taskApi } from '@/api/task'
@@ -420,55 +310,6 @@ const skillTags = ref<any[]>([])
 const startDate = ref<any>(null)
 const endDate = ref<any>(null)
 const addressCascade = ref<string[]>([])
-
-// ── 步骤管理 ──
-const currentStep = ref(0)
-const steps = [
-  { label: '基本信息' },
-  { label: '角色配置' },
-  { label: '执行检查点' },
-  { label: '时间与地点' },
-  { label: '预算设定' },
-]
-
-// 每步的已完成状态（用于允许点击跳转）
-const stepsDone = computed(() => [
-  !!form.title,
-  form.roles.length > 0 && form.roles.every(r => r.roleName && r.budget > 0),
-  true, // 检查点可选，始终可跳过
-  !!(startDate.value && endDate.value),
-  form.totalBudget > 0,
-])
-
-function goToStep(idx: number) {
-  // 只允许跳到已完成的步骤或第一步
-  if (idx === 0 || currentStep.value > idx || stepsDone.value[idx - 1]) {
-    currentStep.value = idx
-  }
-}
-
-function handleNext() {
-  // 当前步骤校验
-  if (currentStep.value === 0 && !form.title.trim()) {
-    message.warning('请填写任务标题')
-    return
-  }
-  if (currentStep.value === 1 && form.roles.length === 0) {
-    message.warning('请至少添加一个角色')
-    return
-  }
-  if (currentStep.value === 1 && form.roles.some(r => !r.roleName)) {
-    message.warning('请为所有角色选择名称')
-    return
-  }
-  if (currentStep.value === 1 && form.roles.some(r => r.budget <= 0)) {
-    message.warning('请填写所有角色的预算')
-    return
-  }
-  if (currentStep.value < steps.length - 1) {
-    currentStep.value++
-  }
-}
 
 // ── 表单 ──
 interface RoleItem { roleName: string; headcount: number; budget: number; skillTagsArr: string[]; description: string }
@@ -592,7 +433,6 @@ const rolesBudgetSum = computed(() => form.roles.reduce((s, r) => s + (r.budget|
 const suggestedBudget = computed(() => rolesBudgetSum.value)
 const skillTagOptions = computed(() => skillTags.value.map(t => ({ label: `${t.name}${t.hot ? ' 🔥' : ''}`, value: t.name })))
 const fullAddress = computed(() => [...(addressCascade.value || []), form.addressDetail].filter(Boolean).join(' '))
-const dateRange = computed(() => { if (!startDate.value && !endDate.value) return ''; return `${startDate.value ? dayjs(startDate.value).format('MM/DD') : '?'} — ${endDate.value ? dayjs(endDate.value).format('MM/DD') : '?'}` })
 const taskDurationDays = computed(() => { if (!startDate.value || !endDate.value) return 0; return dayjs(endDate.value).diff(dayjs(startDate.value), 'day') + 1 })
 const canPublish = computed(() => !!(form.title && form.roles.length > 0 && form.roles.every(r => r.roleName && r.budget > 0) && form.totalBudget > 0))
 function disabledEndDate(current: any) { return startDate.value ? current && current < dayjs(startDate.value).startOf('day') : false }
@@ -679,41 +519,42 @@ onUnmounted(() => { if (autoSaveTimer) clearTimeout(autoSaveTimer) })
 </script>
 
 <style scoped>
-/* ═══════ 页面根：铺满，禁止整页滚动 ═══════ */
+/* ═══════ 页面根：淡紫灰背景，原生滚动 ═══════ */
 .tcp-page {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-  background: #f5f6f8;
+  min-height: 100%;
+  background: #f2f3ff;
 }
 
-/* ═══════ 顶部步骤导航栏 ═══════ */
-.tcp-steps-bar {
+/* ═══════ 头部 ═══════ */
+.tcp-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
-  padding: 0 24px;
-  height: 64px;
+  padding: 20px 32px 8px;
   flex-shrink: 0;
-  background: #fff;
-  border-bottom: 1px solid #e8eaed;
-  box-shadow: 0 1px 4px rgba(0,0,0,.04);
-  z-index: 20;
 }
-
-.tcp-steps-left {
-  display: flex;
+.tcp-back {
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  min-width: 160px;
+  gap: 4px;
+  border: none;
+  background: none;
+  color: #6b6e80;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: all .15s;
 }
-.tcp-page-title {
-  font-size: 15px;
+.tcp-back:hover { background: rgba(0,0,0,.04); color: #1a1a2e; }
+.tcp-title {
+  font-size: 20px;
   font-weight: 700;
   color: #1a1a2e;
-  white-space: nowrap;
+  margin: 0;
+  letter-spacing: -.3px;
 }
 .tcp-saved-tag {
   font-size: 12px;
@@ -721,301 +562,254 @@ onUnmounted(() => { if (autoSaveTimer) clearTimeout(autoSaveTimer) })
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  white-space: nowrap;
-}
-
-/* 步骤导航居中区 */
-.tcp-steps-center {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  flex: 1;
-  justify-content: center;
-}
-
-.tcp-step {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  cursor: default;
-  user-select: none;
-}
-.tcp-step.clickable { cursor: pointer; }
-.tcp-step.clickable:hover .tcp-step-circle { border-color: #1677ff; color: #1677ff; }
-.tcp-step.clickable:hover .tcp-step-label { color: #1677ff; }
-
-.tcp-step-circle {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 2px solid #d9d9d9;
-  background: #fff;
-  color: #bbb;
-  font-size: 12px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: all .2s;
-  z-index: 1;
-}
-.tcp-step.active .tcp-step-circle {
-  border-color: #1677ff;
-  background: #1677ff;
-  color: #fff;
-  box-shadow: 0 0 0 3px rgba(22,119,255,.15);
-}
-.tcp-step.done .tcp-step-circle {
-  border-color: #52c41a;
-  background: #52c41a;
-  color: #fff;
-}
-
-.tcp-step-label {
-  font-size: 13px;
-  color: #8c8c8c;
-  white-space: nowrap;
-  margin: 0 6px;
-  transition: color .2s;
-}
-.tcp-step.active .tcp-step-label { color: #1677ff; font-weight: 600; }
-.tcp-step.done .tcp-step-label { color: #52c41a; }
-
-.tcp-step-line {
-  width: 32px;
-  height: 2px;
-  background: #e8eaed;
-  flex-shrink: 0;
-  transition: background .2s;
-}
-.tcp-step-line.done { background: #52c41a; }
-
-/* 右侧操作区 */
-.tcp-steps-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 260px;
-  justify-content: flex-end;
 }
 .tcp-ai-btn {
   background: linear-gradient(135deg,#667eea,#764ba2) !important;
   border: none !important;
   color: #fff !important;
-  font-size: 13px; font-weight: 500; border-radius: 6px !important;
+  font-size: 13px; font-weight: 500; border-radius: 8px !important;
 }
 .tcp-ai-btn:hover { opacity: .88 !important; }
-.tcp-next-btn,
-.tcp-pub-btn {
-  background: linear-gradient(135deg,#1677ff,#4096ff) !important;
-  border: none !important;
-  font-weight: 600 !important;
-  box-shadow: 0 2px 8px rgba(22,119,255,.25) !important;
-}
 
-/* ═══════ 内容区：铺满剩余高度，不滚动 ═══════ */
-.tcp-content {
+/* ═══════ 主体：原生滚动 ═══════ */
+.tcp-body {
   flex: 1;
-  overflow: hidden;
-  position: relative;
+  padding: 12px 0 0;
 }
-
-/* ─ 单步面板 ─ */
-.tcp-step-panel {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-/* ─ 内容滚动容器（只在面板内滚动） ─ */
-.tcp-panel-scroll {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 24px 40px;
-  /* 自定义滚动条 */
-  scrollbar-width: thin;
-  scrollbar-color: #e0e0e0 transparent;
-}
-.tcp-panel-scroll::-webkit-scrollbar { width: 6px; }
-.tcp-panel-scroll::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 3px; }
-.tcp-panel-scroll::-webkit-scrollbar-track { background: transparent; }
-
-/* ═══════ 区块 ═══════ */
-.tcp-section {
-  background: #fff;
-  border-radius: 10px;
-  border: 1px solid #e8eaed;
-  padding: 28px 32px;
-  box-shadow: 0 1px 3px rgba(0,0,0,.04);
-  max-width: 860px;
+.tcp-container {
+  max-width: 980px;
   margin: 0 auto;
-}
-.tcp-sec-head { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 24px; }
-.tcp-sec-icon { font-size: 26px; flex-shrink: 0; margin-top: 2px; }
-.tcp-sec-title { font-size: 17px; font-weight: 700; color: #1a1a2e; line-height: 1.4; }
-.tcp-sec-sub { font-size: 13px; color: #8c8c8c; margin-top: 3px; }
-.tcp-optional {
-  font-size: 11px; background: #f0f0f0; color: #8c8c8c;
-  padding: 1px 8px; border-radius: 10px; font-weight: 400; vertical-align: middle; margin-left: 6px;
+  padding: 0 24px;
 }
 
-/* ── 表单 ── */
-.tcp-form :deep(.ant-form-item) { margin-bottom: 20px; }
+/* ═══════ 通用卡片 ═══════ */
+.tcp-card {
+  background: #faf9ff;
+  border: 1px solid #e0e2ed;
+  border-radius: 12px;
+  padding: 24px 28px;
+  margin-bottom: 16px;
+}
+.tcp-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 4px;
+}
+.tcp-card-hint {
+  font-size: 13px;
+  color: #8c8e9e;
+  margin-bottom: 18px;
+}
+.tcp-opt-badge {
+  font-size: 11px;
+  background: #e6e7f3;
+  color: #8c8e9e;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 400;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+
+/* ── 表单通用 ── */
+.tcp-form :deep(.ant-form-item) { margin-bottom: 18px; }
 .tcp-fl { font-size: 13px; font-weight: 600; color: #1a1a2e; }
-.tcp-fl-hint { font-size: 12px; color: #aaa; margin-left: 6px; font-weight: 400; }
+.tcp-fl-opt { font-size: 12px; color: #aaa; margin-left: 6px; font-weight: 400; }
 
-/* 工作模式 */
-.tcp-mode-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+/* ═══════ 工作模式卡片 ═══════ */
+.tcp-mode-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 14px; }
 .tcp-mode-card {
-  border: 2px solid #e8eaed; border-radius: 10px; padding: 18px;
-  cursor: pointer; transition: all .18s;
+  background: #fff;
+  border: 2px solid #e0e2ed;
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all .2s;
 }
-.tcp-mode-card:hover { border-color: #91caff; background: #fafcff; }
-.tcp-mode-card.sel { border-color: #1677ff; background: #f0f7ff; }
-.tcp-mode-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-.tcp-mode-ico { font-size: 26px; }
-.tcp-mode-radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #d9d9d9; display: flex; align-items: center; justify-content: center; transition: all .15s; }
-.tcp-mode-radio.sel { border-color: #1677ff; }
-.tcp-mode-radio-dot { width: 8px; height: 8px; border-radius: 50%; background: #1677ff; }
-.tcp-mode-name { font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 4px; }
-.tcp-mode-desc { font-size: 12px; color: #8c8c8c; line-height: 1.5; margin-bottom: 10px; }
-.tcp-mode-tags { display: flex; gap: 4px; }
-.tcp-mtag { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
-.tcp-mtag.blue { background: #e6f4ff; color: #1677ff; }
-.tcp-mtag.green { background: #f6ffed; color: #52c41a; }
-.tcp-mtag.orange { background: #fff7e6; color: #fa8c16; }
-.tcp-mtag.purple { background: #f9f0ff; color: #722ed1; }
+.tcp-mode-card:hover { border-color: #a0b4ff; box-shadow: 0 2px 12px rgba(8,88,244,.08); }
+.tcp-mode-card.sel { border-color: #0858f4; background: #f0f4ff; }
+.tcp-mode-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.tcp-mode-ico { font-size: 28px; }
+.tcp-mode-radio {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid #d0d2de; display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.tcp-mode-radio.sel { border-color: #0858f4; }
+.tcp-mode-dot { width: 10px; height: 10px; border-radius: 50%; background: #0858f4; }
+.tcp-mode-name { font-size: 15px; font-weight: 700; color: #1a1a2e; margin-bottom: 4px; }
+.tcp-mode-desc { font-size: 13px; color: #8c8e9e; line-height: 1.6; margin-bottom: 12px; }
+.tcp-mode-tags { display: flex; gap: 6px; }
+.tcp-tag {
+  font-size: 11px; padding: 2px 10px; border-radius: 10px; font-weight: 500;
+}
+.tcp-tag.blue { background: #e6f0ff; color: #0858f4; }
+.tcp-tag.green { background: #ecfdf5; color: #10b981; }
+.tcp-tag.orange { background: #fff7ed; color: #f97316; }
+.tcp-tag.purple { background: #f3f0ff; color: #7c3aed; }
 
-/* 角色 */
+/* ═══════ 角色 ═══════ */
 .tcp-quick-bar {
   display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
-  padding: 10px 12px; background: #fafafa; border: 1px solid #f0f0f0;
+  padding: 10px 14px; background: #f2f3ff; border: 1px solid #e0e2ed;
   border-radius: 8px; margin-bottom: 14px;
 }
-.tcp-quick-label { font-size: 12px; color: #8c8c8c; white-space: nowrap; }
+.tcp-quick-lbl { font-size: 12px; color: #8c8e9e; white-space: nowrap; }
 .tcp-chip {
-  height: 26px; padding: 0 10px; border-radius: 13px;
-  border: 1px solid #d9d9d9; background: #fff;
-  font-size: 12px; color: #595959; cursor: pointer; transition: all .15s;
+  height: 28px; padding: 0 12px; border-radius: 14px;
+  border: 1px solid #d0d2de; background: #fff;
+  font-size: 12px; color: #4a4d5e; cursor: pointer; transition: all .15s;
 }
-.tcp-chip:hover { border-color: #1677ff; color: #1677ff; background: #f0f7ff; }
-.tcp-roles-empty { text-align: center; padding: 28px 0; color: #bbb; font-size: 13px; }
+.tcp-chip:hover { border-color: #0858f4; color: #0858f4; background: #f0f4ff; }
+.tcp-empty { text-align: center; padding: 24px 0; color: #b0b2c0; font-size: 13px; }
+
 .tcp-role-card {
-  border: 1px solid #e8eaed; border-radius: 8px; padding: 14px 16px;
-  margin-bottom: 10px; background: #fafcff; transition: box-shadow .15s;
+  border: 1px solid #e0e2ed; border-radius: 10px; padding: 14px 16px;
+  margin-bottom: 10px; background: #fff; transition: box-shadow .15s;
 }
-.tcp-role-card:hover { box-shadow: 0 2px 8px rgba(22,119,255,.08); }
-.tcp-role-row1 { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
-.tcp-role-idx {
-  width: 22px; height: 22px; border-radius: 50%; background: #1677ff; color: #fff;
-  font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+.tcp-role-card:hover { box-shadow: 0 2px 8px rgba(8,88,244,.06); }
+.tcp-role-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.tcp-role-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: #0858f4; color: #fff;
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
-.tcp-role-lbl { font-size: 12px; color: #8c8c8c; white-space: nowrap; }
+.tcp-role-lbl { font-size: 12px; color: #8c8e9e; white-space: nowrap; }
 .tcp-role-del {
   margin-left: auto; width: 24px; height: 24px; border-radius: 50%;
   border: 1px solid #ffa39e; background: #fff; color: #ff4d4f; font-size: 11px;
-  cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
 }
 .tcp-role-del:hover { background: #fff1f0; }
-.tcp-role-row2 { display: flex; gap: 10px; }
-.tcp-role-sub { margin-top: 8px; font-size: 12px; color: #8c8c8c; padding-top: 8px; border-top: 1px dashed #f0f0f0; }
-.tcp-role-sub strong { color: #1677ff; }
+.tcp-role-mid { display: flex; gap: 10px; }
+.tcp-role-sub { margin-top: 8px; font-size: 12px; color: #8c8e9e; padding-top: 8px; border-top: 1px dashed #e6e7f3; }
+.tcp-role-sub strong { color: #0858f4; }
 
 .tcp-add-btn {
-  width: 100%; height: 42px; border-radius: 8px; border: 1.5px dashed #d9d9d9;
-  background: transparent; color: #8c8c8c; font-size: 13px; cursor: pointer;
-  margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all .15s;
+  width: 100%; height: 42px; border-radius: 8px;
+  border: 1.5px dashed #d0d2de; background: transparent;
+  color: #8c8e9e; font-size: 13px; cursor: pointer;
+  margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: all .15s;
 }
-.tcp-add-btn:hover { border-color: #1677ff; color: #1677ff; background: #f0f7ff; }
+.tcp-add-btn:hover { border-color: #0858f4; color: #0858f4; background: #f0f4ff; }
 
-/* 检查点 */
-.tcp-tpl-bar {
+/* ═══════ 检查点 ═══════ */
+.tcp-tpl-row {
   display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
-  padding: 8px 12px; background: #fffbe6; border: 1px solid #ffe58f;
+  padding: 8px 14px; background: #fef9e7; border: 1px solid #f0dfa0;
   border-radius: 8px; margin-bottom: 16px;
 }
-.tcp-tpl-label { font-size: 12px; color: #ad6800; font-weight: 600; white-space: nowrap; }
+.tcp-tpl-lbl { font-size: 12px; color: #92750a; font-weight: 600; white-space: nowrap; }
 .tcp-tpl-btn {
-  padding: 3px 10px; border-radius: 6px; border: 1px solid #e8d48f;
-  background: #fff; font-size: 12px; color: #595959; cursor: pointer; transition: all .15s;
+  padding: 4px 12px; border-radius: 6px; border: 1px solid #e0d48f;
+  background: #fff; font-size: 12px; color: #4a4d5e; cursor: pointer;
+  transition: all .15s;
 }
 .tcp-tpl-btn:hover { border-color: #fa8c16; color: #fa8c16; background: #fff7e6; }
+
 .tcp-timeline { padding: 0 0 4px 4px; }
-.tcp-tl-node { display: flex; align-items: center; gap: 12px; padding: 2px 0; }
+.tcp-tl-item { display: flex; align-items: center; gap: 12px; padding: 2px 0; }
 .tcp-tl-dot {
   width: 28px; height: 28px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   font-size: 11px; font-weight: 700;
 }
-.tcp-tl-dot.start { background: #e6f4ff; border: 2px solid #1677ff; color: #1677ff; }
-.tcp-tl-dot.end { background: #f6ffed; border: 2px solid #52c41a; color: #52c41a; font-size: 13px; }
-.tcp-tl-dot.cp { color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+.tcp-tl-dot.start { background: #e6f0ff; border: 2px solid #0858f4; color: #0858f4; }
+.tcp-tl-dot.end { background: #ecfdf5; border: 2px solid #10b981; color: #10b981; font-size: 13px; }
+.tcp-tl-dot.cp { color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
 .tcp-tl-text { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .tcp-tl-text strong { color: #1a1a2e; }
-.tcp-tl-text span { color: #8c8c8c; font-size: 12px; }
-.tcp-tl-stem { width: 2px; height: 12px; background: #e8eaed; margin-left: 13px; }
-.tcp-tl-cp-body { flex: 1; min-width: 0; }
-.tcp-tl-cp-top { display: flex; align-items: center; gap: 8px; }
-.tcp-cp-name { flex: 1; }
-.tcp-cp-badge { flex-shrink: 0; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.tcp-tl-text span { color: #8c8e9e; font-size: 12px; }
+.tcp-tl-stem { width: 2px; height: 12px; background: #e0e2ed; margin-left: 13px; }
+.tcp-tl-body { flex: 1; min-width: 0; }
+.tcp-tl-head { display: flex; align-items: center; gap: 8px; }
+.tcp-cp-input { flex: 1; }
+.tcp-cp-pct {
+  flex-shrink: 0; padding: 2px 10px; border-radius: 12px;
+  font-size: 12px; font-weight: 700; white-space: nowrap;
+}
 .tcp-cp-btn {
-  width: 22px; height: 22px; border-radius: 4px; border: 1px solid #e8eaed;
-  background: #fff; font-size: 11px; cursor: pointer; color: #595959; transition: all .15s;
+  width: 22px; height: 22px; border-radius: 4px; border: 1px solid #e0e2ed;
+  background: #fff; font-size: 11px; cursor: pointer; color: #6b6e80;
   display: flex; align-items: center; justify-content: center;
 }
-.tcp-cp-btn:hover:not(:disabled) { border-color: #1677ff; color: #1677ff; }
+.tcp-cp-btn:hover:not(:disabled) { border-color: #0858f4; color: #0858f4; }
 .tcp-cp-btn:disabled { opacity: .3; cursor: default; }
 .tcp-cp-btn.del:hover { border-color: #ff4d4f; color: #ff4d4f; }
-.tcp-cp-expand { font-size: 12px; color: #8c8c8c; cursor: pointer; padding: 4px 0; display: flex; align-items: center; gap: 6px; user-select: none; }
-.tcp-cp-expand:hover { color: #1677ff; }
-.tcp-cp-expand-hint { color: #bbb; font-size: 11px; }
-.tcp-cp-detail { margin-top: 6px; padding: 10px; background: #fafafa; border-radius: 6px; border: 1px solid #f0f0f0; }
+.tcp-cp-toggle {
+  font-size: 12px; color: #8c8e9e; cursor: pointer; padding: 4px 0;
+  display: flex; align-items: center; gap: 6px; user-select: none;
+}
+.tcp-cp-toggle:hover { color: #0858f4; }
+.tcp-cp-hint { color: #b0b2c0; font-size: 11px; }
+.tcp-cp-detail { margin-top: 6px; padding: 10px; background: #f8f8fc; border-radius: 6px; border: 1px solid #e6e7f3; }
 
-/* 时间 */
-.tcp-duration {
+/* ═══════ 时间+预算 ═══════ */
+.tcp-dur-tag {
   display: inline-flex; align-items: center; gap: 6px;
-  font-size: 12px; color: #1677ff; background: #e6f4ff;
+  font-size: 12px; color: #0858f4; background: #e6f0ff;
   padding: 4px 12px; border-radius: 20px; margin: -4px 0 12px;
 }
-
-/* 预算 */
-.tcp-budget-row { display: flex; align-items: center; gap: 10px; }
 .tcp-fee-box {
-  background: #fafafa; border: 1px solid #f0f0f0; border-radius: 8px;
-  padding: 12px 16px; margin-top: 8px;
+  background: #f8f8fc; border: 1px solid #e6e7f3; border-radius: 8px;
+  padding: 12px 16px; margin-top: 12px;
 }
-.tcp-fee-line { display: flex; justify-content: space-between; font-size: 13px; color: #595959; padding: 4px 0; }
-.tcp-fee-line.sub { color: #8c8c8c; }
+.tcp-fee-line { display: flex; justify-content: space-between; font-size: 13px; color: #4a4d5e; padding: 4px 0; }
+.tcp-fee-line.muted { color: #8c8e9e; }
 .tcp-fee-total {
   display: flex; justify-content: space-between; align-items: center;
-  padding-top: 8px; margin-top: 6px; border-top: 1.5px solid #e8eaed;
-  font-weight: 700; font-size: 15px; color: #1677ff;
+  padding-top: 8px; margin-top: 6px; border-top: 1.5px solid #e0e2ed;
+  font-weight: 700; font-size: 15px; color: #0858f4;
 }
 
-/* 附件 */
+/* ═══════ 附件 ═══════ */
 .tcp-upload {
-  border: 2px dashed #d9d9d9; border-radius: 10px; padding: 20px;
-  text-align: center; cursor: pointer; transition: all .18s; background: #fafafa;
+  border: 2px dashed #d0d2de; border-radius: 10px; padding: 24px;
+  text-align: center; cursor: pointer; transition: all .18s; background: #fff;
 }
-.tcp-upload:hover, .tcp-upload.dragover { border-color: #1677ff; background: #f0f7ff; }
-.tcp-upload-empty { font-size: 14px; color: #595959; }
-.tcp-upload-hint { font-size: 12px; color: #bbb; margin-top: 4px; }
+.tcp-upload:hover, .tcp-upload.dragover { border-color: #0858f4; background: #f0f4ff; }
+.tcp-upload-empty { font-size: 14px; color: #6b6e80; }
+.tcp-upload-hint { font-size: 12px; color: #b0b2c0; margin-top: 4px; }
 .tcp-file-list { text-align: left; }
-.tcp-file-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; }
+.tcp-file-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f0f0f5; font-size: 13px; }
 .tcp-file-ico { font-size: 16px; flex-shrink: 0; }
-.tcp-file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
-.tcp-file-sz { color: #bbb; font-size: 12px; flex-shrink: 0; }
-.tcp-file-del { border: none; background: none; color: #bbb; font-size: 13px; cursor: pointer; padding: 0 4px; }
+.tcp-file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 280px; }
+.tcp-file-sz { color: #b0b2c0; font-size: 12px; flex-shrink: 0; }
+.tcp-file-del { border: none; background: none; color: #b0b2c0; font-size: 13px; cursor: pointer; padding: 0 4px; }
 .tcp-file-del:hover { color: #ff4d4f; }
-.tcp-file-add { font-size: 13px; color: #1677ff; margin-top: 8px; display: inline-block; cursor: pointer; }
+.tcp-file-add { font-size: 13px; color: #0858f4; margin-top: 8px; display: inline-block; cursor: pointer; }
 
-/* 校验 */
-.tcp-checklist { margin-top: 14px; padding: 12px 14px; background: #fff7e6; border-radius: 8px; border: 1px solid #ffe58f; }
-.tcp-checklist-title { font-size: 12px; font-weight: 700; color: #ad6800; margin-bottom: 6px; }
-.tcp-checklist-item { font-size: 12px; color: #d46b08; line-height: 2; }
+/* ═══════ 底部固定操作栏 ═══════ */
+.tcp-footer {
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  border-top: 1px solid #e0e2ed;
+  padding: 12px 0;
+  z-index: 20;
+  box-shadow: 0 -2px 8px rgba(0,0,0,.04);
+}
+.tcp-footer-inner {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.tcp-footer-tips {
+  display: flex; gap: 12px; font-size: 12px; color: #e07a14; flex-wrap: wrap;
+}
+.tcp-pub-btn {
+  background: linear-gradient(135deg,#0858f4,#3b82f6) !important;
+  border: none !important;
+  font-weight: 600 !important;
+  min-width: 140px;
+  box-shadow: 0 2px 10px rgba(8,88,244,.3) !important;
+}
 
 /* ═══════ 动画 ═══════ */
 .fade-enter-active, .fade-leave-active { transition: opacity .3s; }
@@ -1027,6 +821,6 @@ onUnmounted(() => { if (autoSaveTimer) clearTimeout(autoSaveTimer) })
 .ai-msg { display: flex; }
 .ai-msg.user { justify-content: flex-end; }
 .ai-msg-bubble { max-width: 84%; padding: 10px 14px; border-radius: 12px; }
-.ai-msg.user .ai-msg-bubble { background: #1677ff; color: #fff; border-radius: 12px 12px 2px 12px; }
-.ai-msg.assistant .ai-msg-bubble { background: #f5f5f5; border-radius: 12px 12px 12px 2px; }
+.ai-msg.user .ai-msg-bubble { background: #0858f4; color: #fff; border-radius: 12px 12px 2px 12px; }
+.ai-msg.assistant .ai-msg-bubble { background: #f2f3ff; border-radius: 12px 12px 12px 2px; }
 </style>
