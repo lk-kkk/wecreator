@@ -289,7 +289,8 @@ async function sendChat() {
     chatSessionUuid.value = res.sessionUuid
     chatMessages.value.push({ role: 'assistant', content: res.response, meta: { model: res.model, tokens: res.tokensUsed } })
   } catch (e: any) {
-    chatMessages.value.push({ role: 'assistant', content: `❌ 请求失败: ${e?.message || '未知错误'}` })
+    const errMsg = e?.response?.data?.message || e?.message || '未知错误'
+    chatMessages.value.push({ role: 'assistant', content: `❌ ${errMsg}` })
   } finally {
     chatLoading.value = false
     scrollToBottom()
@@ -314,6 +315,7 @@ onMounted(fetchData)
 /* ── Chat Dialog ── */
 .chat-container { display: flex; flex-direction: column; height: 520px; margin: -24px -24px -12px; border-radius: 0 0 8px 8px; overflow: hidden; }
 .chat-agent-bar { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: #fafafa; border-bottom: 1px solid #f0f0f0; flex-shrink: 0; }
+:deep(.ant-modal-header) { padding-right: 48px; }
 .chat-messages { flex: 1; overflow-y: auto; padding: 16px; background: #f8f9fb; }
 .chat-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
 .chat-msg { display: flex; gap: 10px; margin-bottom: 16px; }

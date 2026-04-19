@@ -711,8 +711,15 @@ export class AiService {
   ): LLMAdapter {
     // custom_http / custom — 使用专用适配器
     if (provider === 'custom_http' || provider === 'custom') {
-      const chatUrl = configObj?.customChatUrl || baseUrl || '';
+      let chatUrl = configObj?.customChatUrl || baseUrl || '';
       if (!chatUrl) throw new Error('自定义 HTTP 模式必须提供 Chat URL 或 Base URL');
+      // 如果 chatUrl 只是域名（没有 /chat/completions 之类的路径），自动补全
+      try {
+        const parsed = new URL(chatUrl);
+        if (parsed.pathname === '/' || parsed.pathname === '') {
+          chatUrl = chatUrl.replace(/\/+$/, '') + '/v1/chat/completions';
+        }
+      } catch { /* 非合法URL，原样传递让后续报错 */ }
       const extraHeaders: Record<string, string> = (() => {
         if (!configObj?.customHeaders) return {};
         try { return typeof configObj.customHeaders === 'string'
@@ -1022,7 +1029,9 @@ class CustomHttpAdapter implements LLMAdapter {
       const body = await res.text().catch(() => '');
       throw new Error(`Custom HTTP API ${res.status}: ${body.slice(0, 200)}`);
     }
-    const data = await res.json() as any;
+    const data = await res.json().catch(() => {
+      throw new Error(`服务端返回非 JSON 响应，请检查 Chat URL 是否正确: ${this.chatUrl}`);
+    }) as any;
     const contentText = this.extractByPath(data, this.responsePath);
     const totalTokens = data?.usage?.total_tokens
       || data?.usage?.completion_tokens
