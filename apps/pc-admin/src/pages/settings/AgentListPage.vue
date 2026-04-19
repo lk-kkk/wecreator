@@ -14,7 +14,7 @@
       description="前往「AI大模型配置」添加模型预设后，可在创建智能体时为其单独指定专属模型和 API Key。"
       closable>
       <template #action>
-        <a-button size="small" type="link" @click="$router.push('/settings/llm-config')">去配置模型</a-button>
+        <a-button size="small" type="link" @click="$router.push('/settings/llm')">去配置模型</a-button>
       </template>
     </a-alert>
 
@@ -222,8 +222,8 @@ async function fetchData() {
       request.get('/company/agents'),
       request.get('/company/model-presets'),
     ])
-    agents.value = agentRes.data || []
-    presets.value = presetRes.data || []
+    agents.value = agentRes || []
+    presets.value = presetRes || []
   } finally { loading.value = false }
 }
 
