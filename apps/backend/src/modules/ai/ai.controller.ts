@@ -90,6 +90,12 @@ export class ModelPresetController {
     requireSuperAdmin(user);
     return this.svc.testModelPreset(user.companyId!, id);
   }
+
+  @Get(':id/stats')
+  @ApiOperation({ summary: '模型预设调用统计' })
+  stats(@CurrentUser() user: CurrentUserPayload, @Param('id', ParseIntPipe) id: number) {
+    return this.svc.getModelPresetStats(user.companyId!, id);
+  }
 }
 
 @ApiTags('AI Agents & Chat')

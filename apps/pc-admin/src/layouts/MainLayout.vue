@@ -299,7 +299,7 @@ onMounted(loadBalance)
 <style scoped>
 /* ── 整体布局 ──────────────────────────────────────────────── */
 .main-layout {
-  min-height: 100vh;
+  height: 100vh;
   background: var(--color-bg-page);
 }
 
@@ -567,11 +567,24 @@ onMounted(loadBalance)
 /* ── 内容区 ────────────────────────────────────────────────── */
 .content-layout {
   background: var(--color-bg-page);
+  display: flex !important;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
 }
 
+/* main-content 是内容区内的可滚动区域 */
 .main-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 24px;
-  min-height: calc(100vh - var(--layout-header-height));
   background: var(--color-bg-page);
+}
+
+/* 全屏页面（如任务创建）：不需要 padding，自行控制高度 */
+.main-content:has(.tcp-page) {
+  padding: 0;
+  overflow: hidden;
 }
 </style>

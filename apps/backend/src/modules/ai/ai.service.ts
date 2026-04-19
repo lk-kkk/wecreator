@@ -457,6 +457,69 @@ export class AiService {
     };
   }
 
+  // ═══════ Model Preset Stats ═══════
+
+  async getModelPresetStats(companyId: number, presetId: number) {
+    const preset = await this.prisma.llmModelPreset.findFirst({
+      where: { id: BigInt(presetId), companyId: BigInt(companyId) },
+      include: { agents: { select: { id: true, name: true, monthlyCallCount: true } } },
+    });
+    if (!preset) throw new NotFoundException('模型预设不存在');
+
+    // Aggregate chat sessions through agents bound to this preset
+    const agentIds = preset.agents.map(a => a.id);
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    let totalSessions = 0;
+    let totalMessages = 0;
+    let totalTokens = BigInt(0);
+    let monthlySessions = 0;
+    let monthlyMessages = 0;
+    let monthlyTokens = BigInt(0);
+
+    if (agentIds.length > 0) {
+      const allTimeAgg = await this.prisma.aiChatSession.aggregate({
+        where: { agentId: { in: agentIds } },
+        _count: { id: true },
+        _sum: { messageCount: true, totalTokens: true },
+      });
+      totalSessions = allTimeAgg._count.id || 0;
+      totalMessages = allTimeAgg._sum.messageCount || 0;
+      totalTokens = allTimeAgg._sum.totalTokens || BigInt(0);
+
+      const monthAgg = await this.prisma.aiChatSession.aggregate({
+        where: { agentId: { in: agentIds }, createdAt: { gte: monthStart } },
+        _count: { id: true },
+        _sum: { messageCount: true, totalTokens: true },
+      });
+      monthlySessions = monthAgg._count.id || 0;
+      monthlyMessages = monthAgg._sum.messageCount || 0;
+      monthlyTokens = monthAgg._sum.totalTokens || BigInt(0);
+    }
+
+    return {
+      presetId: Number(preset.id),
+      displayName: preset.displayName,
+      modelName: preset.modelName,
+      provider: preset.provider,
+      boundAgents: preset.agents.map(a => ({
+        id: Number(a.id), name: a.name, monthlyCallCount: a.monthlyCallCount,
+      })),
+      allTime: {
+        sessions: totalSessions,
+        messages: totalMessages,
+        tokens: Number(totalTokens),
+      },
+      thisMonth: {
+        sessions: monthlySessions,
+        messages: monthlyMessages,
+        tokens: Number(monthlyTokens),
+      },
+      createdAt: preset.createdAt,
+    };
+  }
+
   // ═══════ AI Chat ═══════
 
   async chat(companyId: number, userId: number, dto: ChatDto) {
