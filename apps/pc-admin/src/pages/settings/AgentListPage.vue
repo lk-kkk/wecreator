@@ -35,6 +35,20 @@
             </div>
           </div>
         </template>
+        <template #extra>
+          <a-dropdown :trigger="['click']">
+            <a-button type="text" size="small" class="more-btn" @click.stop><EllipsisOutlined style="font-size:16px" /></a-button>
+            <template #overlay>
+              <a-menu @click="({ key }: any) => handleMenuClick(key, a)">
+                <a-menu-item key="edit"><EditOutlined /> 编辑</a-menu-item>
+                <a-menu-item key="test"><MessageOutlined /> 测试对话</a-menu-item>
+                <a-menu-item key="toggle"><PauseCircleOutlined v-if="a.isActive" /><PlayCircleOutlined v-else /> {{ a.isActive ? '停用' : '启用' }}</a-menu-item>
+                <a-menu-divider v-if="!a.isPreset" />
+                <a-menu-item v-if="!a.isPreset" key="delete" danger><DeleteOutlined /> 删除</a-menu-item>
+              </a-menu>
+            </template>
+          </a-dropdown>
+        </template>
 
         <p style="color:#666;font-size:13px;margin:0 0 10px;line-height:1.5">{{ a.description }}</p>
 
@@ -54,14 +68,8 @@
         </div>
 
         <a-divider style="margin:8px 0" />
-        <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center">
           <span style="font-size:12px;color:#999">本月调用: <strong>{{ a.monthlyCallCount }}</strong> 次</span>
-          <a-space :size="4">
-            <a-tooltip title="测试对话"><a-button size="small" type="text" @click="openChat(a)"><MessageOutlined /></a-button></a-tooltip>
-            <a-tooltip title="编辑"><a-button size="small" type="text" @click="onAgentAction('edit', a)"><EditOutlined /></a-button></a-tooltip>
-            <a-tooltip :title="a.isActive ? '停用' : '启用'"><a-button size="small" type="text" @click="onAgentAction('toggle', a)"><PauseCircleOutlined v-if="a.isActive" /><PlayCircleOutlined v-else /></a-button></a-tooltip>
-            <a-tooltip v-if="!a.isPreset" title="删除"><a-popconfirm title="确认删除？" @confirm="deleteAgent(a.id)"><a-button size="small" type="text" danger><DeleteOutlined /></a-button></a-popconfirm></a-tooltip>
-          </a-space>
         </div>
       </a-card>
     </div>
@@ -154,7 +162,7 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import {
   PlusOutlined, EditOutlined, DeleteOutlined, MessageOutlined,
-  SendOutlined, PauseCircleOutlined, PlayCircleOutlined,
+  SendOutlined, PauseCircleOutlined, PlayCircleOutlined, EllipsisOutlined,
 } from '@ant-design/icons-vue'
 import { useRouter } from 'vue-router'
 import request from '@/api/request'
@@ -220,12 +228,18 @@ function openCreate() {
   form.value = { name: '', description: '', systemPrompt: '', modelName: '', temperature: 0.7, presetId: null }
   showForm.value = true
 }
-function onAgentAction(key: string, agent: any) {
+function handleMenuClick(key: string, agent: any) {
   if (key === 'edit') {
     editingId.value = agent.id
     form.value = { name: agent.name, description: agent.description, systemPrompt: agent.systemPrompt, modelName: agent.modelName || '', temperature: agent.temperature ?? 0.7, presetId: agent.presetId || null }
     showForm.value = true
-  } else if (key === 'toggle') { toggleAgent(agent.id) }
+  } else if (key === 'toggle') {
+    toggleAgent(agent.id)
+  } else if (key === 'test') {
+    openChat(agent)
+  } else if (key === 'delete') {
+    Modal.confirm({ title: '确认删除', content: `确定删除智能体「${agent.name}」？此操作不可恢复。`, okText: '删除', okType: 'danger', cancelText: '取消', onOk: () => deleteAgent(agent.id) })
+  }
 }
 async function handleSave() {
   if (!form.value.name.trim()) return message.warning('请填写名称')
@@ -294,6 +308,8 @@ onMounted(fetchData)
 .agent-tags { display: flex; gap: 4px; }
 .model-info { display: flex; align-items: center; gap: 6px; background: #f5f7fa; border-radius: 4px; padding: 6px 8px; flex-wrap: wrap; }
 .model-name { font-size: 12px; color: #333; font-weight: 500; }
+.more-btn { color: #999; border-radius: 4px; }
+.more-btn:hover { color: #333; background: #f5f5f5; }
 
 /* ── Chat Dialog ── */
 .chat-container { display: flex; flex-direction: column; height: 520px; margin: -24px -24px -12px; border-radius: 0 0 8px 8px; overflow: hidden; }
