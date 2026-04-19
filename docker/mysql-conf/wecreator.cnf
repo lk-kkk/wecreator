@@ -1,0 +1,37 @@
+# ============================================================
+# WeCreator MySQL 生产环境优化配置
+# 放置于 docker/mysql-conf/wecreator.cnf
+# ============================================================
+
+[mysqld]
+# 字符集
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+
+# InnoDB 优化（按 4GB 内存服务器调整）
+innodb_buffer_pool_size = 1G
+innodb_buffer_pool_instances = 4
+innodb_log_file_size = 256M
+innodb_flush_log_at_trx_commit = 1
+innodb_flush_method = O_DIRECT
+
+# 连接数
+max_connections = 500
+max_connect_errors = 1000
+
+# 慢查询日志
+slow_query_log = 1
+long_query_time = 2
+slow_query_log_file = /var/log/mysql/slow.log
+
+# 二进制日志（用于备份恢复）
+log-bin = mysql-bin
+binlog_expire_logs_seconds = 604800
+binlog_format = ROW
+
+# 超时
+wait_timeout = 28800
+interactive_timeout = 28800
+
+[client]
+default-character-set = utf8mb4
