@@ -4,18 +4,26 @@
  * R7 · wc-mp-dev · Sprint 1 W1
  *
  * 生命周期：
- * - onLaunch: 检查登录状态 → 预加载个人档案
+ * - onLaunch: 检查登录状态 → 校验 token 有效性 → 预加载个人档案
+ *   若 token 过期 或 对应 worker 已删除 (401/404),自动清除本地状态回到未登录界面
  */
 import { useEffect, PropsWithChildren } from 'react'
 import Taro from '@tarojs/taro'
 import { isLoggedIn, fetchAndCacheProfile } from './utils/wx-login'
+import { clearUserData } from './stores/user'
 import './app.scss'
 
 function App({ children }: PropsWithChildren) {
   useEffect(() => {
-    // App 启动时：若已登录则预加载个人档案
+    // App 启动: 若 storage 里有 token → 校验有效性
     if (isLoggedIn()) {
-      fetchAndCacheProfile()
+      fetchAndCacheProfile().then((ok) => {
+        if (!ok) {
+          // profile 拉取失败 (token 失效 / worker 已删)
+          // → 清除本地登录状态, 触发 emitChange 让首页 UI 重渲易为登录按钮
+          clearUserData()
+        }
+      })
     }
 
     // 检查系统信息（用于适配安全区域等）

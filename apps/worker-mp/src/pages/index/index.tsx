@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { View, Text, ScrollView } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
-import { wxLogin, devLogin, isLoggedIn } from '../../utils/wx-login'
+import { wxLogin, devLogin } from '../../utils/wx-login'
+import { useUserStore } from '../../stores/user'
 import { request } from '../../api/request'
 import './index.scss'
 
@@ -26,7 +27,9 @@ const modeLabel: Record<string, string> = {
 
 export default function IndexPage() {
   const [loading, setLoading] = useState(false)
-  const [logged, setLogged] = useState(isLoggedIn())
+  // 订阅 userStore → storage 变化 (clearUserData / saveLoginData) 会自动触发重渲染
+  // 代替原来的 useState(isLoggedIn()) (只读首次,无法感知 app 启动轮误表 token 时的自动登出)
+  const { isLoggedIn: logged } = useUserStore()
   const [activeTab, setActiveTab] = useState<string>('invited')
   const [tasks, setTasks] = useState<any[]>([])
   const [refreshing, setRefreshing] = useState(false)
@@ -36,7 +39,7 @@ export default function IndexPage() {
     setLoading(true)
     try {
       const result = await wxLogin()
-      setLogged(true)
+      // saveLoginData 已在 wxLogin 内部触发 emitChange, userStore 会自动同步 logged=true
       if (result.isNew || !result.isVerified) {
         Taro.showToast({ title: '登录成功', icon: 'success' })
         setTimeout(() => {
@@ -101,7 +104,8 @@ export default function IndexPage() {
     setLoading(true)
     try {
       const result = await devLogin(content.trim())
-      setLogged(true)
+      // 同上, devLogin 内部会触发 emitChange
+      void result
       Taro.showToast({ title: `调试登录成功`, icon: 'success' })
     } catch (err: any) {
       Taro.showToast({ title: err.message || '登录失败', icon: 'none' })

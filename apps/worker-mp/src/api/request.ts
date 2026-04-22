@@ -10,6 +10,7 @@
  * - 网络异常友好提示
  */
 import Taro from '@tarojs/taro'
+import { clearUserData } from '../stores/user'
 
 const BASE_URL = process.env.TARO_APP_API_BASE || 'http://localhost:3000/api/v1'
 
@@ -76,12 +77,17 @@ async function getValidToken(): Promise<string> {
 }
 
 // ── 强制退出登录 ────────────────────────────────────
+/**
+ * 401 自动登出:
+ * 1. 清除所有本地登录状态 (token / refresh / user / profile)
+ * 2. emitChange 通知首页 UI 重渲染为登录按钮 (由 clearUserData 内部触发)
+ * 3. 跳转到首页 (Tab 页用 switchTab)
+ */
 function forceLogout() {
-  Taro.removeStorageSync('wc_token')
-  Taro.removeStorageSync('wc_refresh_token')
-  Taro.removeStorageSync('wc_user')
-  // 跳转首页（Tab页用switchTab）
-  Taro.switchTab({ url: '/pages/index/index' })
+  clearUserData()
+  Taro.switchTab({ url: '/pages/index/index' }).catch(() => {
+    // 已在首页时 switchTab 会 fail, 忽略
+  })
 }
 
 // ── 统一请求接口 ────────────────────────────────────
