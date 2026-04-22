@@ -97,6 +97,18 @@ export class CreateTaskDto {
   @IsOptional()
   @IsNumber()
   projectId?: number;
+
+  // V3.7 新增字段
+  @ApiPropertyOptional({ description: '优先级', enum: ['p0', 'p1', 'p2'] })
+  @IsOptional()
+  @IsIn(['p0', 'p1', 'p2'])
+  priority?: 'p0' | 'p1' | 'p2';
+
+  @ApiPropertyOptional({ description: '验收标准' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  acceptanceCriteria?: string;
 }
 
 // ============================================================
@@ -109,6 +121,9 @@ export class UpdateDraftDto {
   @ApiPropertyOptional() @IsOptional() @IsDateString() startDate?: string;
   @ApiPropertyOptional() @IsOptional() @IsDateString() endDate?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() address?: string;
+  // V3.7
+  @ApiPropertyOptional() @IsOptional() @IsIn(['p0', 'p1', 'p2']) priority?: 'p0' | 'p1' | 'p2';
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(1000) acceptanceCriteria?: string;
 }
 
 // ============================================================
@@ -141,9 +156,20 @@ export class TaskQueryDto {
   @IsIn(['task_package', 'daily_rate'])
   taskMode?: string;
 
-  @ApiPropertyOptional({ description: '排序字段', enum: ['createdAt', 'totalBudget', 'publishedAt', 'endDate'] })
+  // V3.7
+  @ApiPropertyOptional({ description: '优先级', enum: ['p0', 'p1', 'p2'] })
   @IsOptional()
-  @IsIn(['createdAt', 'totalBudget', 'publishedAt', 'endDate'])
+  @IsIn(['p0', 'p1', 'p2'])
+  priority?: string;
+
+  @ApiPropertyOptional({ description: '风险等级', enum: ['green', 'yellow', 'red'] })
+  @IsOptional()
+  @IsIn(['green', 'yellow', 'red'])
+  riskLevel?: string;
+
+  @ApiPropertyOptional({ description: '排序字段', enum: ['createdAt', 'totalBudget', 'publishedAt', 'endDate', 'priority'] })
+  @IsOptional()
+  @IsIn(['createdAt', 'totalBudget', 'publishedAt', 'endDate', 'priority'])
   sortBy?: string;
 
   @ApiPropertyOptional({ description: '排序方向', enum: ['asc', 'desc'] })
@@ -191,10 +217,27 @@ export class UpdateProgressDto {
   @Max(100)
   progress: number;
 
-  @ApiPropertyOptional({ description: '进度备注' })
+  @ApiPropertyOptional({ description: '进度备注（写入 progress_updates.content）' })
   @IsOptional()
   @IsString()
   note?: string;
+
+  // ── V3.7 日报扩展 ──
+  @ApiPropertyOptional({ description: '今日工作摘要（50-500 字）', maxLength: 500 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  dailySummary?: string;
+
+  @ApiPropertyOptional({ description: '明日计划（多行文本）' })
+  @IsOptional()
+  @IsString()
+  tomorrowPlan?: string;
+
+  @ApiPropertyOptional({ description: '遇到的问题' })
+  @IsOptional()
+  @IsString()
+  issues?: string;
 }
 
 export class SubmitDeliverableDto {

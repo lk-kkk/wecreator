@@ -7,6 +7,8 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import { ProjectService, CreateProjectDto, UpdateProjectDto, UpdateProjectStatusDto,
@@ -15,7 +17,7 @@ import { ProjectService, CreateProjectDto, UpdateProjectDto, UpdateProjectStatus
 
 @ApiTags('Project')
 @Controller('projects')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth('access-token')
 export class ProjectController {
   constructor(private readonly svc: ProjectService) {}
@@ -27,6 +29,7 @@ export class ProjectController {
   }
 
   @Post()
+  @Roles('super_admin', 'task_admin')
   @ApiOperation({ summary: '创建项目' })
   create(@CurrentUser() user: CurrentUserPayload, @Body() dto: CreateProjectDto) {
     return this.svc.createProject(user.companyId!, user.userId, dto);
@@ -51,6 +54,7 @@ export class ProjectController {
   }
 
   @Put(':id')
+  @Roles('super_admin', 'task_admin')
   @ApiOperation({ summary: '更新项目' })
   update(
     @CurrentUser() user: CurrentUserPayload,
@@ -61,6 +65,7 @@ export class ProjectController {
   }
 
   @Patch(':id/status')
+  @Roles('super_admin', 'task_admin')
   @ApiOperation({ summary: '更新项目状态/阶段' })
   updateStatus(
     @CurrentUser() user: CurrentUserPayload,
@@ -79,6 +84,7 @@ export class ProjectController {
   }
 
   @Post(':id/milestones')
+  @Roles('super_admin', 'task_admin')
   @ApiOperation({ summary: '创建里程碑' })
   createMilestone(
     @CurrentUser() user: CurrentUserPayload,
@@ -89,6 +95,7 @@ export class ProjectController {
   }
 
   @Put(':id/milestones/:mid')
+  @Roles('super_admin', 'task_admin')
   @ApiOperation({ summary: '更新里程碑' })
   updateMilestone(
     @CurrentUser() user: CurrentUserPayload,
@@ -100,6 +107,7 @@ export class ProjectController {
   }
 
   @Delete(':id/milestones/:mid')
+  @Roles('super_admin', 'task_admin')
   @ApiOperation({ summary: '删除里程碑' })
   deleteMilestone(
     @CurrentUser() user: CurrentUserPayload,
@@ -110,6 +118,7 @@ export class ProjectController {
   }
 
   @Post(':id/milestones/:mid/complete')
+  @Roles('super_admin', 'task_admin')
   @ApiOperation({ summary: '完成里程碑' })
   completeMilestone(
     @CurrentUser() user: CurrentUserPayload,

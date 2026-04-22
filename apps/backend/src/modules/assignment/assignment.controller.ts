@@ -94,7 +94,11 @@ export class WorkerTaskController {
     @CurrentUser() user: CurrentUserPayload,
     @Body() dto: UpdateProgressDto,
   ) {
-    return this.taskService.updateProgress(id, user.userId, dto.progress, dto.note);
+    return this.taskService.updateProgress(id, user.userId, dto.progress, dto.note, {
+      dailySummary: dto.dailySummary,
+      tomorrowPlan: dto.tomorrowPlan,
+      issues: dto.issues,
+    });
   }
 
   // W4 — 提交交付物

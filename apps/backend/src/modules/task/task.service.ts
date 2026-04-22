@@ -6,6 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma';
+import { NoGeneratorService } from '../../common';
 import { assertTransition } from './task-status.machine';
 import {
   CreateTaskDto,
@@ -18,17 +19,22 @@ import {
 export class TaskService {
   private readonly logger = new Logger(TaskService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly noGen: NoGeneratorService,
+  ) {}
 
   // ================================================================
   // 创建任务（草稿）
   // ================================================================
   async createTask(companyId: number, userId: number, dto: CreateTaskDto) {
+    const taskNo = await this.noGen.nextTaskNo();
     const result = await this.prisma.$transaction(async (tx) => {
       const task = await tx.task.create({
         data: {
           companyId: BigInt(companyId),
           createdBy: BigInt(userId),
+          taskNo, // V3.7
           title: dto.title,
           description: dto.description,
           taskMode: dto.taskMode as any,
@@ -38,6 +44,9 @@ export class TaskService {
           address: dto.address,
           projectId: dto.projectId ? BigInt(dto.projectId) : undefined,
           status: 'draft',
+          // V3.7
+          priority: (dto.priority as any) || 'p2',
+          acceptanceCriteria: dto.acceptanceCriteria,
         },
       });
 
@@ -62,6 +71,7 @@ export class TaskService {
 
     return {
       taskId: Number(result.id),
+      taskNo: result.taskNo, // V3.7
       status: 'draft',
       message: '任务创建成功（草稿）',
     };
@@ -85,6 +95,9 @@ export class TaskService {
     if (dto.startDate !== undefined) data.startDate = new Date(dto.startDate);
     if (dto.endDate !== undefined) data.endDate = new Date(dto.endDate);
     if (dto.address !== undefined) data.address = dto.address;
+    // V3.7
+    if (dto.priority !== undefined) data.priority = dto.priority;
+    if (dto.acceptanceCriteria !== undefined) data.acceptanceCriteria = dto.acceptanceCriteria;
 
     await this.prisma.task.update({
       where: { id: BigInt(taskId) },
@@ -182,6 +195,7 @@ export class TaskService {
   async getTaskList(companyId: number, query: TaskQueryDto) {
     const {
       status, keyword, taskMode,
+      priority, riskLevel, // V3.7
       sortBy = 'createdAt', sortOrder = 'desc',
       createdFrom, createdTo,
       hasPendingApplications,
@@ -191,6 +205,8 @@ export class TaskService {
     const where: any = { companyId: BigInt(companyId) };
     if (status) where.status = status;
     if (taskMode) where.taskMode = taskMode;
+    if (priority) where.priority = priority; // V3.7
+    if (riskLevel) where.riskLevel = riskLevel; // V3.7
     if (keyword) {
       where.OR = [
         { title: { contains: keyword } },
@@ -449,26 +465,58 @@ export class TaskService {
   }
 
   // ================================================================
-  // W4 — 更新进度（只增不减）
+  // W4 — 更新进度（只增不减）+ V3.7 日报写入
   // POST /worker/tasks/:assignmentId/progress
   // ================================================================
-  async updateProgress(assignmentId: number, workerId: number, progress: number, note?: string) {
+  async updateProgress(
+    assignmentId: number,
+    workerId: number,
+    progress: number,
+    note?: string,
+    extra?: { dailySummary?: string; tomorrowPlan?: string; issues?: string },
+  ) {
     const assignment = await this.prisma.roleAssignment.findFirst({
       where: {
         id: BigInt(assignmentId),
         workerId: BigInt(workerId),
         status: 'accepted',
       },
+      include: { taskRole: true },
     });
     if (!assignment) throw new NotFoundException('分配记录不存在或无权操作');
     if (progress <= assignment.progress) {
       throw new BadRequestException(`进度只能增加，当前已是 ${assignment.progress}%`);
     }
-    await this.prisma.roleAssignment.update({
-      where: { id: BigInt(assignmentId) },
-      data: { progress, updatedAt: new Date() },
+
+    // 事务：同时更新分配进度 + 写入 progress_updates 日报记录
+    const result = await this.prisma.$transaction(async (tx) => {
+      await tx.roleAssignment.update({
+        where: { id: BigInt(assignmentId) },
+        data: { progress, updatedAt: new Date() },
+      });
+      const pu = await tx.progressUpdate.create({
+        data: {
+          taskId: assignment.taskRole.taskId,
+          taskRoleId: assignment.taskRoleId,
+          assignmentId: BigInt(assignmentId),
+          workerId: BigInt(workerId),
+          progressPct: progress,
+          content: note ?? null,
+          issues: extra?.issues ?? null,
+          dailySummary: extra?.dailySummary ?? null,
+          tomorrowPlan: extra?.tomorrowPlan ?? null,
+        },
+      });
+      return pu;
     });
-    return { assignmentId, progress };
+
+    return {
+      assignmentId,
+      progress,
+      progressUpdateId: Number(result.id),
+      dailySummary: result.dailySummary,
+      tomorrowPlan: result.tomorrowPlan,
+    };
   }
 
   // ================================================================

@@ -10,6 +10,8 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import { CheckpointService, CreateCheckpointDto, SubmitCheckpointDto, ReviewCheckpointDto } from './checkpoint.service';
@@ -19,7 +21,7 @@ import { IssueService, CreateIssueDto, UpdateIssueDto } from './issue.service';
 
 @ApiTags('Task Checkpoints')
 @Controller('tasks/:taskId/checkpoints')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth('access-token')
 export class CheckpointController {
   constructor(private readonly svc: CheckpointService) {}
@@ -31,24 +33,32 @@ export class CheckpointController {
   }
 
   @Post()
+  @Roles('super_admin', 'task_admin')
   @ApiOperation({ summary: '创建检查点' })
   create(@Param('taskId', ParseIntPipe) taskId: number, @Body() dto: CreateCheckpointDto) {
     return this.svc.create(taskId, dto);
   }
 
   @Post(':cpId/submit')
+  @Roles('worker')
   @ApiOperation({ summary: '零工提交检查点' })
   submit(@Param('cpId', ParseIntPipe) cpId: number, @Body() dto: SubmitCheckpointDto) {
     return this.svc.submit(cpId, dto);
   }
 
   @Post(':cpId/review')
+  @Roles('super_admin', 'task_admin')
   @ApiOperation({ summary: '企业审核检查点' })
-  review(@Param('cpId', ParseIntPipe) cpId: number, @Body() dto: ReviewCheckpointDto) {
-    return this.svc.review(cpId, dto);
+  review(
+    @Param('cpId', ParseIntPipe) cpId: number,
+    @CurrentUser() user: CurrentUserPayload,
+    @Body() dto: ReviewCheckpointDto,
+  ) {
+    return this.svc.review(cpId, user.userId, dto);
   }
 
   @Delete(':cpId')
+  @Roles('super_admin', 'task_admin')
   @ApiOperation({ summary: '删除检查点' })
   delete(@Param('cpId', ParseIntPipe) cpId: number) {
     return this.svc.delete(cpId);
@@ -57,7 +67,7 @@ export class CheckpointController {
 
 @ApiTags('Task Comments')
 @Controller('tasks/:taskId/comments')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth('access-token')
 export class CommentController {
   constructor(private readonly svc: CommentService) {}
@@ -69,6 +79,7 @@ export class CommentController {
   }
 
   @Post()
+  @Roles('super_admin', 'task_admin', 'operator', 'finance_admin', 'worker')
   @ApiOperation({ summary: '发表评论' })
   create(
     @Param('taskId', ParseIntPipe) taskId: number,
@@ -80,6 +91,7 @@ export class CommentController {
   }
 
   @Delete(':commentId')
+  @Roles('super_admin', 'task_admin', 'operator', 'finance_admin', 'worker')
   @ApiOperation({ summary: '删除评论(软删除)' })
   delete(@Param('commentId', ParseIntPipe) commentId: number, @CurrentUser() user: CurrentUserPayload) {
     return this.svc.softDelete(commentId, user.userId);
@@ -88,7 +100,7 @@ export class CommentController {
 
 @ApiTags('Task Issues')
 @Controller('tasks/:taskId/issues')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth('access-token')
 export class IssueController {
   constructor(private readonly svc: IssueService) {}
@@ -100,6 +112,7 @@ export class IssueController {
   }
 
   @Post()
+  @Roles('super_admin', 'task_admin', 'operator', 'finance_admin', 'worker')
   @ApiOperation({ summary: '上报问题' })
   create(
     @Param('taskId', ParseIntPipe) taskId: number,
@@ -111,6 +124,7 @@ export class IssueController {
   }
 
   @Put(':issueId')
+  @Roles('super_admin', 'task_admin', 'operator')
   @ApiOperation({ summary: '更新问题状态' })
   update(@Param('issueId', ParseIntPipe) issueId: number, @Body() dto: UpdateIssueDto) {
     return this.svc.update(issueId, dto);
