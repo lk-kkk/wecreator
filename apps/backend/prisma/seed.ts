@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -159,7 +160,28 @@ async function main() {
   console.log(`  ✅ 技能标签: ${skillTags.length} 个`);
 
   // ================================================================
-  // 3. 统计
+  // 3. 开发用平台超级管理员（仅库中不存在 admin 时创建）
+  // ================================================================
+  const existingAdmin = await prisma.platformAdmin.findUnique({ where: { username: 'admin' } });
+  if (!existingAdmin) {
+    const devPassword = process.env.PLATFORM_ADMIN_DEV_PASSWORD ?? 'Admin@2026';
+    const passwordHash = await bcrypt.hash(devPassword, 10);
+    await prisma.platformAdmin.create({
+      data: {
+        username: 'admin',
+        passwordHash,
+        displayName: '超级管理员',
+        role: 'platform_super_admin',
+        status: 'active',
+      },
+    });
+    console.log('  ✅ 平台管理员: 用户名 admin（密码为 PLATFORM_ADMIN_DEV_PASSWORD 或默认 Admin@2026）');
+  } else {
+    console.log('  ⏭  平台管理员 admin 已存在，跳过创建');
+  }
+
+  // ================================================================
+  // 4. 统计
   // ================================================================
   const roleCount = await prisma.platformRole.count();
   const tagCount = await prisma.skillTag.count();

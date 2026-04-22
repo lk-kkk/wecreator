@@ -4,8 +4,10 @@ import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaModule } from './prisma';
 import { RedisModule } from './redis';
+import { CommonModule } from './common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -26,6 +28,7 @@ import { AdminModule }        from './modules/admin/admin.module';
 import { PlatformModule }     from './modules/platform/platform.module';
 import { ProjectModule }      from './modules/project/project.module';
 import { AiModule }           from './modules/ai/ai.module';
+import { SchedulerModule }    from './modules/scheduler/scheduler.module';
 
 @Module({
   imports: [
@@ -33,6 +36,7 @@ import { AiModule }           from './modules/ai/ai.module';
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
     PrismaModule,
     RedisModule,
+    CommonModule,
     MongooseModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (c: ConfigService) => ({ uri: c.get<string>('MONGODB_URL') }),
@@ -51,6 +55,9 @@ import { AiModule }           from './modules/ai/ai.module';
     // ── R9 安全：全局限流 100 req/min/IP ─────────
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
 
+    // ── V3.7 定时任务基础设施 ────────────────
+    ScheduleModule.forRoot(),
+
     // ── 业务模块（W1→W7）────────────────────────
     AuthModule,         // W1 ✅
     TaskModule,         // W2 ✅
@@ -68,6 +75,7 @@ import { AiModule }           from './modules/ai/ai.module';
     PlatformModule,     // V3.2 平台运营后台 ✅
     ProjectModule,      // W13 R2-a ✅
     AiModule,           // W14 R2-b ✅
+    SchedulerModule,    // V3.7 Cron ✅
   ],
   controllers: [AppController],
   providers: [

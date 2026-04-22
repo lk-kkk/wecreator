@@ -242,7 +242,74 @@ async function main() {
     if (!notifRoles?.includes('operator')) throw new Error('CompanyNotification 缺 class-level @Roles');
     console.log('✅ [14] RolesGuard 装饰器已正确挂载到 13 个路由');
 
-    console.log('\n🎉 All V3.7 Phase 2 smoke tests passed!\n');
+    // ── 15. V3.7 Phase 5 Scheduler 测试 ──
+    const { RiskLevelCron } = require('../src/modules/scheduler/risk-level.cron');
+    const { CheckpointOverdueCron } = require('../src/modules/scheduler/checkpoint-overdue.cron');
+    const { MilestoneRemindCron } = require('../src/modules/scheduler/milestone-remind.cron');
+    const { NotificationCleanupCron } = require('../src/modules/scheduler/notification-cleanup.cron');
+    const { SlaMonitorCron } = require('../src/modules/scheduler/sla-monitor.cron');
+    const { DailyMissingCron } = require('../src/modules/scheduler/daily-missing.cron');
+
+    // [15] 风险等级 cron：把测试任务 endDate 改为今天+1 天，触发 red
+    const riskCron = app.get(RiskLevelCron);
+    const tomorrow = new Date(Date.now() + 86400_000);
+    await prisma.task.update({
+      where: { id: BigInt(task.taskId) },
+      data: { status: 'in_progress' as any, endDate: tomorrow, riskLevel: 'green' as any },
+    });
+    const riskResult = await riskCron.runOnce();
+    const updated = await prisma.task.findUnique({ where: { id: BigInt(task.taskId) }, select: { riskLevel: true } });
+    if (!updated || updated.riskLevel !== 'red') {
+      throw new Error(`[15] 期望风险等级为 red，实际: ${updated?.riskLevel} (stats=${JSON.stringify(riskResult)})`);
+    }
+    console.log(`✅ [15] RiskLevelCron: 任务风险 green→red stats=${JSON.stringify(riskResult)}`);
+
+    // [16] 检查点逾期 cron：新建 pending + 昨天 plannedDate 的 checkpoint → overdue
+    const yesterday = new Date(Date.now() - 86400_000);
+    const cp2 = await prisma.taskCheckpoint.create({
+      data: {
+        taskId: BigInt(task.taskId), name: '逾期检查点', type: 'progress_check' as any,
+        plannedDate: yesterday, status: 'pending' as any, reviewerId: BigInt(user.id),
+        sortOrder: 99,
+      },
+    });
+    const cpOverdueCron = app.get(CheckpointOverdueCron);
+    const overdueResult = await cpOverdueCron.runOnce();
+    const cp2After = await prisma.taskCheckpoint.findUnique({ where: { id: cp2.id }, select: { status: true } });
+    if (cp2After?.status !== 'overdue') {
+      throw new Error(`[16] 期望状态为 overdue，实际: ${cp2After?.status}`);
+    }
+    console.log(`✅ [16] CheckpointOverdueCron: overdue=${overdueResult.overdue}`);
+
+    // [17] 里程碑到期 cron：新建明天到期的里程碑 → 触发 T-3 提醒
+    const t3Date = new Date(Date.now() + 2 * 86400_000);
+    const ms2 = await prisma.milestone.create({
+      data: {
+        projectId: BigInt(proj.projectId), name: 'T-3 提醒测试',
+        plannedDate: t3Date, status: 'pending' as any, createdBy: BigInt(user.id),
+        sortOrder: 99,
+      },
+    });
+    const msCron = app.get(MilestoneRemindCron);
+    const remindResult = await msCron.runOnce();
+    const remindNotif = await prisma.companyNotification.findFirst({
+      where: { userId: BigInt(user.id), type: 'milestone_remind' as any, refType: 'milestone', refId: ms2.id },
+    });
+    if (!remindNotif) {
+      throw new Error(`[17] 未找到 T-3 提醒通知 (result=${JSON.stringify(remindResult)})`);
+    }
+    console.log(`✅ [17] MilestoneRemindCron: ${JSON.stringify(remindResult)}`);
+
+    // [18] SLA + DailyMissing + Cleanup 静态 runOnce 不报错即可
+    const slaCron = app.get(SlaMonitorCron);
+    const dmCron = app.get(DailyMissingCron);
+    const cleanCron = app.get(NotificationCleanupCron);
+    const sla = await slaCron.runOnce();
+    const dm = await dmCron.runOnce();
+    const cleaned = await cleanCron.runOnce();
+    console.log(`✅ [18] SlaMonitor/DailyMissing/Cleanup: sla=${JSON.stringify(sla)} dm=${JSON.stringify(dm)} cleanup=${JSON.stringify(cleaned)}`);
+
+    console.log('\n🎉 All V3.7 Phase 2+5 smoke tests passed!\n');
 
   } catch (e: any) {
     console.error('\n❌ Smoke test failed:', e.message);

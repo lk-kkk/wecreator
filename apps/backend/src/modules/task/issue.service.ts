@@ -9,6 +9,7 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, IsIn, IsArray, MaxLength } from 'class-validator';
 import { PrismaService } from '../../prisma';
+import { CompanyNotificationService } from '../notification/company-notification.service';
 
 export class CreateIssueDto {
   @ApiProperty() @IsString() @MaxLength(100) title: string;
@@ -24,7 +25,10 @@ export class UpdateIssueDto {
 
 @Injectable()
 export class IssueService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notify: CompanyNotificationService,
+  ) {}
 
   async list(taskId: number) {
     const items = await this.prisma.taskIssue.findMany({
@@ -35,6 +39,12 @@ export class IssueService {
   }
 
   async create(taskId: number, reporterType: string, reporterId: number, dto: CreateIssueDto) {
+    const task = await this.prisma.task.findUnique({
+      where: { id: BigInt(taskId) },
+      select: { id: true, title: true, companyId: true, createdBy: true, projectId: true },
+    });
+    if (!task) throw new NotFoundException('任务不存在');
+
     const issue = await this.prisma.taskIssue.create({
       data: {
         taskId: BigInt(taskId),
@@ -46,7 +56,28 @@ export class IssueService {
         attachments: dto.attachments || [],
       },
     });
-    // TODO: C20 事件 → R4 通知
+
+    // V3.7 — 通知企业 PM（任务创建人 + 项目负责人）
+    const recipientIds = new Set<number>();
+    recipientIds.add(Number(task.createdBy));
+    if (task.projectId) {
+      const proj = await this.prisma.project.findUnique({
+        where: { id: task.projectId },
+        select: { managerId: true },
+      });
+      if (proj) recipientIds.add(Number(proj.managerId));
+    }
+    if (recipientIds.size > 0) {
+      await this.notify.createMany([...recipientIds], {
+        companyId: Number(task.companyId),
+        type: 'issue_report',
+        title: `新的问题上报：${dto.title}`,
+        content: `任务《${task.title}》有新的阻塞问题，类型: ${dto.type}`,
+        refType: 'issue',
+        refId: Number(issue.id),
+      });
+    }
+
     return { issueId: Number(issue.id) };
   }
 

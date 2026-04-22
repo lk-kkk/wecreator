@@ -216,6 +216,8 @@ model Task {
   @@index([companyId, status])
   @@index([status, createdAt])
   @@index([projectId])
+  @@index([companyId, priority]) // V3.7: 任务优先级筛选
+  @@index([companyId, riskLevel]) // V3.7: 风险等级筛选
   @@map("tasks")
 }
 
@@ -755,6 +757,9 @@ model Project {
   milestones Milestone[]
 
   @@index([companyId, status])
+  @@index([companyId, phase]) // V3.7: 项目阶段筛选
+  @@index([companyId, riskLevel]) // V3.7: 项目风险等级筛选
+  @@index([expectedDeliveryDate]) // V3.7: 预警扫描 cron 用
   @@map("projects")
 }
 

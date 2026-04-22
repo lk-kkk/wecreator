@@ -6,12 +6,16 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma';
+import { ProjectService } from '../project/project.service';
 
 @Injectable()
 export class AssignmentService {
   private readonly logger = new Logger(AssignmentService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly projectService: ProjectService,
+  ) {}
 
   // ================================================================
   // 零工库列表（企业端）
@@ -168,6 +172,15 @@ export class AssignmentService {
           data: { status: 'in_progress' },
         });
         this.logger.log(`任务自动流转: ${task.id} → in_progress`);
+
+        // V3.7 Step 5.7: 同步项目阶段（若有关联项目）
+        if (task.projectId) {
+          try {
+            await this.projectService.syncPhaseFromTasks(Number(task.projectId));
+          } catch (e: any) {
+            this.logger.warn(`syncPhaseFromTasks 失败: project=${task.projectId} err=${e?.message}`);
+          }
+        }
       }
     }
 

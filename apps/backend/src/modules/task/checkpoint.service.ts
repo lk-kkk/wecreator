@@ -30,6 +30,9 @@ export class ReviewCheckpointDto {
 
 @Injectable()
 export class CheckpointService {
+  private static readonly MAX_PER_TASK = 20;
+  private static readonly MAX_REVISIONS = 3;
+
   constructor(private readonly prisma: PrismaService) {}
 
   async list(taskId: number) {
@@ -41,6 +44,11 @@ export class CheckpointService {
   }
 
   async create(taskId: number, dto: CreateCheckpointDto) {
+    // V3.7 — 单任务最多 20 个检查点
+    const existing = await this.prisma.taskCheckpoint.count({ where: { taskId: BigInt(taskId) } });
+    if (existing >= CheckpointService.MAX_PER_TASK) {
+      throw new BadRequestException(`单任务最多设置 ${CheckpointService.MAX_PER_TASK} 个检查点`);
+    }
     const maxSort = await this.prisma.taskCheckpoint.aggregate({
       where: { taskId: BigInt(taskId) },
       _max: { sortOrder: true },
@@ -63,6 +71,10 @@ export class CheckpointService {
     const cp = await this.prisma.taskCheckpoint.findUnique({ where: { id: BigInt(checkpointId) } });
     if (!cp) throw new NotFoundException('检查点不存在');
     if (!['pending', 'rejected'].includes(cp.status)) throw new BadRequestException('当前状态不允许提交');
+    // V3.7 — 被拒后最多修改 3 次
+    if (cp.status === 'rejected' && cp.revisionCount >= CheckpointService.MAX_REVISIONS) {
+      throw new BadRequestException(`已达最大修改次数 (${CheckpointService.MAX_REVISIONS} 次)，请联系项目管理员`);
+    }
 
     await this.prisma.taskCheckpoint.update({
       where: { id: BigInt(checkpointId) },
@@ -77,10 +89,17 @@ export class CheckpointService {
     return { checkpointId, status: 'submitted' };
   }
 
-  async review(checkpointId: number, dto: ReviewCheckpointDto) {
+  async review(checkpointId: number, userId: number, dto: ReviewCheckpointDto) {
     const cp = await this.prisma.taskCheckpoint.findUnique({ where: { id: BigInt(checkpointId) } });
     if (!cp) throw new NotFoundException('检查点不存在');
     if (cp.status !== 'submitted') throw new BadRequestException('当前状态不允许审核');
+    // V3.7 — 仅指定审核人可审核
+    if (Number(cp.reviewerId) !== userId) {
+      throw new BadRequestException('仅指定审核人可执行审核操作');
+    }
+    if (dto.result === 'rejected' && !dto.reviewComment) {
+      throw new BadRequestException('拒绝时必须填写不通过原因');
+    }
 
     await this.prisma.taskCheckpoint.update({
       where: { id: BigInt(checkpointId) },
@@ -94,6 +113,10 @@ export class CheckpointService {
   }
 
   async delete(checkpointId: number) {
+    // V3.7 — 仅 pending 可删
+    const cp = await this.prisma.taskCheckpoint.findUnique({ where: { id: BigInt(checkpointId) } });
+    if (!cp) throw new NotFoundException('检查点不存在');
+    if (cp.status !== 'pending') throw new BadRequestException('仅待检查状态的检查点可删除');
     await this.prisma.taskCheckpoint.delete({ where: { id: BigInt(checkpointId) } });
     return { deleted: true };
   }

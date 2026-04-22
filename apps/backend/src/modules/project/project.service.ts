@@ -11,6 +11,8 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PrismaService } from '../../prisma';
+import { NoGeneratorService } from '../../common';
+import { CompanyNotificationService } from '../notification/company-notification.service';
 
 // ─── DTO ───
 export class CreateProjectDto {
@@ -60,7 +62,11 @@ export class ProjectQueryDto {
 // ─── Service ───
 @Injectable()
 export class ProjectService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly noGen: NoGeneratorService,
+    private readonly notify: CompanyNotificationService,
+  ) {}
 
   /** C06a-01: 项目列表 */
   async getProjects(companyId: number, query: ProjectQueryDto) {
@@ -103,12 +109,8 @@ export class ProjectService {
     const existingCount = await this.prisma.project.count({ where: { companyId: BigInt(companyId) } });
     if (existingCount >= 500) throw new BadRequestException('每企业最多创建500个项目');
 
-    // 生成项目编号 PRJ-YYYYMMDD-NNN
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const count = await this.prisma.project.count({
-      where: { projectNo: { startsWith: `PRJ-${today}` } },
-    });
-    const projectNo = `PRJ-${today}-${String(count + 1).padStart(3, '0')}`;
+    // V3.7 — 使用统一编号生成器 (Redis INCR 保证并发安全)
+    const projectNo = await this.noGen.nextProjectNo();
 
     const project = await this.prisma.project.create({
       data: {
@@ -240,6 +242,17 @@ export class ProjectService {
   /** C06a-08: 创建里程碑 */
   async createMilestone(companyId: number, projectId: number, userId: number, dto: CreateMilestoneDto) {
     await this.checkOwnership(companyId, projectId);
+
+    // V3.7 — 单项目最多 10 个里程碑
+    const count = await this.prisma.milestone.count({ where: { projectId: BigInt(projectId) } });
+    if (count >= 10) throw new BadRequestException('单项目最多设置 10 个里程碑');
+
+    // V3.7 — 计划日期 ≥ 今日
+    const planned = new Date(dto.plannedDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (planned < today) throw new BadRequestException('计划完成日期不能早于今日');
+
     const maxSort = await this.prisma.milestone.aggregate({
       where: { projectId: BigInt(projectId) },
       _max: { sortOrder: true },
@@ -249,7 +262,7 @@ export class ProjectService {
         projectId: BigInt(projectId),
         name: dto.name,
         description: dto.description,
-        plannedDate: new Date(dto.plannedDate),
+        plannedDate: planned,
         sortOrder: (maxSort._max.sortOrder ?? 0) + 1,
         createdBy: BigInt(userId),
       },
@@ -276,9 +289,15 @@ export class ProjectService {
     return { milestoneId: Number(updated.id) };
   }
 
-  /** C06a-10: 删除里程碑 */
+  /** C06a-10: 删除里程碑 (仅 pending 可删) */
   async deleteMilestone(companyId: number, projectId: number, milestoneId: number) {
     await this.checkOwnership(companyId, projectId);
+    const m = await this.prisma.milestone.findFirst({
+      where: { id: BigInt(milestoneId), projectId: BigInt(projectId) },
+    });
+    if (!m) throw new NotFoundException('里程碑不存在');
+    if (m.status !== 'pending') throw new BadRequestException('仅待完成状态的里程碑可删除');
+
     await this.prisma.milestoneAttachment.deleteMany({ where: { milestoneId: BigInt(milestoneId) } });
     await this.prisma.milestone.delete({ where: { id: BigInt(milestoneId) } });
     return { deleted: true };
@@ -297,6 +316,24 @@ export class ProjectService {
       where: { id: BigInt(milestoneId) },
       data: { status: 'completed', completedAt: new Date() },
     });
+
+    // V3.7 — 通知项目负责人
+    const project = await this.prisma.project.findUnique({
+      where: { id: BigInt(projectId) },
+      select: { managerId: true, name: true },
+    });
+    if (project) {
+      await this.notify.create({
+        companyId,
+        userId: Number(project.managerId),
+        type: 'milestone_remind',
+        title: `里程碑已完成：${m.name}`,
+        content: `项目《${project.name}》的里程碑「${m.name}」已标记完成`,
+        refType: 'milestone',
+        refId: milestoneId,
+      });
+    }
+
     return { milestoneId: Number(m.id), status: 'completed' };
   }
 
@@ -339,6 +376,46 @@ export class ProjectService {
     });
     if (!p) throw new NotFoundException('项目不存在');
     return p;
+  }
+
+  /**
+   * V3.7 Step 5.7 —— 项目阶段自动流转（单调前进：requirement → execution → acceptance）
+   * 在 任务 in_progress / 验收通过 等进展节点调用。
+   * 不会倒退；企业人工设成更后阶段不会被覆盖。
+   * 说明：schema 没有 phaseManuallySet 字段，采用单调前进策略避免新 migration。
+   */
+  async syncPhaseFromTasks(projectId: number): Promise<'requirement' | 'execution' | 'acceptance' | null> {
+    const project = await this.prisma.project.findUnique({
+      where: { id: BigInt(projectId) },
+      select: { id: true, phase: true, status: true },
+    });
+    if (!project) return null;
+
+    const tasks = await this.prisma.task.findMany({
+      where: { projectId: BigInt(projectId) },
+      select: { status: true },
+    });
+    if (tasks.length === 0) return project.phase as any;
+
+    const allCompleted = tasks.every((t) => t.status === 'completed');
+    const anyInProgress = tasks.some((t) => t.status === 'in_progress' || t.status === 'reviewing');
+
+    // 优先判断：全部 completed → acceptance
+    let target: 'requirement' | 'execution' | 'acceptance' | null = null;
+    if (allCompleted) target = 'acceptance';
+    else if (anyInProgress) target = 'execution';
+
+    if (!target || target === project.phase) return project.phase as any;
+
+    // 单调前进：计算数字序号，当前已超过目标则不流转
+    const order = { requirement: 0, execution: 1, acceptance: 2 } as const;
+    if ((order[project.phase] ?? 0) >= order[target]) return project.phase as any;
+
+    await this.prisma.project.update({
+      where: { id: BigInt(projectId) },
+      data: { phase: target as any },
+    });
+    return target;
   }
 
   private serializeProject(p: any) {

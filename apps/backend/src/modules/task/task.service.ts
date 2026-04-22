@@ -8,6 +8,7 @@ import {
 import { PrismaService } from '../../prisma';
 import { NoGeneratorService } from '../../common';
 import { assertTransition } from './task-status.machine';
+import { ProjectService } from '../project/project.service';
 import {
   CreateTaskDto,
   UpdateDraftDto,
@@ -22,6 +23,7 @@ export class TaskService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly noGen: NoGeneratorService,
+    private readonly projectService: ProjectService,
   ) {}
 
   // ================================================================
@@ -599,6 +601,31 @@ export class TaskService {
         data: { status: 'completed', progress: 100 },
       });
       this.logger.log(`分配 #${assignment.id} 验收通过 → completed`);
+
+      // V3.7 Step 5.7: 检查任务所有 assignment 是否均已 completed → task 也改为 completed
+      const pendingCount = await this.prisma.roleAssignment.count({
+        where: {
+          taskRole: { taskId: BigInt(taskId) },
+          status: { in: ['accepted', 'invited'] as any },
+        },
+      });
+      if (pendingCount === 0) {
+        const task = await this.prisma.task.update({
+          where: { id: BigInt(taskId) },
+          data: { status: 'completed' as any },
+          select: { projectId: true, title: true },
+        });
+        this.logger.log(`任务自动完成: task=${taskId}`);
+
+        // 同步项目阶段
+        if (task.projectId) {
+          try {
+            await this.projectService.syncPhaseFromTasks(Number(task.projectId));
+          } catch (e: any) {
+            this.logger.warn(`syncPhaseFromTasks 失败: project=${task.projectId} err=${e?.message}`);
+          }
+        }
+      }
     }
 
     this.logger.log(`验收结果: task=${taskId} role=${taskRoleId} result=${result}`);

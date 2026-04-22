@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { AssignmentController, WorkerTaskController } from './assignment.controller';
 import { AssignmentService } from './assignment.service';
 import { TaskModule } from '../task/task.module';
+import { ProjectModule } from '../project/project.module';
 
 @Module({
-  imports:     [TaskModule],
+  imports:     [TaskModule, ProjectModule],
   controllers: [AssignmentController, WorkerTaskController],
   providers:   [AssignmentService],
   exports:     [AssignmentService],
