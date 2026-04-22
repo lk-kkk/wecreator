@@ -1,16 +1,22 @@
 import { useState, useEffect, useCallback } from 'react'
-import { View, Text, Button, Slider, Input } from '@tarojs/components'
+import { View, Text, Button, Slider, Input, Textarea } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
 import { request } from '../../../../api/request'
+import { taskApi } from '../../../../api/task'
 import './index.scss'
 
 export default function TaskExecutePage() {
   const router = useRouter()
   const assignmentId = Number(router.params.id || 0)
+  const taskId = Number(router.params.taskId || 0)
 
   const [detail, setDetail] = useState<any>(null)
   const [progress, setProgress] = useState(0)
   const [progressNote, setProgressNote] = useState('')
+  // V3.7: 结构化日报字段
+  const [dailySummary, setDailySummary] = useState('')
+  const [tomorrowPlan, setTomorrowPlan] = useState('')
+  const [issues, setIssues] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
@@ -24,26 +30,35 @@ export default function TaskExecutePage() {
       .catch(() => {})
   }, [assignmentId])
 
-  // ──────────────────── 更新进度 ────────────────────
+  // 更新进度 + V3.7 结构化日报
   const handleUpdateProgress = useCallback(async () => {
     if (submitting) return
+    if (dailySummary && (dailySummary.length < 50 || dailySummary.length > 500)) {
+      Taro.showToast({ title: '今日摘要需 50-500 字', icon: 'none' })
+      return
+    }
     setSubmitting(true)
     try {
-      await request({
-        url: `/worker/tasks/${assignmentId}/progress`,
-        method: 'POST',
-        data: { progress, note: progressNote },
+      await taskApi.updateProgress(assignmentId, {
+        progress,
+        note: progressNote,
+        dailySummary: dailySummary || undefined,
+        tomorrowPlan: tomorrowPlan || undefined,
+        issues: issues || undefined,
       })
       Taro.showToast({ title: '进度已更新', icon: 'success' })
       setProgressNote('')
+      setDailySummary('')
+      setTomorrowPlan('')
+      setIssues('')
     } catch (err: any) {
       Taro.showToast({ title: err?.message || '更新失败', icon: 'none' })
     } finally {
       setSubmitting(false)
     }
-  }, [assignmentId, progress, progressNote, submitting])
+  }, [assignmentId, progress, progressNote, dailySummary, tomorrowPlan, issues, submitting])
 
-  // ──────────────────── 上传交付物 ────────────────────
+  // 上传交付物
   const handleUploadDeliverable = useCallback(async () => {
     try {
       const chooseRes = await Taro.chooseMessageFile({
@@ -55,7 +70,6 @@ export default function TaskExecutePage() {
 
       Taro.showLoading({ title: '上传中...' })
 
-      // 获取预签名 URL
       const presignRes: any = await request({
         url: '/common/upload/presign',
         method: 'POST',
@@ -67,7 +81,6 @@ export default function TaskExecutePage() {
       })
       const presignData = presignRes.data ?? presignRes
 
-      // 直传到 OSS（如未配置 OSS，使用 fileUrl 作为 mock）
       let finalUrl: string
       if (presignData.uploadUrl) {
         await Taro.request({
@@ -78,11 +91,9 @@ export default function TaskExecutePage() {
         })
         finalUrl = presignData.fileUrl
       } else {
-        // OSS 未配置时，使用本地路径作为占位
         finalUrl = file.path
       }
 
-      // 提交交付物记录
       await request({
         url: `/worker/tasks/${assignmentId}/deliverables`,
         method: 'POST',
@@ -121,7 +132,7 @@ export default function TaskExecutePage() {
         </View>
       </View>
 
-      {/* 进度更新 */}
+      {/* 进度更新 + V3.7 结构化日报 */}
       <View className='card'>
         <Text className='card-title'>更新进度</Text>
         <View className='progress-row'>
@@ -142,15 +153,67 @@ export default function TaskExecutePage() {
           value={progressNote}
           onInput={(e: any) => setProgressNote(e.detail.value)}
         />
+
+        <Text className='card-title' style={{ marginTop: 16 }}>📌 今日工作摘要</Text>
+        <Textarea
+          className='note-input'
+          placeholder='摘要今日完成的主要工作（50-500字）'
+          value={dailySummary}
+          maxlength={500}
+          onInput={(e: any) => setDailySummary(e.detail.value)}
+          style={{ minHeight: '80px', padding: '8px', width: '100%' }}
+        />
+
+        <Text className='card-title' style={{ marginTop: 12 }}>🎯 明日计划</Text>
+        <Textarea
+          className='note-input'
+          placeholder='明日准备做的工作（选填）'
+          value={tomorrowPlan}
+          maxlength={500}
+          onInput={(e: any) => setTomorrowPlan(e.detail.value)}
+          style={{ minHeight: '60px', padding: '8px', width: '100%' }}
+        />
+
+        <Text className='card-title' style={{ marginTop: 12 }}>⚠️ 遇到的问题</Text>
+        <Textarea
+          className='note-input'
+          placeholder='有阻塞或困难请填写（选填）'
+          value={issues}
+          maxlength={500}
+          onInput={(e: any) => setIssues(e.detail.value)}
+          style={{ minHeight: '60px', padding: '8px', width: '100%' }}
+        />
+
         <Button
           className='primary-btn'
           onClick={handleUpdateProgress}
           loading={submitting}
           disabled={submitting || progress <= (detail?.progress ?? 0)}
         >
-          提交进度
+          提交日报
         </Button>
       </View>
+
+      {/* V3.7: 任务级功能入口 */}
+      {taskId > 0 && (
+        <View className='card'>
+          <Text className='card-title'>关联功能</Text>
+          <View style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+            <Button
+              className='upload-btn'
+              onClick={() => Taro.navigateTo({ url: `/subpackages/task/pages/checkpoint-submit/index?taskId=${taskId}` })}
+            >📋 提交检查点</Button>
+            <Button
+              className='upload-btn'
+              onClick={() => Taro.navigateTo({ url: `/subpackages/task/pages/issue-report/index?taskId=${taskId}` })}
+            >⚠️ 上报问题</Button>
+            <Button
+              className='upload-btn'
+              onClick={() => Taro.navigateTo({ url: `/subpackages/task/pages/comments/index?taskId=${taskId}` })}
+            >💬 任务讨论</Button>
+          </View>
+        </View>
+      )}
 
       {/* 提交交付物 */}
       <View className='card'>

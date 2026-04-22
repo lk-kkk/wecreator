@@ -20,6 +20,19 @@ export interface WorkerTask {
     roleName: string
     budget: number
   }
+  /** V3.7: 未解决问题数（任务卡片 ⚠️ 展示） */
+  unresolvedIssueCount?: number
+}
+
+export interface UpdateProgressPayload {
+  progress: number
+  note?: string
+  /** V3.7 日报：今日摘要、5–0-500 字 */
+  dailySummary?: string
+  /** V3.7 日报：明日计划 */
+  tomorrowPlan?: string
+  /** V3.7 日报：遇到的问题 */
+  issues?: string
 }
 
 export const taskApi = {
@@ -44,12 +57,12 @@ export const taskApi = {
       method: 'POST',
     }),
 
-  /** 更新进度 */
-  updateProgress: (assignmentId: number, progress: number, note?: string) =>
-    request<{ message: string }>({
+  /** 更新进度 + V3.7 结构化日报 */
+  updateProgress: (assignmentId: number, payload: UpdateProgressPayload) =>
+    request<{ message: string; progressUpdateId?: number }>({
       url: `/worker/tasks/${assignmentId}/progress`,
       method: 'POST',
-      data: { progress, note },
+      data: payload,
     }),
 
   /** 提交交付物 */

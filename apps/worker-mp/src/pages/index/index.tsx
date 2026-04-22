@@ -193,6 +193,20 @@ export default function IndexPage() {
             <View key={item.assignmentId} className='task-card' onClick={() => goTask(item)}>
               <View className='card-top'>
                 <Text className='card-title'>{item.task?.title || '未命名任务'}</Text>
+                {item.unresolvedIssueCount > 0 && (
+                  <View
+                    className='issue-warning'
+                    style={{ background: '#fff1f0', border: '1px solid #ffa39e', borderRadius: '4px', padding: '0 6px', marginLeft: 'auto', marginRight: '6px' }}
+                    onClick={(e: any) => {
+                      e.stopPropagation()
+                      Taro.navigateTo({ url: `/subpackages/task/pages/issue-report/index?taskId=${item.task?.taskId}` })
+                    }}
+                  >
+                    <Text style={{ fontSize: '11px', color: '#ff4d4f' }}>
+                      ⚠️ {item.unresolvedIssueCount}
+                    </Text>
+                  </View>
+                )}
                 <View className='status-tag' style={{ background: statusBadge[item.status]?.color || '#ccc' }}>
                   <Text className='status-text'>{statusBadge[item.status]?.label || item.status}</Text>
                 </View>

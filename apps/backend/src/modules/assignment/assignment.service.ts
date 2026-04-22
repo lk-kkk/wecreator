@@ -210,6 +210,23 @@ export class AssignmentService {
       orderBy: { updatedAt: 'desc' },
     });
 
+    // V3.7: 按 taskId 聚合未解决问题数（open / in_progress）
+    const taskIds = Array.from(new Set(assignments.map((a) => a.taskRole.task.id)));
+    const issueCountMap = new Map<string, number>();
+    if (taskIds.length > 0) {
+      const grouped = await this.prisma.taskIssue.groupBy({
+        by: ['taskId'],
+        where: {
+          taskId: { in: taskIds },
+          status: { in: ['open', 'in_progress'] as any },
+        },
+        _count: { _all: true },
+      });
+      for (const g of grouped) {
+        issueCountMap.set(String(g.taskId), (g as any)._count?._all ?? 0);
+      }
+    }
+
     return assignments.map((a) => ({
       assignmentId: Number(a.id),
       status: a.status,
@@ -227,6 +244,8 @@ export class AssignmentService {
         roleName: a.taskRole.roleName,
         budget: Number(a.taskRole.budget),
       },
+      // V3.7: 未解决问题数（用于列表右上角 ⚠️ 图标）
+      unresolvedIssueCount: issueCountMap.get(String(a.taskRole.task.id)) ?? 0,
     }));
   }
 

@@ -19,6 +19,10 @@ export default defineAppConfig({
         'pages/workhour/index',
         'pages/review/index',
         'pages/dispute/index',
+        // V3.7
+        'pages/checkpoint-submit/index',
+        'pages/issue-report/index',
+        'pages/comments/index',
       ],
     },
     {

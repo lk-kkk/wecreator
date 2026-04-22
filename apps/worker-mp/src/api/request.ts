@@ -11,7 +11,7 @@
  */
 import Taro from '@tarojs/taro'
 
-const BASE_URL = process.env.TARO_APP_API_BASE || 'http://localhost:3001/api/v1'
+const BASE_URL = process.env.TARO_APP_API_BASE || 'http://localhost:3000/api/v1'
 
 // ── Token 刷新队列 ─────────────────────────────────
 let isRefreshing = false
