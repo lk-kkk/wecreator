@@ -10,7 +10,10 @@
  * 4. 后端返回 JWT 双 Token（access 2h + refresh 7d）
  * 5. 本地持久化 Token + 用户信息
  *
- * 开发环境：code 直接当 openid 用（后端 mock）
+ * 开发环境：为保证同一设备始终映射到同一 worker,
+ *   前端生成一次性 mockDeviceId 存 storage,每次登录拼入 code,
+ *   后端按稳定 code → 稳定 openid 识别用户。
+ *   清除小程序缓存 = 切换成新用户。
  */
 import Taro from '@tarojs/taro'
 import { authApi } from '../api/auth'
@@ -21,6 +24,33 @@ import { saveLoginData, clearUserData, saveProfile } from '../stores/user'
 export interface LoginOutcome {
   isNew: boolean
   isVerified: boolean
+}
+
+const MOCK_DEVICE_ID_KEY = 'wc_mock_device_id'
+
+/**
+ * 获取或生成稳定的 mock 设备 ID (仅 dev 环境使用)
+ * 保证同一台设备/模拟器在清缓存前永远映射到同一个 worker
+ */
+function getOrCreateMockDeviceId(): string {
+  let id = Taro.getStorageSync(MOCK_DEVICE_ID_KEY) as string
+  if (!id) {
+    id = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10)
+    Taro.setStorageSync(MOCK_DEVICE_ID_KEY, id)
+  }
+  return id
+}
+
+/**
+ * 组合 code: dev 环境把稳定设备 ID 拼到真实 code 后面,
+ * 使 `dev_openid_${code}` 在同设备重复登录时保持不变。
+ * 生产环境: 直接用 Taro.login 返回的原始 code (真实微信 5min 一次性)。
+ */
+function buildLoginCode(realCode: string): string {
+  if (process.env.NODE_ENV === 'production') {
+    return realCode
+  }
+  return getOrCreateMockDeviceId()
 }
 
 /**
@@ -34,8 +64,8 @@ export async function wxLogin(): Promise<LoginOutcome> {
     throw new Error('微信登录失败，未获取到 code')
   }
 
-  // 2. 后端换取 Token
-  const result = await authApi.login(loginRes.code)
+  // 2. 后端换取 Token (dev 环境使用稳定 mockDeviceId 代替一次性 code)
+  const result = await authApi.login(buildLoginCode(loginRes.code))
 
   // 3. 持久化
   saveLoginData({
@@ -79,9 +109,20 @@ export function isLoggedIn(): boolean {
 
 /**
  * 退出登录 — 清除 Token + 用户信息
+ * 注意: 保留 mock 设备 ID, 下次登录仍回到同一 worker
  */
 export function logout() {
   clearUserData()
+}
+
+/**
+ * 开发环境专用: 重置 mock 设备 ID
+ * 下次登录会创建/映射到一个新 worker (等同于换账号)
+ */
+export function resetMockDeviceId() {
+  if (process.env.NODE_ENV !== 'production') {
+    Taro.removeStorageSync(MOCK_DEVICE_ID_KEY)
+  }
 }
 
 /**
