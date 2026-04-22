@@ -73,6 +73,7 @@ import { useRouter } from 'vue-router'
 import { BellOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { notificationApi, type Notification } from '@/api/notification'
+import { analyticsApi } from '@/api/analytics'
 
 const POLL_INTERVAL_MS = 30_000
 
@@ -130,6 +131,7 @@ async function loadRecent() {
 }
 
 async function handleClick(n: Notification) {
+  analyticsApi.track({ event: 'notification_click', refType: n.refType || 'notification', refId: n.refId ?? n.id, props: { type: n.type } })
   try {
     await notificationApi.markRead([n.id])
   } catch {

@@ -9,6 +9,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, IsNumber, IsArray, IsBoolean, MaxLength } from 'class-validator';
 import { PrismaService } from '../../prisma';
 import { CompanyNotificationService } from '../notification/company-notification.service';
+import { AnalyticsService } from '../analytics/analytics.service';
 
 export class CreateCommentDto {
   @ApiProperty() @IsString() @MaxLength(1000) content: string;
@@ -22,6 +23,7 @@ export class CommentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notify: CompanyNotificationService,
+    private readonly analytics: AnalyticsService,
   ) {}
 
   async list(taskId: number, page = 1, pageSize = 50) {
@@ -95,6 +97,15 @@ export class CommentService {
         );
       }
     }
+
+    await this.analytics.track({
+      event: 'task_comment_post',
+      actorType: authorType as any,
+      actorId: authorId,
+      companyId: Number(task.companyId),
+      refType: 'comment', refId: Number(comment.id),
+      props: { taskId, mentionCount: mentionedUserIds.length, hasParent: !!dto.parentId },
+    });
 
     return { commentId: Number(comment.id), mentionedUserIds };
   }

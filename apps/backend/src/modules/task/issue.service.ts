@@ -10,6 +10,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, IsIn, IsArray, MaxLength } from 'class-validator';
 import { PrismaService } from '../../prisma';
 import { CompanyNotificationService } from '../notification/company-notification.service';
+import { AnalyticsService } from '../analytics/analytics.service';
 
 export class CreateIssueDto {
   @ApiProperty() @IsString() @MaxLength(100) title: string;
@@ -28,6 +29,7 @@ export class IssueService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notify: CompanyNotificationService,
+    private readonly analytics: AnalyticsService,
   ) {}
 
   async list(taskId: number) {
@@ -78,6 +80,15 @@ export class IssueService {
       });
     }
 
+    await this.analytics.track({
+      event: 'issue_report',
+      actorType: reporterType as any,
+      actorId: reporterId,
+      companyId: Number(task.companyId),
+      refType: 'issue', refId: Number(issue.id),
+      props: { taskId, type: dto.type },
+    });
+
     return { issueId: Number(issue.id) };
   }
 
@@ -98,6 +109,16 @@ export class IssueService {
     }
 
     await this.prisma.taskIssue.update({ where: { id: BigInt(issueId) }, data });
+
+    if (dto.status === 'resolved') {
+      await this.analytics.track({
+        event: 'issue_resolve',
+        actorType: 'company_user',
+        refType: 'issue', refId: issueId,
+        props: { taskId: Number(issue.taskId) },
+      });
+    }
+
     return { issueId, status: dto.status ?? issue.status };
   }
 

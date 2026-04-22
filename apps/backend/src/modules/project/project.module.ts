@@ -19,9 +19,10 @@ import { Module } from '@nestjs/common';
 import { ProjectController } from './project.controller';
 import { ProjectService } from './project.service';
 import { NotificationModule } from '../notification/notification.module';
+import { AnalyticsModule } from '../analytics/analytics.module';
 
 @Module({
-  imports: [NotificationModule],
+  imports: [NotificationModule, AnalyticsModule],
   controllers: [ProjectController],
   providers: [ProjectService],
   exports: [ProjectService],

@@ -11,6 +11,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CompanyNotificationService } from '../notification/company-notification.service';
+import { AnalyticsService } from '../analytics/analytics.service';
 
 type Level = 'green' | 'yellow' | 'red';
 
@@ -21,6 +22,7 @@ export class RiskLevelCron {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notify: CompanyNotificationService,
+    private readonly analytics: AnalyticsService,
   ) {}
 
   private computeLevel(daysLeft: number, progress: number): Level {
@@ -76,6 +78,12 @@ export class RiskLevelCron {
         where: { id: t.id },
         data: { riskLevel: nextLevel as any },
       });
+      await this.analytics.track({
+        event: 'risk_level_change', actorType: 'system',
+        companyId: Number(t.companyId),
+        refType: 'task', refId: Number(t.id),
+        props: { from: t.riskLevel, to: nextLevel, daysLeft, avgProgress },
+      });
 
       if ((nextLevel === 'red' || nextLevel === 'yellow') && t.companyId && t.createdBy) {
         await this.notify.create({
@@ -128,6 +136,12 @@ export class RiskLevelCron {
       await this.prisma.project.update({
         where: { id: p.id },
         data: { riskLevel: nextLevel as any },
+      });
+      await this.analytics.track({
+        event: 'risk_level_change', actorType: 'system',
+        companyId: Number(p.companyId),
+        refType: 'project', refId: Number(p.id),
+        props: { from: p.riskLevel, to: nextLevel, daysLeft, avgProgress },
       });
 
       if ((nextLevel === 'red' || nextLevel === 'yellow') && p.managerId) {

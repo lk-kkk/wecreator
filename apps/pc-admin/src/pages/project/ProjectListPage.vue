@@ -129,6 +129,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { PlusOutlined, AppstoreOutlined, ProjectOutlined } from '@ant-design/icons-vue'
 import request from '@/api/request'
+import { analyticsApi } from '@/api/analytics'
 
 const router = useRouter()
 // V3.7: /project/board 路由使用看板视图，其他地方使用列表
@@ -137,6 +138,7 @@ const viewMode = ref<'list' | 'board'>(_route.path.includes('/project/board') ? 
 watch(viewMode, (v) => {
   const targetPath = v === 'board' ? '/project/board' : '/project/list'
   if (_route.path !== targetPath) router.replace(targetPath)
+  if (v === 'board') analyticsApi.track({ event: 'project_board_view' })
 })
 const loading = ref(false)
 const list = ref<any[]>([])
@@ -252,7 +254,7 @@ async function archiveProject(id: number) {
 
 function goDetail(id: number) { router.push(`/project/${id}`) }
 
-onMounted(() => { fetchList(); fetchBoard(); loadManagers() })
+onMounted(() => { fetchList(); fetchBoard(); loadManagers(); if (viewMode.value === 'board') analyticsApi.track({ event: 'project_board_view' }) })
 </script>
 
 <style scoped>

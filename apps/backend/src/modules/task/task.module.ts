@@ -11,9 +11,10 @@ import { IssueService } from './issue.service';
 import { CheckpointController, CommentController, IssueController } from './task-enhancement.controller';
 import { NotificationModule } from '../notification/notification.module';
 import { ProjectModule } from '../project/project.module';
+import { AnalyticsModule } from '../analytics/analytics.module';
 
 @Module({
-  imports: [NotificationModule, ProjectModule],
+  imports: [NotificationModule, ProjectModule, AnalyticsModule],
   controllers: [
     TaskController, CommonController, RecommendationController,
     MarketplaceController, WorkerStatsController,

@@ -135,6 +135,70 @@
           </div>
         </div>
       </div>
+
+      <!-- V3.7 Phase 6 — 质量与效率 -->
+      <div class="v37-section" v-if="v37.loaded">
+        <h2 class="v37-title">V3.7 质量与效率</h2>
+        <div class="kpi-grid">
+          <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">平均完成周期</span></div>
+            <div class="kpi-value">{{ v37.task?.cards?.avgCycleDays ?? 0 }}<span class="kpi-suffix">天</span></div>
+            <div class="kpi-trend-placeholder" />
+          </div>
+          <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">按时交付率</span></div>
+            <div class="kpi-value">{{ v37.task?.cards?.onTimeRate ?? 0 }}<span class="kpi-suffix">%</span></div>
+            <div class="kpi-trend-placeholder" />
+          </div>
+          <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">接单响应时间</span></div>
+            <div class="kpi-value">{{ v37.task?.cards?.avgResponseHours ?? 0 }}<span class="kpi-suffix">h</span></div>
+            <div class="kpi-trend-placeholder" />
+          </div>
+          <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">本月活跃零工数</span></div>
+            <div class="kpi-value">{{ v37.task?.cards?.activeWorkers ?? 0 }}</div>
+            <div class="kpi-trend-placeholder" />
+          </div>
+        </div>
+
+        <div class="kpi-grid" style="margin-top: 16px;">
+          <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">验收通过率</span></div>
+            <div class="kpi-value">{{ v37.quality?.cards?.approvalRate ?? 0 }}<span class="kpi-suffix">%</span></div>
+            <div class="kpi-trend-placeholder" />
+          </div>
+          <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">返工率</span></div>
+            <div class="kpi-value">{{ v37.quality?.cards?.reworkRate ?? 0 }}<span class="kpi-suffix">%</span></div>
+            <div class="kpi-trend-placeholder" />
+          </div>
+          <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">平均返工次数</span></div>
+            <div class="kpi-value">{{ v37.quality?.cards?.avgRevisions ?? 0 }}<span class="kpi-suffix">次</span></div>
+            <div class="kpi-trend-placeholder" />
+          </div>
+          <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">检查点通过率</span></div>
+            <div class="kpi-value">{{ v37.quality?.cards?.cpPassRate ?? 0 }}<span class="kpi-suffix">%</span></div>
+            <div class="kpi-trend-placeholder" />
+          </div>
+        </div>
+
+        <div class="chart-row" style="margin-top: 16px;">
+          <div class="wc-card chart-card">
+            <div class="wc-card-title">任务类型分布</div>
+            <div ref="modePieRef" class="chart-body" />
+          </div>
+          <div class="wc-card chart-card">
+            <div class="wc-card-title">任务优先级分布</div>
+            <div ref="priorityBarRef" class="chart-body" />
+          </div>
+        </div>
+
+        <div class="chart-row" style="margin-top: 16px;">
+          <div class="wc-card chart-card">
+            <div class="wc-card-title">项目风险分布</div>
+            <div ref="riskPieRef" class="chart-body" />
+          </div>
+          <div class="wc-card chart-card">
+            <div class="wc-card-title">项目预算对比（Top 10）</div>
+            <div ref="budgetBarRef" class="chart-body" />
+          </div>
+        </div>
+      </div>
     </a-spin>
   </div>
 </template>
@@ -155,6 +219,7 @@ import {
 } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { dashboardApi } from '@/api/dashboard'
+import { analyticsApi } from '@/api/analytics'
 
 echarts.use([
   LineChart, BarChart, PieChart,
@@ -179,6 +244,19 @@ const pieChartRef   = ref<HTMLDivElement>()
 let taskChart: any = null
 let settleChart: any = null
 let pieChart: any = null
+
+// V3.7 Phase 6 分析状态
+const v37 = reactive<{ loaded: boolean; task: any; project: any; quality: any }>({
+  loaded: false, task: null, project: null, quality: null,
+})
+const modePieRef      = ref<HTMLDivElement>()
+const priorityBarRef  = ref<HTMLDivElement>()
+const riskPieRef      = ref<HTMLDivElement>()
+const budgetBarRef    = ref<HTMLDivElement>()
+let modePieChart: any = null
+let priorityBarChart: any = null
+let riskPieChart: any = null
+let budgetBarChart: any = null
 
 // ── KPI 列表（computed）──────────────────────────────────────
 const kpiList = computed(() => [
@@ -265,11 +343,21 @@ function formatMoneyFull(v?: number) {
 async function loadData() {
   loading.value = true
   try {
-    const res = await dashboardApi.company()
+    const [res, taskAnalytics, projectAnalytics, qualityAnalytics] = await Promise.all([
+      dashboardApi.company(),
+      analyticsApi.tasks().catch(() => null),
+      analyticsApi.projects().catch(() => null),
+      analyticsApi.quality().catch(() => null),
+    ])
     Object.assign(data, res)
+    v37.task = taskAnalytics
+    v37.project = projectAnalytics
+    v37.quality = qualityAnalytics
+    v37.loaded = !!(taskAnalytics || projectAnalytics || qualityAnalytics)
     lastUpdated.value = new Date().toLocaleTimeString('zh-CN')
     await nextTick()
     renderCharts()
+    renderV37Charts()
   } catch {
     message.error('加载看板数据失败')
   } finally {
@@ -390,6 +478,82 @@ function renderCharts() {
 }
 
 onMounted(loadData)
+
+// V3.7 Phase 6 图表渲染
+function renderV37Charts() {
+  // 任务类型饼图
+  if (modePieRef.value && v37.task?.charts?.byMode) {
+    modePieChart = modePieChart || echarts.init(modePieRef.value)
+    modePieChart.setOption({
+      tooltip: { trigger: 'item' },
+      legend: { bottom: 0 },
+      series: [{
+        type: 'pie', radius: ['45%', '70%'],
+        data: v37.task.charts.byMode.map((m: any) => ({
+          name: m.name === 'task_package' ? '包价' : m.name === 'daily_rate' ? '日薪' : m.name,
+          value: m.value,
+        })),
+        label: { formatter: '{b}: {c}' },
+      }],
+      color: ['#0858F4', '#38D048', '#FC6400', '#722ED1'],
+    })
+  }
+
+  // 任务优先级柱状图
+  if (priorityBarRef.value && v37.task?.charts?.byPriority) {
+    priorityBarChart = priorityBarChart || echarts.init(priorityBarRef.value)
+    const pmap: Record<string, string> = { p0: 'P0 紧急', p1: 'P1 高', p2: 'P2 中', p3: 'P3 低' }
+    const rows = v37.task.charts.byPriority
+    priorityBarChart.setOption({
+      tooltip: { trigger: 'axis' },
+      grid: { left: 40, right: 20, top: 16, bottom: 28 },
+      xAxis: { type: 'category', data: rows.map((r: any) => pmap[r.name] ?? r.name) },
+      yAxis: { type: 'value' },
+      series: [{
+        type: 'bar', data: rows.map((r: any) => r.value),
+        itemStyle: { color: '#0858F4', borderRadius: [4, 4, 0, 0] },
+        barWidth: 24,
+      }],
+    })
+  }
+
+  // 项目风险饼图
+  if (riskPieRef.value && v37.project?.byRisk) {
+    riskPieChart = riskPieChart || echarts.init(riskPieRef.value)
+    const colorMap: Record<string, string> = {
+      red: '#ff4d4f', yellow: '#faad14', green: '#52c41a', unset: '#999',
+    }
+    riskPieChart.setOption({
+      tooltip: { trigger: 'item' },
+      legend: { bottom: 0 },
+      series: [{
+        type: 'pie', radius: ['45%', '70%'],
+        data: v37.project.byRisk.map((r: any) => ({
+          name: r.name === 'red' ? '红(高风险)' : r.name === 'yellow' ? '黄(中)' : r.name === 'green' ? '绿(低)' : r.name,
+          value: r.value,
+          itemStyle: { color: colorMap[r.name] ?? '#999' },
+        })),
+      }],
+    })
+  }
+
+  // 项目预算对比柱状图
+  if (budgetBarRef.value && v37.project?.budgetCompare) {
+    budgetBarChart = budgetBarChart || echarts.init(budgetBarRef.value)
+    const rows = v37.project.budgetCompare
+    budgetBarChart.setOption({
+      tooltip: { trigger: 'axis' },
+      legend: { data: ['预算', '已结算'], bottom: 0 },
+      grid: { left: 60, right: 20, top: 16, bottom: 40 },
+      xAxis: { type: 'category', data: rows.map((r: any) => r.name), axisLabel: { fontSize: 10, interval: 0, rotate: 20 } },
+      yAxis: { type: 'value' },
+      series: [
+        { name: '预算', type: 'bar', data: rows.map((r: any) => r.budget), itemStyle: { color: '#0858F4' } },
+        { name: '已结算', type: 'bar', data: rows.map((r: any) => r.settled), itemStyle: { color: '#38D048' } },
+      ],
+    })
+  }
+}
 </script>
 
 <style scoped>

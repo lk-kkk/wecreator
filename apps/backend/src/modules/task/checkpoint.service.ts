@@ -9,6 +9,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, IsNumber, IsIn, IsDateString, IsArray, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PrismaService } from '../../prisma';
+import { AnalyticsService } from '../analytics/analytics.service';
 
 export class CreateCheckpointDto {
   @ApiProperty() @IsString() @MaxLength(50) name: string;
@@ -33,7 +34,10 @@ export class CheckpointService {
   private static readonly MAX_PER_TASK = 20;
   private static readonly MAX_REVISIONS = 3;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly analytics: AnalyticsService,
+  ) {}
 
   async list(taskId: number) {
     const items = await this.prisma.taskCheckpoint.findMany({
@@ -64,6 +68,11 @@ export class CheckpointService {
         sortOrder: (maxSort._max.sortOrder ?? 0) + 1,
       },
     });
+    await this.analytics.track({
+      event: 'checkpoint_create', actorType: 'company_user',
+      refType: 'checkpoint', refId: Number(cp.id),
+      props: { taskId, type: dto.type },
+    });
     return { checkpointId: Number(cp.id) };
   }
 
@@ -85,6 +94,11 @@ export class CheckpointService {
         submittedAt: new Date(),
         revisionCount: cp.status === 'rejected' ? { increment: 1 } : undefined,
       },
+    });
+    await this.analytics.track({
+      event: 'checkpoint_submit', actorType: 'worker',
+      refType: 'checkpoint', refId: checkpointId,
+      props: { taskId: Number(cp.taskId), revision: cp.revisionCount + (cp.status === 'rejected' ? 1 : 0) },
     });
     return { checkpointId, status: 'submitted' };
   }
@@ -108,6 +122,11 @@ export class CheckpointService {
         reviewComment: dto.reviewComment,
         reviewedAt: new Date(),
       },
+    });
+    await this.analytics.track({
+      event: 'checkpoint_review', actorType: 'company_user', actorId: userId,
+      refType: 'checkpoint', refId: checkpointId,
+      props: { taskId: Number(cp.taskId), result: dto.result },
     });
     return { checkpointId, status: dto.result };
   }

@@ -13,6 +13,7 @@ import { Type } from 'class-transformer';
 import { PrismaService } from '../../prisma';
 import { NoGeneratorService } from '../../common';
 import { CompanyNotificationService } from '../notification/company-notification.service';
+import { AnalyticsService } from '../analytics/analytics.service';
 
 // ─── DTO ───
 export class CreateProjectDto {
@@ -66,6 +67,7 @@ export class ProjectService {
     private readonly prisma: PrismaService,
     private readonly noGen: NoGeneratorService,
     private readonly notify: CompanyNotificationService,
+    private readonly analytics: AnalyticsService,
   ) {}
 
   /** C06a-01: 项目列表 */
@@ -267,6 +269,18 @@ export class ProjectService {
         createdBy: BigInt(userId),
       },
     });
+
+    // V3.7 Phase 6 埋点
+    await this.analytics.track({
+      event: 'milestone_create',
+      actorType: 'company_user',
+      actorId: userId,
+      companyId,
+      refType: 'milestone',
+      refId: Number(m.id),
+      props: { projectId },
+    });
+
     return { milestoneId: Number(m.id) };
   }
 
@@ -333,6 +347,16 @@ export class ProjectService {
         refId: milestoneId,
       });
     }
+
+    // V3.7 Phase 6 埋点
+    await this.analytics.track({
+      event: 'milestone_complete',
+      actorType: 'company_user',
+      companyId,
+      refType: 'milestone',
+      refId: milestoneId,
+      props: { projectId },
+    });
 
     return { milestoneId: Number(m.id), status: 'completed' };
   }

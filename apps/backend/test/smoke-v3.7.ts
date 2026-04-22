@@ -309,7 +309,53 @@ async function main() {
     const cleaned = await cleanCron.runOnce();
     console.log(`✅ [18] SlaMonitor/DailyMissing/Cleanup: sla=${JSON.stringify(sla)} dm=${JSON.stringify(dm)} cleanup=${JSON.stringify(cleaned)}`);
 
-    console.log('\n🎉 All V3.7 Phase 2+5 smoke tests passed!\n');
+    // ── V3.7 Phase 6 埋点 + 分析 ──
+    const { AnalyticsService } = require('../src/modules/analytics/analytics.service');
+    const analyticsSvc = app.get(AnalyticsService);
+
+    // [19] AnalyticsService.track 写入
+    await analyticsSvc.track({
+      event: 'milestone_create', actorType: 'company_user', actorId: Number(user.id),
+      companyId: Number(company.id), refType: 'milestone', refId: Number(ms.milestoneId),
+      props: { test: true },
+    });
+    const evt = await prisma.analyticsEvent.findFirst({
+      where: { event: 'milestone_create', companyId: company.id },
+      orderBy: { id: 'desc' },
+    });
+    if (!evt) throw new Error('[19] track() 写入后无数据');
+    console.log(`✅ [19] AnalyticsService.track 写入成功 evt=${Number(evt.id)}`);
+
+    // [20] 检查 CheckpointService.review/create 是否已写入埋点
+    const cpEvents = await prisma.analyticsEvent.count({
+      where: {
+        refType: 'checkpoint', refId: BigInt(cp.checkpointId),
+        event: { in: ['checkpoint_create', 'checkpoint_submit', 'checkpoint_review'] as any },
+      },
+    });
+    if (cpEvents < 3) throw new Error(`[20] 期望至少 3 个 checkpoint_* 事件，实际: ${cpEvents}`);
+    console.log(`✅ [20] Checkpoint 埋点已覆盖 create/submit/review (count=${cpEvents})`);
+
+    // [21] getTaskAnalytics 返回四指标
+    const taskAnalytics = await analyticsSvc.getTaskAnalytics(Number(company.id));
+    if (typeof taskAnalytics.cards?.avgCycleDays !== 'number') {
+      throw new Error('[21] getTaskAnalytics.cards.avgCycleDays 不是数字');
+    }
+    if (!Array.isArray(taskAnalytics.charts?.byPriority)) {
+      throw new Error('[21] getTaskAnalytics.charts.byPriority 不是数组');
+    }
+    console.log(`✅ [21] getTaskAnalytics: avgCycle=${taskAnalytics.cards.avgCycleDays}d priority档=${taskAnalytics.charts.byPriority.length}`);
+
+    // [22] getQualityAnalytics 返回结构
+    const qa = await analyticsSvc.getQualityAnalytics(Number(company.id));
+    if (typeof qa.cards?.approvalRate !== 'number' ||
+        typeof qa.cards?.reworkRate !== 'number' ||
+        typeof qa.cards?.cpPassRate !== 'number') {
+      throw new Error('[22] getQualityAnalytics.cards 缺字段');
+    }
+    console.log(`✅ [22] getQualityAnalytics: approval=${qa.cards.approvalRate}%, rework=${qa.cards.reworkRate}%, cpPass=${qa.cards.cpPassRate}%`);
+
+    console.log('\n🎉 All V3.7 Phase 2+5+6 smoke tests passed!\n');
 
   } catch (e: any) {
     console.error('\n❌ Smoke test failed:', e.message);
@@ -320,6 +366,18 @@ async function main() {
     if (company) {
       try {
         await prisma.companyNotification.deleteMany({ where: { companyId: company.id } });
+        await prisma.analyticsEvent.deleteMany({ where: { companyId: company.id } });
+        // 清理 Phase 6 无 companyId 的 checkpoint/issue/comment 事件
+        await prisma.analyticsEvent.deleteMany({
+          where: {
+            OR: [
+              { refType: 'checkpoint' },
+              { refType: 'issue' },
+              { refType: 'comment' },
+              { refType: 'milestone' },
+            ],
+          },
+        });
         await prisma.taskComment.deleteMany({ where: { task: { companyId: company.id } } });
         await prisma.taskCheckpoint.deleteMany({ where: { task: { companyId: company.id } } });
         await prisma.taskIssue.deleteMany({ where: { task: { companyId: company.id } } });

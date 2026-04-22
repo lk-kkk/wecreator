@@ -13,6 +13,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../prisma';
 import { NotificationModule } from '../notification/notification.module';
+import { AnalyticsModule } from '../analytics/analytics.module';
 import { RiskLevelCron } from './risk-level.cron';
 import { SlaMonitorCron } from './sla-monitor.cron';
 import { CheckpointOverdueCron } from './checkpoint-overdue.cron';
@@ -21,7 +22,7 @@ import { MilestoneRemindCron } from './milestone-remind.cron';
 import { NotificationCleanupCron } from './notification-cleanup.cron';
 
 @Module({
-  imports: [PrismaModule, NotificationModule],
+  imports: [PrismaModule, NotificationModule, AnalyticsModule],
   providers: [
     RiskLevelCron,
     SlaMonitorCron,

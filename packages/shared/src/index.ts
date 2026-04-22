@@ -3,6 +3,10 @@
 // 前后端共用的类型、常量、工具函数
 // ============================================================
 
+// V3.7 埋点事件常量
+export * from './analytics';
+
+
 // ── 从 Prisma 客户端 re-export 枚举（单一来源，杜绝不同步）──
 // 注意：前端项目如果不安装 @prisma/client，则使用下方手写镜像
 // 后端直接 import { TaskStatus } from '@prisma/client' 亦可

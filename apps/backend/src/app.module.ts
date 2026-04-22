@@ -29,6 +29,7 @@ import { PlatformModule }     from './modules/platform/platform.module';
 import { ProjectModule }      from './modules/project/project.module';
 import { AiModule }           from './modules/ai/ai.module';
 import { SchedulerModule }    from './modules/scheduler/scheduler.module';
+import { AnalyticsModule }    from './modules/analytics/analytics.module';
 
 @Module({
   imports: [
@@ -76,6 +77,7 @@ import { SchedulerModule }    from './modules/scheduler/scheduler.module';
     ProjectModule,      // W13 R2-a ✅
     AiModule,           // W14 R2-b ✅
     SchedulerModule,    // V3.7 Cron ✅
+    AnalyticsModule,    // V3.7 Phase 6 埋点 ✅
   ],
   controllers: [AppController],
   providers: [
