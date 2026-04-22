@@ -124,14 +124,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { PlusOutlined, AppstoreOutlined, ProjectOutlined } from '@ant-design/icons-vue'
 import request from '@/api/request'
 
 const router = useRouter()
-const viewMode = ref<'list' | 'board'>('board')
+// V3.7: /project/board 路由使用看板视图，其他地方使用列表
+const _route = useRoute()
+const viewMode = ref<'list' | 'board'>(_route.path.includes('/project/board') ? 'board' : 'list')
+watch(viewMode, (v) => {
+  const targetPath = v === 'board' ? '/project/board' : '/project/list'
+  if (_route.path !== targetPath) router.replace(targetPath)
+})
 const loading = ref(false)
 const list = ref<any[]>([])
 const boardData = ref<any[]>([])

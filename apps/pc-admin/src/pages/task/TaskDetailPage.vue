@@ -17,6 +17,17 @@
         <!-- ===================== 左栏：任务信息 ===================== -->
         <div class="col-left">
           <a-card title="基本信息" :bordered="false">
+            <!-- V3.7 任务编号 / 优先级 / 风险 -->
+            <div class="v37-badges" v-if="task.taskNo || task.priority || task.riskLevel">
+              <span v-if="task.taskNo" class="v37-tasknoT">#{{ task.taskNo }}</span>
+              <a-tag v-if="task.priority === 'p0'" color="red">P0 紧急</a-tag>
+              <a-tag v-else-if="task.priority === 'p1'" color="orange">P1 重要</a-tag>
+              <a-tag v-else-if="task.priority === 'p2'" color="blue">P2 常规</a-tag>
+              <a-tooltip :title="riskTooltip(task.riskLevel)">
+                <span :style="{ color: riskColor(task.riskLevel), fontSize: '16px' }">●</span>
+              </a-tooltip>
+              <a-tag v-if="task.acceptanceStatus" :color="acceptanceColor(task.acceptanceStatus)">{{ acceptanceLabel(task.acceptanceStatus) }}</a-tag>
+            </div>
             <a-descriptions :column="1" size="small">
               <a-descriptions-item label="任务模式">{{ task.taskMode === 'task_package' ? '任务包' : '日薪制' }}</a-descriptions-item>
               <a-descriptions-item label="总预算">¥{{ task.totalBudget?.toLocaleString() }}</a-descriptions-item>
@@ -28,6 +39,10 @@
             </a-descriptions>
             <a-divider />
             <div class="desc-text">{{ task.description || '暂无描述' }}</div>
+            <div v-if="task.acceptanceCriteria" class="acceptance-box">
+              <div class="acceptance-title">✅ 验收标准</div>
+              <div class="acceptance-text">{{ task.acceptanceCriteria }}</div>
+            </div>
           </a-card>
         </div>
 
@@ -107,6 +122,27 @@
               />
             </div>
           </a-card>
+
+          <!-- V3.7 协作与过程管控 Tabs -->
+          <a-card :bordered="false" class="v37-tabs-card">
+            <a-tabs v-model:activeKey="v37Tab" size="small">
+              <a-tab-pane key="checkpoints" tab="📋 检查点">
+                <TaskCheckpointPanel :task-id="taskId" :current-user-id="currentUserId" />
+              </a-tab-pane>
+              <a-tab-pane key="logs" tab="📝 工作日志">
+                <TaskProgressLogPanel :task-id="taskId" :roles="task.roles || []" />
+              </a-tab-pane>
+              <a-tab-pane key="versions" tab="📦 交付物版本">
+                <DeliverableVersionBrowser :deliverables="task.deliverables || []" :roles="task.roles || []" />
+              </a-tab-pane>
+              <a-tab-pane key="comments" :tab="`💬 讨论`">
+                <TaskCommentsPanel :task-id="taskId" :current-user-id="currentUserId" />
+              </a-tab-pane>
+              <a-tab-pane key="issues" tab="⚠️ 问题">
+                <TaskIssuesPanel :task-id="taskId" />
+              </a-tab-pane>
+            </a-tabs>
+          </a-card>
         </div>
 
         <!-- ===================== 右栏：IM 聊天面板 ===================== -->
@@ -161,6 +197,11 @@ import { recommendApi } from '@/api/recommendation'
 import request from '@/api/request'
 import DeliverableReview from '@/components/DeliverableReview.vue'
 import ImChatPanel from '@/components/ImChatPanel.vue'
+import TaskCheckpointPanel from '@/components/task/TaskCheckpointPanel.vue'
+import TaskCommentsPanel from '@/components/task/TaskCommentsPanel.vue'
+import TaskIssuesPanel from '@/components/task/TaskIssuesPanel.vue'
+import TaskProgressLogPanel from '@/components/task/TaskProgressLogPanel.vue'
+import DeliverableVersionBrowser from '@/components/task/DeliverableVersionBrowser.vue'
 
 const route = useRoute()
 const taskId = Number(route.params.id)
@@ -170,6 +211,27 @@ const task = ref<any>(null)
 const activeConversation = ref<any>(null)
 const applications = ref<any[]>([])
 const pendingApplications = computed(() => applications.value.filter((a: any) => a.status === 'pending'))
+
+// V3.7: 当前用户与 Tab
+const v37Tab = ref('checkpoints')
+const currentUserId = computed<number | undefined>(() => {
+  try {
+    const u = JSON.parse(localStorage.getItem('wc_user') || '{}')
+    return u?.userId
+  } catch {
+    return undefined
+  }
+})
+
+// V3.7 UI helpers
+const riskColor = (r: string) =>
+  ({ red: '#ff4d4f', yellow: '#faad14', green: '#52c41a' } as any)[r] || '#52c41a'
+const riskTooltip = (r: string) =>
+  ({ red: '风险: 紧急处理', yellow: '风险: 需关注', green: '状态正常' } as any)[r] || '状态正常'
+const acceptanceLabel = (a: string) =>
+  ({ pending: '未验收', partial: '部分验收', all_passed: '全部通过' } as any)[a] || a
+const acceptanceColor = (a: string) =>
+  ({ pending: 'default', partial: 'blue', all_passed: 'green' } as any)[a] || 'default'
 
 const statusColor: Record<string, string> = {
   draft: 'default', pending_review: 'processing', published: 'blue',
@@ -374,4 +436,21 @@ onMounted(load)
 .application-row:last-child {
   border-bottom: none;
 }
+
+/* V3.7 */
+.v37-badges {
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+  margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #f0f0f0;
+}
+.v37-tasknoT {
+  font-family: monospace; font-size: 12px; color: #666;
+  padding: 2px 8px; background: #f5f5f5; border-radius: 4px;
+}
+.acceptance-box {
+  margin-top: 12px; padding: 10px 12px; background: #f6ffed;
+  border-left: 3px solid #52c41a; border-radius: 0 4px 4px 0;
+}
+.acceptance-title { font-weight: 600; color: #389e0d; margin-bottom: 4px; font-size: 13px; }
+.acceptance-text { font-size: 13px; color: #333; line-height: 1.6; white-space: pre-wrap; }
+.v37-tabs-card { margin-top: 12px; }
 </style>

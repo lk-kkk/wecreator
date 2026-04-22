@@ -51,10 +51,15 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/task/TaskDetailPage.vue'),
       },
 
-      // ── 📁 项目管理 ── PRD: /project/list
+      // ── 📁 项目管理 ── PRD: /project/list + V3.7 /project/board
       {
         path: 'project/list',
         name: 'ProjectList',
+        component: () => import('@/pages/project/ProjectListPage.vue'),
+      },
+      {
+        path: 'project/board',
+        name: 'ProjectBoard',
         component: () => import('@/pages/project/ProjectListPage.vue'),
       },
       { path: 'project', redirect: '/project/list' }, // 兼容短路径

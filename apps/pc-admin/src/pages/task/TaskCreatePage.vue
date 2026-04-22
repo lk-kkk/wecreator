@@ -28,12 +28,34 @@
               <template #label><span class="tcp-fl">任务标题</span></template>
               <a-input v-model:value="form.title" placeholder="一句话说清任务，如：双11产品主图拍摄 · 50款SKU" :maxlength="100" show-count size="large" />
             </a-form-item>
+
+            <!-- V3.7 优先级 -->
+            <a-form-item>
+              <template #label><span class="tcp-fl">优先级</span></template>
+              <a-radio-group v-model:value="form.priority" button-style="solid">
+                <a-radio-button value="p0"><span style="color:#ff4d4f">●</span> P0 紧急</a-radio-button>
+                <a-radio-button value="p1"><span style="color:#faad14">●</span> P1 重要</a-radio-button>
+                <a-radio-button value="p2"><span style="color:#1890ff">●</span> P2 常规</a-radio-button>
+              </a-radio-group>
+            </a-form-item>
             <a-form-item>
               <template #label>
                 <span class="tcp-fl">任务描述</span>
                 <span class="tcp-fl-opt">选填</span>
               </template>
               <a-textarea v-model:value="form.description" :rows="4" placeholder="告诉零工需要做什么、做到什么程度、有哪些注意事项…" :maxlength="2000" show-count />
+            </a-form-item>
+
+            <!-- V3.7 验收标准 -->
+            <a-form-item>
+              <template #label><span class="tcp-fl">验收标准</span><span class="tcp-fl-opt">选填</span></template>
+              <a-textarea
+                v-model:value="form.acceptanceCriteria"
+                :rows="3"
+                placeholder="明确的验收指标和质量要求，例如：Logo 提交不少于3个完整方案，每个包含 PNG/SVG/AI 格式"
+                :maxlength="1000"
+                show-count
+              />
             </a-form-item>
           </a-form>
         </section>
@@ -291,7 +313,7 @@ import { ref, reactive, computed, onMounted, onUnmounted, watch, nextTick } from
 import { useRouter, useRoute } from 'vue-router'
 import { message, Modal } from 'ant-design-vue'
 import {
-  PlusOutlined, LeftOutlined, CheckOutlined, CheckCircleOutlined,
+  PlusOutlined, LeftOutlined, CheckCircleOutlined,
   CloseOutlined, ClockCircleOutlined, InboxOutlined,
 } from '@ant-design/icons-vue'
 import dayjs from 'dayjs'
@@ -321,6 +343,9 @@ const form = reactive({
   addressDetail: '',
   roles: [] as RoleItem[],
   projectId: null as number | null,
+  // V3.7 新增
+  priority: 'p2' as 'p0' | 'p1' | 'p2',
+  acceptanceCriteria: '',
 })
 
 // ── 检查点 ──
@@ -446,6 +471,8 @@ function buildPayload() {
     startDate: startDate.value ? dayjs(startDate.value).format('YYYY-MM-DD') : undefined,
     endDate: endDate.value ? dayjs(endDate.value).format('YYYY-MM-DD') : undefined,
     address: fullAddress.value || undefined, ...(form.projectId && { projectId: form.projectId }),
+    priority: form.priority,
+    acceptanceCriteria: form.acceptanceCriteria || undefined,
     roles: form.roles.map(r => ({ roleName: r.roleName, headcount: r.headcount, budget: r.budget, skillTags: r.skillTagsArr.length > 0 ? r.skillTagsArr.join(',') : undefined, description: r.description || undefined })) }
 }
 
@@ -476,6 +503,7 @@ async function handlePublish() {
     if (!taskId) { const res = await taskApi.create(buildPayload()); taskId = res.taskId }
     else { await taskApi.updateDraft(taskId, { title: form.title, description: form.description || undefined, totalBudget: form.totalBudget, startDate: startDate.value ? dayjs(startDate.value).format('YYYY-MM-DD') : undefined, endDate: endDate.value ? dayjs(endDate.value).format('YYYY-MM-DD') : undefined, address: fullAddress.value || undefined })
       if (form.roles.length > 0) await taskApi.setRoles(taskId, buildPayload().roles) }
+    if (!taskId) throw new Error('任务创建失败')
     for (const att of attachments.value.filter(a => !a.error && a.fileUrl)) { try { await taskApi.addAttachment(taskId, { fileName: att.fileName, fileUrl: att.fileUrl, fileSize: att.fileSize, fileType: att.fileType }) } catch {} }
     await taskApi.publish(taskId); message.success('🎉 任务发布成功！'); router.push('/task/square')
   } catch (err: any) { message.error(err?.response?.data?.message || '发布失败') }

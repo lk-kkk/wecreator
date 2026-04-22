@@ -1,5 +1,33 @@
 import request from './request'
 
+export type TaskPriority = 'p0' | 'p1' | 'p2'
+export type RiskLevel = 'green' | 'yellow' | 'red'
+export type AcceptanceStatus = 'pending' | 'partial' | 'all_passed' | null
+
+export const PRIORITY_LABEL: Record<TaskPriority, string> = {
+  p0: 'P0 紧急',
+  p1: 'P1 重要',
+  p2: 'P2 常规',
+}
+
+export const PRIORITY_COLOR: Record<TaskPriority, string> = {
+  p0: 'red',
+  p1: 'orange',
+  p2: 'blue',
+}
+
+export const RISK_LABEL: Record<RiskLevel, string> = {
+  green: '正常',
+  yellow: '关注',
+  red: '风险',
+}
+
+export const RISK_COLOR: Record<RiskLevel, string> = {
+  green: '#52c41a',
+  yellow: '#faad14',
+  red: '#ff4d4f',
+}
+
 export interface CreateTaskParams {
   title: string
   description?: string
@@ -8,6 +36,10 @@ export interface CreateTaskParams {
   startDate?: string
   endDate?: string
   address?: string
+  /** V3.7 优先级 */
+  priority?: TaskPriority
+  /** V3.7 验收标准 */
+  acceptanceCriteria?: string
   roles?: {
     roleName: string
     headcount: number
@@ -21,7 +53,9 @@ export interface TaskListParams {
   status?: string
   keyword?: string
   taskMode?: string
-  sortBy?: 'createdAt' | 'totalBudget' | 'publishedAt' | 'endDate'
+  /** V3.7 优先级筛选 */
+  priority?: TaskPriority
+  sortBy?: 'createdAt' | 'totalBudget' | 'publishedAt' | 'endDate' | 'priority'
   sortOrder?: 'asc' | 'desc'
   createdFrom?: string
   createdTo?: string

@@ -80,6 +80,17 @@
           <a-select-option value="task_package">📦 任务包</a-select-option>
           <a-select-option value="daily_rate">📅 人天模式</a-select-option>
         </a-select>
+        <a-select
+          v-model:value="filterPriority"
+          placeholder="全部优先级"
+          allow-clear
+          style="width: 130px;"
+          @change="handleSearch"
+        >
+          <a-select-option value="p0"><span style="color:#ff4d4f">●</span> P0 紧急</a-select-option>
+          <a-select-option value="p1"><span style="color:#faad14">●</span> P1 重要</a-select-option>
+          <a-select-option value="p2"><span style="color:#1890ff">●</span> P2 常规</a-select-option>
+        </a-select>
         <a-range-picker
           v-model:value="dateRange"
           style="width: 240px;"
@@ -112,6 +123,12 @@
       >
         <template #bodyCell="{ column, record }">
 
+          <!-- V3.7 任务编号 -->
+          <template v-if="column.key === 'taskNo'">
+            <span v-if="record.taskNo" style="font-family:monospace;color:#666;font-size:12px">{{ record.taskNo }}</span>
+            <span v-else style="color:#ccc">—</span>
+          </template>
+
           <!-- 任务名称 -->
           <template v-if="column.key === 'title'">
             <div class="task-title-cell" @click="openTaskDrawer(record.taskId)">
@@ -123,6 +140,22 @@
           </template>
 
           <!-- 预算 -->
+          <!-- V3.7 优先级 -->
+          <template v-if="column.key === 'priority'">
+            <a-tag v-if="record.priority === 'p0'" color="red" style="margin:0">P0</a-tag>
+            <a-tag v-else-if="record.priority === 'p1'" color="orange" style="margin:0">P1</a-tag>
+            <a-tag v-else color="blue" style="margin:0">P2</a-tag>
+          </template>
+
+          <!-- V3.7 风险等级 -->
+          <template v-if="column.key === 'riskLevel'">
+            <a-tooltip :title="record.riskLevel === 'red' ? '风险' : record.riskLevel === 'yellow' ? '关注' : '正常'">
+              <span v-if="record.riskLevel === 'red'" style="color:#ff4d4f;font-size:18px">●</span>
+              <span v-else-if="record.riskLevel === 'yellow'" style="color:#faad14;font-size:18px">●</span>
+              <span v-else style="color:#52c41a;font-size:18px">●</span>
+            </a-tooltip>
+          </template>
+
           <template v-if="column.key === 'totalBudget'">
             <span class="amount-number budget-val">
               ¥{{ record.totalBudget >= 10000
@@ -488,13 +521,17 @@ const loading = ref(false)
 const taskList = ref<any[]>([])
 const searchKeyword = ref('')
 const filterMode = ref<string | undefined>(undefined)
+const filterPriority = ref<string | undefined>(undefined)
 const dateRange = ref<any>(null)
 const pagination = reactive({ current: 1, pageSize: 20, total: 0 })
 const tabCounts = reactive<Record<string, number>>({})
 
-// V3.5 表格列定义 — 新增「报名信息」列
+// V3.7: 新增任务编号/优先级/风险列
 const columns = [
+  { title: '任务编号', key: 'taskNo', width: 150 },
   { title: '任务名称', key: 'title', ellipsis: true },
+  { title: '优先级', key: 'priority', width: 92, align: 'center' as const },
+  { title: '风险', key: 'riskLevel', width: 72, align: 'center' as const },
   { title: '预算', key: 'totalBudget', width: 110, align: 'right' as const },
   { title: '角色', key: 'roleCount', width: 72, align: 'center' as const },
   { title: '报名信息', key: 'applicationInfo', width: 140, align: 'center' as const },
@@ -539,6 +576,7 @@ async function fetchList() {
     const params: Record<string, any> = {
       keyword: searchKeyword.value || undefined,
       taskMode: filterMode.value || undefined,
+      priority: filterPriority.value || undefined,
       page: pagination.current,
       pageSize: pagination.pageSize,
     }

@@ -46,11 +46,19 @@
           </a-menu-item>
         </a-sub-menu>
 
-        <!-- 📁 项目管理 -->
-        <a-menu-item key="project" @click="$router.push('/project/list')">
+        <!-- 📁 项目管理 SubMenu (V3.7) -->
+        <a-sub-menu key="project-group">
           <template #icon><partition-outlined /></template>
-          <span>项目管理</span>
-        </a-menu-item>
+          <template #title>项目管理</template>
+          <a-menu-item key="project-list" @click="$router.push('/project/list')">
+            <template #icon><unordered-list-outlined /></template>
+            项目列表
+          </a-menu-item>
+          <a-menu-item key="project-board" @click="$router.push('/project/board')">
+            <template #icon><appstore-outlined /></template>
+            项目看板
+          </a-menu-item>
+        </a-sub-menu>
 
         <!-- 👥 零工库 -->
         <a-menu-item key="worker-pool" @click="$router.push('/worker/pool')">
@@ -133,11 +141,7 @@
           <a-divider type="vertical" style="height: 20px; margin: 0 8px;" />
 
           <!-- 通知 -->
-          <a-tooltip title="消息通知">
-            <a-badge :count="0" class="header-notify" @click="$router.push('/notifications')" style="cursor:pointer">
-              <bell-outlined class="header-icon" />
-            </a-badge>
-          </a-tooltip>
+          <NotificationBell />
 
           <a-divider type="vertical" style="height: 20px; margin: 0 8px;" />
 
@@ -196,16 +200,17 @@ import {
   UserSwitchOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  BellOutlined,
   DownOutlined,
   SettingOutlined,
   LogoutOutlined,
   PartitionOutlined,
   RobotOutlined,
   ApiOutlined,
+  UnorderedListOutlined,
 } from '@ant-design/icons-vue'
 import { useUserStore } from '@/stores/user'
 import request from '@/api/request'
+import NotificationBell from '@/components/layout/NotificationBell.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -215,7 +220,7 @@ const balanceDisplay = ref('—')
 
 // ── SubMenu 展开状态 ───────────────────────────────────────────
 // 初始展开任务管理组
-const openKeys = ref<string[]>(['task-group'])
+const openKeys = ref<string[]>(['task-group', 'project-group'])
 function onOpenChange(keys: string[]) {
   openKeys.value = keys
 }
@@ -227,7 +232,8 @@ const selectedKeys = computed(() => {
   if (path.includes('/task/dispute'))      return ['dispute']
   if (path.includes('/task/square'))       return ['task-square']
   if (path.includes('/task'))              return ['task-square']
-  if (path.includes('/project'))           return ['project']
+  if (path.includes('/project/board'))     return ['project-board']
+  if (path.includes('/project'))           return ['project-list']
   if (path.includes('/worker'))            return ['worker-pool']
   if (path.includes('/finance/invoices'))  return ['invoices']
   if (path.includes('/finance'))           return ['finance']
@@ -252,7 +258,8 @@ const breadcrumbs = computed<Breadcrumb[]>(() => {
     '/finance':                [{ label: '财务中心' }],
     '/finance/recharge':       [{ label: '财务中心', path: '/finance' }, { label: '充值' }],
     '/finance/invoices':       [{ label: '财务中心', path: '/finance' }, { label: '发票管理' }],
-    '/project/list':           [{ label: '项目管理' }],
+    '/project/list':           [{ label: '项目管理' }, { label: '项目列表' }],
+    '/project/board':          [{ label: '项目管理' }, { label: '项目看板' }],
     '/admin/subaccounts':        [{ label: '系统管理' }, { label: '子账号管理' }],
     '/settings/llm':           [{ label: '系统管理' }, { label: '大模型配置' }],
     '/settings/agents':        [{ label: '系统管理' }, { label: '智能体管理' }],
