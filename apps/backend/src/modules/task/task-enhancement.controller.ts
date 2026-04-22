@@ -79,7 +79,7 @@ export class CommentController {
   }
 
   @Post()
-  @Roles('super_admin', 'task_admin', 'operator', 'finance_admin', 'worker')
+  @Roles('super_admin', 'task_admin', 'operator', 'worker')
   @ApiOperation({ summary: '发表评论' })
   create(
     @Param('taskId', ParseIntPipe) taskId: number,
@@ -91,7 +91,7 @@ export class CommentController {
   }
 
   @Delete(':commentId')
-  @Roles('super_admin', 'task_admin', 'operator', 'finance_admin', 'worker')
+  @Roles('super_admin', 'task_admin', 'operator', 'worker')
   @ApiOperation({ summary: '删除评论(软删除)' })
   delete(@Param('commentId', ParseIntPipe) commentId: number, @CurrentUser() user: CurrentUserPayload) {
     return this.svc.softDelete(commentId, user.userId);
@@ -112,7 +112,7 @@ export class IssueController {
   }
 
   @Post()
-  @Roles('super_admin', 'task_admin', 'operator', 'finance_admin', 'worker')
+  @Roles('super_admin', 'task_admin', 'operator', 'worker')
   @ApiOperation({ summary: '上报问题' })
   create(
     @Param('taskId', ParseIntPipe) taskId: number,

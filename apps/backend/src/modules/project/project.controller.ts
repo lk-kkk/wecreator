@@ -36,6 +36,7 @@ export class ProjectController {
   }
 
   @Get('board')
+  @Roles('super_admin', 'task_admin', 'operator')
   @ApiOperation({ summary: '看板数据' })
   board(@CurrentUser() user: CurrentUserPayload) {
     return this.svc.getBoard(user.companyId!);
