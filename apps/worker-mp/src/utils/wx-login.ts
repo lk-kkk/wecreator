@@ -143,12 +143,25 @@ export function getCurrentUser() {
 /**
  * 获取完整个人档案并缓存
  * 通常在登录成功后或进入"我的"页面时调用
+ *
+ * 返回: true = profile 获取成功(用户合法), false = 失败(已自动登出)
  */
-export async function fetchAndCacheProfile(): Promise<void> {
+export async function fetchAndCacheProfile(): Promise<boolean> {
   try {
     const profile = await authApi.getProfile()
     saveProfile(profile)
-  } catch {
-    // 静默失败，下次进入页面会重试
+    return true
+  } catch (err: any) {
+    // profile 失败通常意味着: token 过期 / worker 已被删 / 后端错误
+    // request.ts 已处理 401 自动登出, 这里额外对"标记登录但用户不合法"的场景兆底:
+    // 若 err message 是"登录已过期"类 (已走 forceLogout), 直接返回 false
+    // 若是网络或 5xx, 保留 token 下次重试 (不自动登出以免误杀)
+    const msg = err?.message || ''
+    if (/登录已过期|请重新登录|Unauthorized|401/.test(msg)) {
+      // 已被 request.ts 处理, 无需额外动作
+      return false
+    }
+    // 其它错误(网络/5xx): 静默失败
+    return false
   }
 }
