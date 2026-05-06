@@ -78,6 +78,12 @@ export function clearUserData() {
   Taro.removeStorageSync(STORAGE_REFRESH)
   Taro.removeStorageSync(STORAGE_USER)
   Taro.removeStorageSync(STORAGE_PROFILE)
+  // 登出时清掉底部「消息」Tab 的未读角标
+  try {
+    Taro.removeTabBarBadge({ index: 2 }).catch(() => {})
+  } catch {
+    // 非 TabBar 页面会报错，忽略
+  }
   emitChange()
 }
 

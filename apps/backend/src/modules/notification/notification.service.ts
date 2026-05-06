@@ -81,12 +81,46 @@ export class NotificationService {
       }),
     ]);
 
+    // 关联查询任务简要信息
+    const taskIds = list
+      .map((n) => n.relatedTaskId)
+      .filter((id): id is bigint => id !== null);
+
+    let taskMap: Record<string, any> = {};
+    if (taskIds.length > 0) {
+      const uniqueIds = [...new Set(taskIds)];
+      const tasks = await this.prisma.task.findMany({
+        where: { id: { in: uniqueIds } },
+        select: {
+          id: true,
+          title: true,
+          totalBudget: true,
+          startDate: true,
+          endDate: true,
+          status: true,
+          taskMode: true,
+        },
+      });
+      for (const t of tasks) {
+        taskMap[String(t.id)] = {
+          taskId: Number(t.id),
+          title: t.title,
+          totalBudget: Number(t.totalBudget),
+          startDate: t.startDate,
+          endDate: t.endDate,
+          status: t.status,
+          taskMode: t.taskMode,
+        };
+      }
+    }
+
     return {
       list: list.map((n) => ({
         ...n,
         id: Number(n.id),
         recipientId: Number(n.recipientId),
         relatedTaskId: n.relatedTaskId ? Number(n.relatedTaskId) : null,
+        task: n.relatedTaskId ? (taskMap[String(n.relatedTaskId)] || null) : null,
       })),
       total,
       page,

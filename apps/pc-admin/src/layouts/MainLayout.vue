@@ -44,6 +44,10 @@
             <template #icon><plus-circle-outlined /></template>
             发布任务
           </a-menu-item>
+          <a-menu-item key="dispute" @click="$router.push('/task/dispute')">
+            <template #icon><audit-outlined /></template>
+            争议管理
+          </a-menu-item>
         </a-sub-menu>
 
         <!-- 📁 项目管理 SubMenu (V3.7) -->
@@ -66,27 +70,19 @@
           <span>零工库</span>
         </a-menu-item>
 
-        <!-- ⚖️ 争议管理 -->
-        <a-menu-item key="dispute" @click="$router.push('/task/dispute')">
-          <template #icon><audit-outlined /></template>
-          <span>争议管理</span>
-        </a-menu-item>
-
-        <div class="menu-divider" />
-
-        <!-- 💰 财务中心 -->
-        <a-menu-item key="finance" @click="$router.push('/finance')">
+        <!-- 💰 财务中心 SubMenu -->
+        <a-sub-menu key="finance-group">
           <template #icon><wallet-outlined /></template>
-          <span>财务中心</span>
-        </a-menu-item>
-
-        <!-- 🧾 发票管理 -->
-        <a-menu-item key="invoices" @click="$router.push('/finance/invoices')">
-          <template #icon><file-text-outlined /></template>
-          <span>发票管理</span>
-        </a-menu-item>
-
-        <div class="menu-divider" />
+          <template #title>财务中心</template>
+          <a-menu-item key="finance" @click="$router.push('/finance')">
+            <template #icon><wallet-outlined /></template>
+            资金概览
+          </a-menu-item>
+          <a-menu-item key="invoices" @click="$router.push('/finance/invoices')">
+            <template #icon><file-text-outlined /></template>
+            发票管理
+          </a-menu-item>
+        </a-sub-menu>
 
         <!-- ⚙️ 系统管理 SubMenu — PRD V3.6: 仅 super_admin 可见 -->
         <a-sub-menu v-if="userStore.isSuperAdmin" key="settings-group">
@@ -96,14 +92,30 @@
             <template #icon><user-switch-outlined /></template>
             子账号管理
           </a-menu-item>
-          <a-menu-item key="llm-config" @click="$router.push('/settings/llm')">
-            <template #icon><api-outlined /></template>
-            大模型配置
-          </a-menu-item>
-          <a-menu-item key="agents" @click="$router.push('/settings/agents')">
-            <template #icon><robot-outlined /></template>
-            智能体管理
-          </a-menu-item>
+          <a-menu-item-group title="任务配置">
+            <a-menu-item key="role-config" @click="$router.push('/settings/roles')">
+              <template #icon><usergroup-add-outlined /></template>
+              角色配置
+            </a-menu-item>
+            <a-menu-item key="checkpoint-config" @click="$router.push('/settings/checkpoints')">
+              <template #icon><flag-outlined /></template>
+              检查点配置
+            </a-menu-item>
+            <a-menu-item key="skill-config" @click="$router.push('/settings/skills')">
+              <template #icon><tags-outlined /></template>
+              技能配置
+            </a-menu-item>
+          </a-menu-item-group>
+          <a-menu-item-group title="AI 设置">
+            <a-menu-item key="llm-config" @click="$router.push('/settings/llm')">
+              <template #icon><api-outlined /></template>
+              大模型配置
+            </a-menu-item>
+            <a-menu-item key="agents" @click="$router.push('/settings/agents')">
+              <template #icon><robot-outlined /></template>
+              智能体管理
+            </a-menu-item>
+          </a-menu-item-group>
         </a-sub-menu>
       </a-menu>
 
@@ -207,6 +219,9 @@ import {
   RobotOutlined,
   ApiOutlined,
   UnorderedListOutlined,
+  UsergroupAddOutlined,
+  FlagOutlined,
+  TagsOutlined,
 } from '@ant-design/icons-vue'
 import { useUserStore } from '@/stores/user'
 import request from '@/api/request'
@@ -220,7 +235,7 @@ const balanceDisplay = ref('—')
 
 // ── SubMenu 展开状态 ───────────────────────────────────────────
 // 初始展开任务管理组
-const openKeys = ref<string[]>(['task-group', 'project-group'])
+const openKeys = ref<string[]>(['task-group'])
 function onOpenChange(keys: string[]) {
   openKeys.value = keys
 }
@@ -240,6 +255,9 @@ const selectedKeys = computed(() => {
   if (path.includes('/admin/subaccounts'))  return ['subaccounts']
   if (path.includes('/settings/llm'))      return ['llm-config']
   if (path.includes('/settings/agents'))   return ['agents']
+  if (path.includes('/settings/roles'))    return ['role-config']
+  if (path.includes('/settings/checkpoints')) return ['checkpoint-config']
+  if (path.includes('/settings/skills'))      return ['skill-config']
   if (path.includes('/dashboard'))         return ['dashboard']
   if (path.includes('/notifications'))     return ['notifications']
   return ['dashboard']
@@ -263,6 +281,9 @@ const breadcrumbs = computed<Breadcrumb[]>(() => {
     '/admin/subaccounts':        [{ label: '系统管理' }, { label: '子账号管理' }],
     '/settings/llm':           [{ label: '系统管理' }, { label: '大模型配置' }],
     '/settings/agents':        [{ label: '系统管理' }, { label: '智能体管理' }],
+    '/settings/roles':         [{ label: '系统管理' }, { label: '角色配置' }],
+    '/settings/checkpoints':   [{ label: '系统管理' }, { label: '检查点配置' }],
+    '/settings/skills':        [{ label: '系统管理' }, { label: '技能配置' }],
     '/notifications':          [{ label: '通知中心' }],
   }
   // 任务详情动态路由
@@ -340,7 +361,7 @@ onMounted(loadBalance)
 .logo-icon {
   width: 28px;
   height: 28px;
-  background: var(--color-primary);
+  background: linear-gradient(135deg, #4E8CFF 0%, #2B6BE5 100%);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
@@ -402,6 +423,21 @@ onMounted(loadBalance)
   height: 1px;
   background: var(--color-border-light);
   margin: 8px 16px;
+}
+
+/* 菜单项分组标题 */
+.main-menu :deep(.ant-menu-item-group-title) {
+  padding: 8px 16px 4px 24px !important;
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.main-menu :deep(.ant-menu-item-group-list .ant-menu-item) {
+  margin: 1px 8px 1px 12px;
+  padding-left: 36px !important;
 }
 
 /* 底部折叠按钮 */

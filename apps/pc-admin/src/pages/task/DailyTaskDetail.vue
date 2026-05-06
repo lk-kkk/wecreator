@@ -181,10 +181,11 @@ const formatTime = (d: any) => d ? new Date(d).toLocaleTimeString('zh-CN', { hou
 
 async function loadTask() {
   try {
-    const res = await taskApi.detailFull(taskId)
-    task.value = res.data
-    assignments.value = res.data?.roles?.flatMap((r: any) => r.assignments) || []
-    role.value = res.data?.roles?.[0]
+    const res: any = await taskApi.detailFull(taskId)
+    const data = res?.data ?? res
+    task.value = data
+    assignments.value = data?.roles?.flatMap((r: any) => r.assignments) || []
+    role.value = data?.roles?.[0]
   } catch {
     message.error('加载任务失败')
   }
@@ -198,11 +199,12 @@ async function openCheckins(asgn: any) {
 async function loadCheckins() {
   if (!currentAssignment.value) return
   try {
-    const res = await checkinApi.list(currentAssignment.value.assignmentId, {
+    const res: any = await checkinApi.list(currentAssignment.value.assignmentId, {
       status: filterStatus.value || undefined,
     })
-    checkins.value     = res.data.list
-    checkinTotal.value = res.data.total
+    const data = res?.data ?? res
+    checkins.value     = data?.list ?? []
+    checkinTotal.value = data?.total ?? 0
   } catch {
     message.error('加载打卡记录失败')
   }
@@ -252,10 +254,10 @@ onMounted(loadTask)
 }
 .mb-4 { margin-bottom: 16px; }
 .timeline-toolbar { margin-bottom: 16px; }
-.checkin-summary { margin-bottom: 16px; color: #666; font-size: 13px; }
+.checkin-summary { margin-bottom: 16px; color: #666; font-size: 12px; }
 .checkin-item { padding-bottom: 4px; }
 .checkin-date { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-.checkin-times { font-size: 13px; color: #555; display: flex; gap: 16px; }
+.checkin-times { font-size: 12px; color: #555; display: flex; gap: 16px; }
 .checkin-log { margin-top: 4px; font-size: 12px; color: #888; white-space: pre-wrap; }
 .checkin-screenshot { margin-top: 4px; }
 .checkin-gps { font-size: 11px; color: #aaa; margin-top: 2px; }

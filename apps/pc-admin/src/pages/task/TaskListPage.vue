@@ -58,6 +58,15 @@
             </span>
           </template>
         </a-tab-pane>
+        <!-- V3.9 待付款 Tab -->
+        <a-tab-pane key="pending_payment">
+          <template #tab>
+            <span class="tab-with-badge">
+              待付款
+              <span v-if="tabCounts.pending_payment" class="tab-badge payment">{{ tabCounts.pending_payment }}</span>
+            </span>
+          </template>
+        </a-tab-pane>
         <a-tab-pane key="completed" tab="已完成" />
       </a-tabs>
 
@@ -136,6 +145,9 @@
                 {{ record.taskMode === 'task_package' ? '📦' : '📅' }}
               </span>
               <span class="task-name">{{ record.title }}</span>
+              <a-tag v-if="record.milestoneName" color="cyan" size="small" style="margin-left:6px;font-size:11px">
+                🏁 {{ record.milestoneName }}
+              </a-tag>
             </div>
           </template>
 
@@ -216,6 +228,15 @@
                 style="color: var(--color-accent);"
                 @click="openTaskDrawer(record.taskId)"
               >验收</a-button>
+              <a-popconfirm
+                v-if="['draft', 'cancelled', 'closed'].includes(record.status)"
+                title="确认删除该任务？删除后不可恢复"
+                @confirm="handleDeleteTask(record.taskId)"
+                ok-text="删除" cancel-text="取消"
+                ok-button-props="{ danger: true }"
+              >
+                <a-button type="link" size="small" danger>删除</a-button>
+              </a-popconfirm>
             </a-space>
           </template>
         </template>
@@ -351,6 +372,10 @@
               </span>
             </div>
             <div v-if="app.introduction" class="app-card-intro">「{{ app.introduction }}」</div>
+            <div v-if="app.expectPay || app.availableAt" class="app-card-extra">
+              <span v-if="app.expectPay" class="extra-pay">💰 期望报酬: ¥{{ Number(app.expectPay).toLocaleString() }}</span>
+              <span v-if="app.availableAt" class="extra-date">📅 可开始: {{ new Date(app.availableAt).toLocaleDateString() }}</span>
+            </div>
             <div v-if="app.skills && app.skills.length > 0" class="app-card-skills">
               <a-tag v-for="skill in app.skills.slice(0, 3)" :key="skill" color="blue" class="skill-tag">{{ skill }}</a-tag>
               <span v-if="app.skills.length > 3" class="skill-more">+{{ app.skills.length - 3 }}</span>
@@ -401,13 +426,31 @@
       :ok-button-props="{ disabled: rejectReason.trim().length < 10 }"
       ok-text="确认婉拒" cancel-text="取消"
     >
-      <div style="margin-bottom: 8px; color: var(--color-text-secondary); font-size: 13px;">
+      <div style="margin-bottom: 8px; color: var(--color-text-secondary); font-size: 12px;">
         请填写婉拒原因（10-200字），将通知零工
       </div>
       <a-textarea
         v-model:value="rejectReason"
         placeholder="例如：该角色需要3年以上相关经验，暂不符合岗位要求..."
         :maxlength="200" :rows="4" show-count
+      />
+    </a-modal>
+
+    <!-- V3.9 验收驳回弹窗 -->
+    <a-modal
+      v-model:open="rejectAcceptanceModalVisible"
+      title="验收驳回"
+      @ok="handleRejectAcceptanceConfirm"
+      :ok-button-props="{ disabled: rejectAcceptanceReason.trim().length < 5 }"
+      ok-text="确认驳回" cancel-text="取消"
+    >
+      <div style="margin-bottom: 8px; color: var(--color-text-secondary); font-size: 12px;">
+        请填写驳回原因（5-500字），任务将回到进行中状态
+      </div>
+      <a-textarea
+        v-model:value="rejectAcceptanceReason"
+        placeholder="例如：交付物不符合验收标准，请补充XX内容..."
+        :maxlength="500" :rows="4" show-count
       />
     </a-modal>
 
@@ -420,9 +463,31 @@
       <template v-if="taskDetail">
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px">
           <a-tag :color="drawerStatusColor[taskDetail.status]">{{ drawerStatusLabel[taskDetail.status] }}</a-tag>
-          <span style="color: var(--color-text-tertiary); font-size: 13px">#{{ taskDetail.taskId }}</span>
+          <span style="color: var(--color-text-tertiary); font-size: 12px">#{{ taskDetail.taskId }}</span>
+          <a-tag v-if="taskDetail.milestoneName" color="cyan" size="small">🏁 {{ taskDetail.milestoneName }}</a-tag>
           <div style="flex: 1" />
+          <a-button
+            v-if="taskDetail.status === 'draft' || taskDetail.status === 'pending_review'"
+            type="primary" size="small"
+            @click="$router.push(`/task/create?id=${taskDetail.taskId}`)"
+            style="margin-right: 8px"
+          >编辑草稿</a-button>
           <a-button v-if="taskDetail.status === 'published'" danger size="small" @click="handleCancelTask">取消任务</a-button>
+          <!-- V3.9: 验收确认/驳回 -->
+          <template v-if="taskDetail.status === 'reviewing'">
+            <a-popconfirm
+              title="确认验收通过？任务将进入待付款阶段"
+              @confirm="handleAcceptTask"
+              ok-text="确认" cancel-text="取消"
+            >
+              <a-button type="primary" size="small">✅ 验收确认</a-button>
+            </a-popconfirm>
+            <a-button danger size="small" style="margin-left: 8px" @click="showRejectAcceptanceModal">❌ 验收驳回</a-button>
+          </template>
+          <!-- V3.9: 待付款状态提示 -->
+          <a-button v-if="taskDetail.status === 'pending_payment'" type="primary" size="small" @click="handlePayTask">
+            💰 确认付款
+          </a-button>
         </div>
         <a-card title="基本信息" :bordered="false" size="small" style="margin-bottom: 16px">
           <a-descriptions :column="2" size="small">
@@ -433,7 +498,7 @@
             <a-descriptions-item label="开始时间">{{ taskDetail.startDate ? dayjs(taskDetail.startDate).format('YYYY-MM-DD') : '—' }}</a-descriptions-item>
             <a-descriptions-item label="截止时间">{{ taskDetail.endDate ? dayjs(taskDetail.endDate).format('YYYY-MM-DD') : '—' }}</a-descriptions-item>
           </a-descriptions>
-          <div style="margin-top: 8px; font-size: 13px; color: var(--color-text-secondary)">{{ taskDetail.description || '暂无描述' }}</div>
+          <div style="margin-top: 8px; font-size: 12px; color: var(--color-text-secondary)">{{ taskDetail.description || '暂无描述' }}</div>
         </a-card>
         <a-card
           v-for="role in taskDetail.roles" :key="role.taskRoleId"
@@ -446,7 +511,7 @@
           <div v-if="role.skillTags" style="margin-bottom: 8px">
             <a-tag v-for="tag in role.skillTags.split(',')" :key="tag" color="blue">{{ tag.trim() }}</a-tag>
           </div>
-          <div v-if="taskDetail.status === 'published' || taskDetail.status === 'in_progress'" style="margin-bottom: 8px">
+          <div v-if="(taskDetail.status === 'published' || taskDetail.status === 'in_progress') && (role.assignments?.length || 0) < role.headcount" style="margin-bottom: 8px">
             <a-button size="small" type="primary" ghost @click="openInviteDrawer(role)">
               <team-outlined /> 邀约零工到此角色
             </a-button>
@@ -454,12 +519,14 @@
               已邀 {{ role.assignments?.length || 0 }} / {{ role.headcount }} 人
             </span>
           </div>
+          <div v-else-if="(taskDetail.status === 'published' || taskDetail.status === 'in_progress') && (role.assignments?.length || 0) >= role.headcount" style="margin-bottom: 8px">
+            <a-tag color="green">✅ 已招满 {{ role.headcount }} 人</a-tag>
+          </div>
           <div v-for="assignment in role.assignments" :key="assignment.assignmentId" class="drawer-assignment-row">
             <a-avatar :src="assignment.workerAvatar || undefined" :size="32">{{ (assignment.workerName || '?')[0] }}</a-avatar>
-            <span style="min-width: 80px; font-size: 13px">{{ assignment.workerName || `零工#${assignment.workerId}` }}</span>
+            <span style="min-width: 80px; font-size: 12px">{{ assignment.workerName || `零工#${assignment.workerId}` }}</span>
             <a-progress :percent="assignment.progress" size="small" style="flex: 1" />
             <a-tag :color="drawerAssignColor[assignment.status]">{{ drawerAssignLabel[assignment.status] }}</a-tag>
-            <a-button size="small" @click="openImPanel(assignment, role)">消息</a-button>
           </div>
           <div v-if="drawerDeliverablesByRole(role.taskRoleId).length > 0">
             <a-divider orientation="left" plain>交付物</a-divider>
@@ -470,8 +537,19 @@
             />
           </div>
         </a-card>
-        <a-card v-if="activeConversation" title="💬 消息" :bordered="false" size="small" style="margin-top: 12px">
-          <ImChatPanel :conversation="activeConversation" :task-title="taskDetail.title" />
+        <!-- 工作日志 / 交付物版本 / 检查点 Tabs -->
+        <a-card :bordered="false" size="small" style="margin-top: 12px">
+          <a-tabs v-model:activeKey="drawerTab" size="small">
+            <a-tab-pane key="logs" tab="📝 工作日志">
+              <TaskProgressLogPanel :task-id="taskDetail.taskId" :roles="taskDetail.roles || []" />
+            </a-tab-pane>
+            <a-tab-pane key="versions" tab="📦 交付物版本">
+              <DeliverableVersionBrowser :deliverables="taskDetail.deliverables || []" :roles="taskDetail.roles || []" />
+            </a-tab-pane>
+            <a-tab-pane key="checkpoints" tab="📋 检查点">
+              <TaskCheckpointPanel :task-id="taskDetail.taskId" :current-user-id="currentUserId" />
+            </a-tab-pane>
+          </a-tabs>
         </a-card>
       </template>
       <a-skeleton v-else active />
@@ -507,10 +585,13 @@ import {
   CheckOutlined, CloseOutlined,
 } from '@ant-design/icons-vue'
 import { taskApi } from '@/api/task'
+import { financeApi } from '@/api/finance'
 import { recommendApi } from '@/api/recommendation'
 import request from '@/api/request'
 import DeliverableReview from '@/components/DeliverableReview.vue'
-import ImChatPanel from '@/components/ImChatPanel.vue'
+import TaskCheckpointPanel from '@/components/task/TaskCheckpointPanel.vue'
+import TaskProgressLogPanel from '@/components/task/TaskProgressLogPanel.vue'
+import DeliverableVersionBrowser from '@/components/task/DeliverableVersionBrowser.vue'
 
 // ╔══════════════════════════════════════════════════════════════╗
 // ║  任务列表                                                    ║
@@ -537,16 +618,16 @@ const columns = [
   { title: '报名信息', key: 'applicationInfo', width: 140, align: 'center' as const },
   { title: '状态', key: 'status', width: 96 },
   { title: '创建时间', key: 'createdAt', width: 120 },
-  { title: '操作', key: 'action', width: 100, align: 'right' as const },
+  { title: '操作', key: 'action', width: 140, align: 'right' as const },
 ]
 
 const statusLabelMap: Record<string, string> = {
   draft: '草稿', published: '招募中', in_progress: '进行中',
-  reviewing: '验收中', completed: '已完成', closed: '已关闭', cancelled: '已取消',
+  reviewing: '验收中', pending_payment: '待付款', completed: '已完成', closed: '已关闭', cancelled: '已取消',
 }
 const statusClassMap: Record<string, string> = {
   draft: 'status-draft', published: 'status-matching', in_progress: 'status-progress',
-  reviewing: 'status-review', completed: 'status-completed', closed: 'status-closed', cancelled: 'status-closed',
+  reviewing: 'status-review', pending_payment: 'status-payment', completed: 'status-completed', closed: 'status-closed', cancelled: 'status-closed',
 }
 const statusLabel = (s: string) => statusLabelMap[s] || s
 const statusClass = (s: string) => statusClassMap[s] || 'status-draft'
@@ -613,6 +694,16 @@ function handleTableChange(pag: any) {
 }
 function handleExport() {
   message.info('导出功能开发中...')
+}
+
+async function handleDeleteTask(taskId: number) {
+  try {
+    await taskApi.delete(taskId)
+    message.success('任务已删除')
+    fetchList()
+  } catch (e: any) {
+    message.error(e?.response?.data?.message || e?.message || '删除失败')
+  }
 }
 
 // ────────────────────────────────────────────────────────────
@@ -763,17 +854,26 @@ function viewWorkerProfile(workerId: number) {
 
 const taskDrawerVisible = ref(false)
 const taskDetail = ref<any>(null)
-const activeConversation = ref<any>(null)
+const drawerTab = ref('logs')
+
+const currentUserId = computed<number | undefined>(() => {
+  try {
+    const u = JSON.parse(localStorage.getItem('wc_user') || '{}')
+    return u?.userId
+  } catch {
+    return undefined
+  }
+})
 
 const drawerStatusColor: Record<string, string> = {
   draft: 'default', pending_review: 'processing', published: 'blue',
   in_progress: 'green', completed: 'green', cancelled: 'red',
-  reviewing: 'orange', closed: 'default',
+  reviewing: 'orange', pending_payment: 'gold', closed: 'default',
 }
 const drawerStatusLabel: Record<string, string> = {
   draft: '草稿', pending_review: '审核中', published: '已发布',
   in_progress: '执行中', completed: '已完成', cancelled: '已取消',
-  reviewing: '验收中', closed: '已关闭',
+  reviewing: '验收中', pending_payment: '待付款', closed: '已关闭',
 }
 const drawerAssignColor: Record<string, string> = {
   invited: 'orange', accepted: 'green', rejected: 'red', expired: 'default', completed: 'purple',
@@ -791,7 +891,7 @@ const drawerDeliverablesByRole = (roleId: number) =>
 async function openTaskDrawer(taskId: number) {
   taskDrawerVisible.value = true
   taskDetail.value = null
-  activeConversation.value = null
+  drawerTab.value = 'logs'
   try {
     const res = await taskApi.detailFull(taskId)
     taskDetail.value = res.data ?? res
@@ -809,8 +909,56 @@ async function handleCancelTask() {
   fetchList()
 }
 
-function openImPanel(assignment: any, role: any) {
-  activeConversation.value = { assignment, role, taskId: taskDetail.value?.taskId }
+// ── V3.9: 审批/验收/付款 ──
+const rejectAcceptanceModalVisible = ref(false)
+const rejectAcceptanceReason = ref('')
+
+async function handleAcceptTask() {
+  if (!taskDetail.value) return
+  try {
+    await taskApi.acceptTask(taskDetail.value.taskId)
+    message.success('验收确认，任务进入待付款阶段')
+    const res = await taskApi.detailFull(taskDetail.value.taskId)
+    taskDetail.value = res.data ?? res
+    fetchList()
+  } catch (e: any) {
+    message.error(e?.message || '验收确认失败')
+  }
+}
+
+function showRejectAcceptanceModal() {
+  rejectAcceptanceReason.value = ''
+  rejectAcceptanceModalVisible.value = true
+}
+
+async function handleRejectAcceptanceConfirm() {
+  if (rejectAcceptanceReason.value.trim().length < 5) {
+    message.warning('驳回原因至少5字')
+    return
+  }
+  try {
+    await taskApi.rejectAcceptance(taskDetail.value.taskId, rejectAcceptanceReason.value.trim())
+    message.success('验收已驳回，任务回到进行中')
+    rejectAcceptanceModalVisible.value = false
+    const res = await taskApi.detailFull(taskDetail.value.taskId)
+    taskDetail.value = res.data ?? res
+    fetchList()
+  } catch (e: any) {
+    message.error(e?.message || '驳回失败')
+  }
+}
+
+async function handlePayTask() {
+  if (!taskDetail.value) return
+  try {
+    await financeApi.payForTask(taskDetail.value.taskId)
+    message.success('付款成功，任务已完成 ✅')
+    const res = await taskApi.detailFull(taskDetail.value.taskId)
+    taskDetail.value = res.data ?? res
+    fetchList()
+  } catch (e: any) {
+    message.error(e?.message || '付款失败')
+  }
 }
 
 async function submitReview(roleId: number, result: 'approved' | 'rejected', reviewNote?: string) {
@@ -888,6 +1036,7 @@ onMounted(fetchList)
 .tab-badge.pending  { background: #FDE8E0; color: #E8383C; }
 .tab-badge.progress { background: #D0F4F0; color: #34B8A8; }
 .tab-badge.review   { background: var(--color-accent-bg); color: #FC6400; }
+.tab-badge.payment  { background: #FFF7E6; color: #D48806; }
 
 /* ======= 筛选条 ======= */
 .filter-bar {
@@ -902,21 +1051,21 @@ onMounted(fetchList)
 .task-mode-badge {
   width: 24px; height: 24px; border-radius: 6px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 13px; flex-shrink: 0;
+  font-size: 12px; flex-shrink: 0;
 }
 .mode-pkg { background: var(--color-primary-bg-soft); }
 .mode-day { background: var(--color-accent-bg); }
 .task-name {
-  font-size: 14px; color: var(--color-text-primary);
+  font-size: 12px; color: var(--color-text-primary);
   font-weight: 500; transition: color var(--duration-fast);
 }
-.budget-val { font-size: 14px; font-weight: 600; color: var(--color-text-primary); }
-.role-count { font-size: 13px; color: var(--color-text-secondary); }
-.time-text  { font-size: 13px; color: var(--color-text-tertiary); }
+.budget-val { font-size: 12px; font-weight: 600; color: var(--color-text-primary); }
+.role-count { font-size: 12px; color: var(--color-text-secondary); }
+.time-text  { font-size: 12px; color: var(--color-text-tertiary); }
 
 /* ======= V3.5 报名信息列 ======= */
 .app-info {
-  font-size: 13px; cursor: pointer; border-radius: 4px;
+  font-size: 12px; cursor: pointer; border-radius: 4px;
   padding: 2px 8px; transition: background var(--duration-fast);
 }
 .app-info:hover { background: var(--color-bg-hover); }
@@ -940,14 +1089,14 @@ onMounted(fetchList)
 .empty-state { padding: 48px 0; text-align: center; }
 .empty-icon { font-size: 48px; margin-bottom: 16px; }
 .empty-title { font-size: 16px; font-weight: 600; color: var(--color-text-primary); margin-bottom: 8px; }
-.empty-desc { font-size: 13px; color: var(--color-text-tertiary); }
+.empty-desc { font-size: 12px; color: var(--color-text-tertiary); }
 
 /* ======= V3.5 报名管理抽屉 ======= */
 .app-drawer-title { line-height: 1.4; }
 .app-drawer-heading { font-size: 16px; font-weight: 600; color: var(--color-text-primary); }
 .app-drawer-task-name { font-weight: 400; color: var(--color-text-secondary); margin-left: 4px; }
 .app-drawer-subtitle {
-  font-size: 13px; color: var(--color-text-tertiary); margin-top: 4px;
+  font-size: 12px; color: var(--color-text-tertiary); margin-top: 4px;
   display: flex; align-items: center; gap: 6px;
 }
 .sub-sep { color: var(--color-border); }
@@ -987,7 +1136,7 @@ onMounted(fetchList)
 .app-checkbox { flex-shrink: 0; }
 .app-checkbox-placeholder { width: 16px; flex-shrink: 0; }
 .app-card-info { flex: 1; min-width: 0; }
-.app-card-name { font-size: 14px; font-weight: 600; color: var(--color-text-primary); }
+.app-card-name { font-size: 12px; font-weight: 600; color: var(--color-text-primary); }
 .app-card-role { font-size: 12px; color: var(--color-text-tertiary); margin-top: 2px; }
 .app-card-role strong { color: var(--color-text-secondary); font-weight: 500; }
 .app-card-time { font-size: 12px; color: var(--color-text-quaternary); white-space: nowrap; flex-shrink: 0; }
@@ -1003,11 +1152,17 @@ onMounted(fetchList)
 .stat-unverified { color: var(--color-warning); }
 
 .app-card-intro {
-  font-size: 13px; color: var(--color-text-secondary);
+  font-size: 12px; color: var(--color-text-secondary);
   line-height: 1.5; margin-bottom: 6px;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+.app-card-extra {
+  display: flex; gap: 16px; margin-bottom: 6px; font-size: 12px;
+}
+.extra-pay { color: #ff4d4f; font-weight: 500; }
+.extra-date { color: #1890ff; }
 
 .app-card-skills { display: flex; flex-wrap: wrap; gap: 4px; }
 .skill-tag { font-size: 11px !important; margin: 0 !important; }
@@ -1020,7 +1175,7 @@ onMounted(fetchList)
 }
 
 .app-result-tag {
-  font-size: 13px; font-weight: 500; padding: 2px 8px;
+  font-size: 12px; font-weight: 500; padding: 2px 8px;
   border-radius: 4px;
 }
 .app-result-approved { color: var(--color-success); background: var(--color-success-bg, #f0fff0); }

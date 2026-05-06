@@ -18,6 +18,7 @@ export default function TaskExecutePage() {
   const [tomorrowPlan, setTomorrowPlan] = useState('')
   const [issues, setIssues] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [acceptanceRequesting, setAcceptanceRequesting] = useState(false)
 
   useEffect(() => {
     if (!assignmentId) return
@@ -33,10 +34,10 @@ export default function TaskExecutePage() {
   // 更新进度 + V3.7 结构化日报
   const handleUpdateProgress = useCallback(async () => {
     if (submitting) return
-    if (dailySummary && (dailySummary.length < 50 || dailySummary.length > 500)) {
-      Taro.showToast({ title: '今日摘要需 50-500 字', icon: 'none' })
-      return
-    }
+    // if (dailySummary && (dailySummary.length < 50 || dailySummary.length > 500)) {
+    //   Taro.showToast({ title: '今日摘要需 50-500 字', icon: 'none' })
+    //   return
+    // }
     setSubmitting(true)
     try {
       await taskApi.updateProgress(assignmentId, {
@@ -57,6 +58,27 @@ export default function TaskExecutePage() {
       setSubmitting(false)
     }
   }, [assignmentId, progress, progressNote, dailySummary, tomorrowPlan, issues, submitting])
+
+  // V3.9: 发起验收申请
+  const handleRequestAcceptance = useCallback(async () => {
+    if (acceptanceRequesting) return
+    const { confirm } = await Taro.showModal({
+      title: '发起验收申请',
+      content: '确认已完成所有工作并发起验收申请？企业将收到验收通知。',
+      confirmText: '确认发起',
+      confirmColor: '#52c41a',
+    })
+    if (!confirm) return
+    setAcceptanceRequesting(true)
+    try {
+      await taskApi.requestAcceptance(assignmentId)
+      Taro.showToast({ title: '验收申请已发送 ✅', icon: 'success' })
+    } catch (err: any) {
+      Taro.showToast({ title: err?.message || '申请失败', icon: 'none' })
+    } finally {
+      setAcceptanceRequesting(false)
+    }
+  }, [assignmentId, acceptanceRequesting])
 
   // 上传交付物
   const handleUploadDeliverable = useCallback(async () => {
@@ -157,7 +179,7 @@ export default function TaskExecutePage() {
         <Text className='card-title' style={{ marginTop: 16 }}>📌 今日工作摘要</Text>
         <Textarea
           className='note-input'
-          placeholder='摘要今日完成的主要工作（50-500字）'
+          placeholder='摘要今日完成的主要工作'
           value={dailySummary}
           maxlength={500}
           onInput={(e: any) => setDailySummary(e.detail.value)}
@@ -223,6 +245,23 @@ export default function TaskExecutePage() {
           选择文件并上传
         </Button>
       </View>
+
+      {/* V3.9: 发起验收申请（进度 100% 时显示） */}
+      {progress >= 100 && (
+        <View className='card' style={{ borderColor: '#52c41a', borderWidth: 1, borderStyle: 'solid' }}>
+          <Text className='card-title'>✅ 任务已完成</Text>
+          <Text className='hint-text'>工作已全部完成，可以发起验收申请，通知企业进行验收确认</Text>
+          <Button
+            className='primary-btn'
+            style={{ backgroundColor: '#52c41a', marginTop: 12 }}
+            onClick={handleRequestAcceptance}
+            loading={acceptanceRequesting}
+            disabled={acceptanceRequesting}
+          >
+            📩 发起验收申请
+          </Button>
+        </View>
+      )}
     </View>
   )
 }

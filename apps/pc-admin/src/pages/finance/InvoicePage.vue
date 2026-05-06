@@ -185,7 +185,7 @@ onMounted(loadData)
   margin: 0 24px 16px; border-radius: 16px; padding: 24px 32px;
 }
 .balance-item { display: flex; flex-direction: column; gap: 4px; }
-.bl-label { font-size: 13px; color: rgba(255,255,255,.8); }
+.bl-label { font-size: 12px; color: rgba(255,255,255,.8); }
 .bl-val   { font-size: 24px; font-weight: 800; color: #fff; }
 .bl-val.green { color: var(--color-success-bg); }
 .balance-divider { width: 1px; height: 40px; background: rgba(255,255,255,.3); }
@@ -195,12 +195,12 @@ onMounted(loadData)
 .amount-hint { font-size: 12px; color: #aaa; margin-top: 4px; }
 .tax-preview {
   background: var(--color-bg-hover); border-radius: 8px; padding: 10px 14px;
-  font-size: 13px; margin-bottom: 12px;
+  font-size: 12px; margin-bottom: 12px;
 }
 .tax-bold { font-weight: 700; color: #333; margin: 0 4px; }
 .tax-note { color: #aaa; }
 
 .tax-amt  { font-size: 12px; color: #aaa; }
-.dl-link  { color: var(--color-primary); font-size: 13px; }
+.dl-link  { color: var(--color-primary); font-size: 12px; }
 .no-pdf   { color: #ccc; }
 </style>

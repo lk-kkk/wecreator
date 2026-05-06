@@ -25,7 +25,7 @@
     >
       <template v-if="detail">
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px">
-          <span style="font-weight: 600; font-size: 15px">{{ detail.taskTitle }}</span>
+          <span style="font-weight: 600; font-size: 12px">{{ detail.taskTitle }}</span>
           <a-tag :color="detail.status === 'pending' ? 'orange' : detail.status === 'investigating' ? 'blue' : 'green'" style="margin-left: auto">{{ detail.status }}</a-tag>
         </div>
 

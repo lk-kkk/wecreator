@@ -1,0 +1,723 @@
+/**
+ * WeCreator — Material Design 3 组件样式
+ * 
+ * 基于 M3 规范适配 Ant Design Vue 组件
+ * - Filled Button / Outlined Button / Text Button
+ * - Elevated Card / Filled Card / Outlined Card
+ * - Navigation Rail / Navigation Drawer
+ * - FAB (Floating Action Button)
+ * - Chips / Badges
+ * - State Layers (Hover/Focus/Pressed)
+ */
+
+/* ==================== 全局基础 ==================== */
+html, body, #app {
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', 
+    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==================== M3 按钮系统 ==================== */
+
+/* 基础按钮样式 */
+.ant-btn {
+  font-weight: 500 !important;
+  letter-spacing: 0.1px !important;
+  border-radius: var(--md-sys-shape-full) !important;
+  transition: all var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+/* State Layer 效果 */
+.ant-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+  pointer-events: none;
+}
+
+.ant-btn:hover::before {
+  opacity: var(--md-sys-state-hover-opacity);
+}
+
+.ant-btn:focus::before {
+  opacity: var(--md-sys-state-focus-opacity);
+}
+
+.ant-btn:active::before {
+  opacity: var(--md-sys-state-pressed-opacity);
+}
+
+/* Filled Button (Primary) */
+.ant-btn-primary {
+  background: var(--md-sys-color-primary) !important;
+  border: none !important;
+  color: var(--md-sys-color-on-primary) !important;
+  box-shadow: var(--md-sys-elevation-0) !important;
+}
+
+.ant-btn-primary > span,
+.ant-btn-primary > .anticon {
+  color: var(--md-sys-color-on-primary) !important;
+  position: relative;
+  z-index: 1;
+}
+
+.ant-btn-primary:not(:disabled):hover {
+  background: var(--md-sys-color-primary) !important;
+  box-shadow: var(--md-sys-elevation-1) !important;
+}
+
+.ant-btn-primary:not(:disabled):active {
+  box-shadow: var(--md-sys-elevation-0) !important;
+}
+
+/* Outlined Button (Default) */
+.ant-btn-default {
+  background: transparent !important;
+  border: 1px solid var(--md-sys-color-outline) !important;
+  color: var(--md-sys-color-primary) !important;
+}
+
+.ant-btn-default > span,
+.ant-btn-default > .anticon {
+  color: var(--md-sys-color-primary) !important;
+  position: relative;
+  z-index: 1;
+}
+
+.ant-btn-default:not(:disabled):hover {
+  background: rgba(27, 110, 243, 0.08) !important;
+  border-color: var(--md-sys-color-outline) !important;
+}
+
+/* Text Button */
+.ant-btn-text {
+  background: transparent !important;
+  border: none !important;
+  color: var(--md-sys-color-primary) !important;
+  padding-inline: 12px !important;
+}
+
+.ant-btn-text > span,
+.ant-btn-text > .anticon {
+  color: var(--md-sys-color-primary) !important;
+  position: relative;
+  z-index: 1;
+}
+
+.ant-btn-text:not(:disabled):hover {
+  background: rgba(27, 110, 243, 0.08) !important;
+}
+
+/* Link Button */
+.ant-btn-link {
+  background: transparent !important;
+  border: none !important;
+  color: var(--md-sys-color-primary) !important;
+  padding-inline: 4px !important;
+  font-weight: 400 !important;
+}
+
+/* Tonal Button (Secondary) */
+.ant-btn.md-tonal {
+  background: var(--md-sys-color-secondary-container) !important;
+  border: none !important;
+  color: var(--md-sys-color-on-secondary-container) !important;
+}
+
+.ant-btn.md-tonal:not(:disabled):hover {
+  box-shadow: var(--md-sys-elevation-1) !important;
+}
+
+/* Elevated Button */
+.ant-btn.md-elevated {
+  background: var(--md-sys-color-surface-container-low) !important;
+  border: none !important;
+  color: var(--md-sys-color-primary) !important;
+  box-shadow: var(--md-sys-elevation-1) !important;
+}
+
+.ant-btn.md-elevated:not(:disabled):hover {
+  box-shadow: var(--md-sys-elevation-2) !important;
+}
+
+/* Danger Button */
+.ant-btn-dangerous.ant-btn-primary {
+  background: var(--md-sys-color-error) !important;
+  color: var(--md-sys-color-on-error) !important;
+}
+
+.ant-btn-dangerous:not(.ant-btn-primary) {
+  border-color: var(--md-sys-color-error) !important;
+  color: var(--md-sys-color-error) !important;
+}
+
+/* Disabled */
+.ant-btn:disabled,
+.ant-btn[disabled] {
+  opacity: 0.38 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}
+
+/* 尺寸 */
+.ant-btn-lg {
+  height: 40px !important;
+  font-size: 14px !important;
+  padding-inline: 24px !important;
+}
+
+.ant-btn-sm {
+  height: 32px !important;
+  font-size: 12px !important;
+  padding-inline: 16px !important;
+}
+
+/* ==================== M3 卡片系统 ==================== */
+
+/* Elevated Card (默认) */
+.ant-card {
+  border-radius: var(--md-sys-shape-medium) !important;
+  border: none !important;
+  background: var(--md-sys-color-surface-container-low) !important;
+  box-shadow: var(--md-sys-elevation-1) !important;
+  transition: box-shadow var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+}
+
+.ant-card-hoverable:hover {
+  box-shadow: var(--md-sys-elevation-2) !important;
+}
+
+/* Filled Card */
+.ant-card.md-filled {
+  background: var(--md-sys-color-surface-container-highest) !important;
+  box-shadow: none !important;
+}
+
+/* Outlined Card */
+.ant-card.md-outlined {
+  background: var(--md-sys-color-surface) !important;
+  border: 1px solid var(--md-sys-color-outline-variant) !important;
+  box-shadow: none !important;
+}
+
+.ant-card-head {
+  border-bottom: 1px solid var(--md-sys-color-outline-variant) !important;
+  padding: 16px 24px !important;
+}
+
+.ant-card-head-title {
+  font-size: var(--md-sys-typescale-title-large) !important;
+  font-weight: 400 !important;
+  color: var(--md-sys-color-on-surface) !important;
+}
+
+.ant-card-body {
+  padding: 16px 24px !important;
+  color: var(--md-sys-color-on-surface-variant) !important;
+}
+
+/* ==================== M3 Layout ==================== */
+
+/* Layout */
+.ant-layout {
+  background: var(--md-sys-color-surface) !important;
+}
+
+/* Navigation Rail (Sidebar) */
+.ant-layout-sider {
+  background: var(--md-sys-color-surface-container) !important;
+  border-right: none !important;
+  box-shadow: none !important;
+}
+
+/* Top App Bar (Header) */
+.ant-layout-header {
+  background: var(--md-sys-color-surface) !important;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant) !important;
+  height: var(--layout-header-height) !important;
+  line-height: var(--layout-header-height) !important;
+  padding: 0 24px !important;
+  box-shadow: none !important;
+}
+
+/* ==================== M3 Navigation ==================== */
+
+.ant-menu {
+  background: transparent !important;
+  border-right: none !important;
+}
+
+.ant-menu-item {
+  border-radius: var(--md-sys-shape-full) !important;
+  margin: 4px 12px !important;
+  width: calc(100% - 24px) !important;
+  color: var(--md-sys-color-on-surface-variant) !important;
+  transition: all var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+/* State Layer for Menu */
+.ant-menu-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--md-sys-color-on-surface);
+  opacity: 0;
+  transition: opacity var(--md-sys-motion-duration-short2);
+}
+
+.ant-menu-item:hover::before {
+  opacity: var(--md-sys-state-hover-opacity);
+}
+
+.ant-menu-item-selected {
+  background: var(--md-sys-color-secondary-container) !important;
+  color: var(--md-sys-color-on-secondary-container) !important;
+  font-weight: 500 !important;
+}
+
+.ant-menu-item-selected::before {
+  opacity: 0 !important;
+}
+
+.ant-menu-item-selected .anticon {
+  color: var(--md-sys-color-on-secondary-container) !important;
+}
+
+/* ==================== M3 Input ==================== */
+
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-select .ant-select-selector,
+.ant-picker,
+.ant-input-number {
+  background: var(--md-sys-color-surface-container-highest) !important;
+  border: 1px solid var(--md-sys-color-outline) !important;
+  border-radius: var(--md-sys-shape-extra-small) !important;
+  color: var(--md-sys-color-on-surface) !important;
+  transition: all var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+}
+
+.ant-input:hover,
+.ant-input-affix-wrapper:hover,
+.ant-select:not(.ant-select-disabled):hover .ant-select-selector,
+.ant-picker:hover {
+  border-color: var(--md-sys-color-on-surface) !important;
+}
+
+.ant-input:focus,
+.ant-input-affix-wrapper-focused,
+.ant-select-focused .ant-select-selector,
+.ant-picker-focused {
+  border-color: var(--md-sys-color-primary) !important;
+  border-width: 2px !important;
+  box-shadow: none !important;
+}
+
+.ant-input::placeholder {
+  color: var(--md-sys-color-on-surface-variant) !important;
+}
+
+/* ==================== M3 Table ==================== */
+
+.ant-table {
+  border-radius: var(--md-sys-shape-medium) !important;
+  overflow: hidden;
+  background: var(--md-sys-color-surface) !important;
+}
+
+.ant-table-thead > tr > th {
+  background: var(--md-sys-color-surface-container) !important;
+  color: var(--md-sys-color-on-surface-variant) !important;
+  font-weight: 500 !important;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant) !important;
+  font-size: var(--md-sys-typescale-title-small) !important;
+}
+
+.ant-table-tbody > tr > td {
+  border-bottom: 1px solid var(--md-sys-color-outline-variant) !important;
+  color: var(--md-sys-color-on-surface) !important;
+  font-size: var(--md-sys-typescale-body-medium) !important;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: rgba(27, 27, 31, 0.08) !important;
+}
+
+/* ==================== M3 Modal / Dialog ==================== */
+
+.ant-modal-content {
+  border-radius: var(--md-sys-shape-extra-large) !important;
+  background: var(--md-sys-color-surface-container-high) !important;
+  box-shadow: var(--md-sys-elevation-3) !important;
+}
+
+.ant-modal-header {
+  background: transparent !important;
+  border-bottom: none !important;
+  padding: 24px 24px 16px !important;
+}
+
+.ant-modal-title {
+  font-size: var(--md-sys-typescale-headline-small) !important;
+  font-weight: 400 !important;
+  color: var(--md-sys-color-on-surface) !important;
+}
+
+.ant-modal-body {
+  padding: 0 24px 24px !important;
+  color: var(--md-sys-color-on-surface-variant) !important;
+}
+
+.ant-modal-footer {
+  border-top: none !important;
+  padding: 16px 24px 24px !important;
+}
+
+/* ==================== M3 Dropdown / Menu ==================== */
+
+.ant-dropdown-menu {
+  border-radius: var(--md-sys-shape-extra-small) !important;
+  background: var(--md-sys-color-surface-container) !important;
+  box-shadow: var(--md-sys-elevation-2) !important;
+  padding: 8px !important;
+  border: none !important;
+}
+
+.ant-dropdown-menu-item {
+  border-radius: var(--md-sys-shape-extra-small) !important;
+  font-size: var(--md-sys-typescale-label-large) !important;
+  color: var(--md-sys-color-on-surface) !important;
+  padding: 12px 16px !important;
+  margin: 0 !important;
+}
+
+.ant-dropdown-menu-item:hover {
+  background: rgba(27, 27, 31, 0.08) !important;
+}
+
+/* ==================== M3 Tabs ==================== */
+
+.ant-tabs-tab {
+  font-weight: 500 !important;
+  color: var(--md-sys-color-on-surface-variant) !important;
+  font-size: var(--md-sys-typescale-title-small) !important;
+}
+
+.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--md-sys-color-primary) !important;
+}
+
+.ant-tabs-ink-bar {
+  background: var(--md-sys-color-primary) !important;
+  height: 3px !important;
+  border-radius: 3px 3px 0 0 !important;
+}
+
+.ant-tabs > .ant-tabs-nav::before {
+  border-bottom-color: var(--md-sys-color-outline-variant) !important;
+}
+
+/* ==================== M3 Tag / Chip ==================== */
+
+.ant-tag {
+  border-radius: var(--md-sys-shape-small) !important;
+  font-weight: 500 !important;
+  border: 1px solid var(--md-sys-color-outline) !important;
+  background: transparent !important;
+  color: var(--md-sys-color-on-surface-variant) !important;
+  padding: 4px 12px !important;
+  font-size: var(--md-sys-typescale-label-medium) !important;
+}
+
+/* Filled Chip */
+.ant-tag.md-filled {
+  background: var(--md-sys-color-secondary-container) !important;
+  border: none !important;
+  color: var(--md-sys-color-on-secondary-container) !important;
+}
+
+/* ==================== M3 Switch ==================== */
+
+.ant-switch {
+  background: var(--md-sys-color-surface-variant) !important;
+  border: 2px solid var(--md-sys-color-outline) !important;
+}
+
+.ant-switch-checked {
+  background: var(--md-sys-color-primary) !important;
+  border-color: var(--md-sys-color-primary) !important;
+}
+
+.ant-switch-handle::before {
+  background: var(--md-sys-color-outline) !important;
+}
+
+.ant-switch-checked .ant-switch-handle::before {
+  background: var(--md-sys-color-on-primary) !important;
+}
+
+/* ==================== M3 Progress ==================== */
+
+.ant-progress-bg {
+  background: var(--md-sys-color-primary) !important;
+  border-radius: var(--md-sys-shape-full) !important;
+}
+
+.ant-progress-inner {
+  background: var(--md-sys-color-surface-container-highest) !important;
+  border-radius: var(--md-sys-shape-full) !important;
+}
+
+/* ==================== M3 Pagination ==================== */
+
+.ant-pagination-item {
+  border-radius: var(--md-sys-shape-full) !important;
+  border: 1px solid var(--md-sys-color-outline) !important;
+  background: transparent !important;
+}
+
+.ant-pagination-item:hover {
+  border-color: var(--md-sys-color-primary) !important;
+}
+
+.ant-pagination-item-active {
+  background: var(--md-sys-color-secondary-container) !important;
+  border-color: transparent !important;
+}
+
+.ant-pagination-item-active a {
+  color: var(--md-sys-color-on-secondary-container) !important;
+}
+
+/* ==================== M3 Checkbox & Radio ==================== */
+
+.ant-checkbox-checked .ant-checkbox-inner {
+  background: var(--md-sys-color-primary) !important;
+  border-color: var(--md-sys-color-primary) !important;
+}
+
+.ant-radio-checked .ant-radio-inner {
+  border-color: var(--md-sys-color-primary) !important;
+}
+
+.ant-radio-inner::after {
+  background: var(--md-sys-color-primary) !important;
+}
+
+/* ==================== M3 Tooltip ==================== */
+
+.ant-tooltip-inner {
+  background: var(--md-sys-color-inverse-surface) !important;
+  color: var(--md-sys-color-inverse-on-surface) !important;
+  border-radius: var(--md-sys-shape-extra-small) !important;
+  font-size: var(--md-sys-typescale-body-small) !important;
+  padding: 4px 8px !important;
+}
+
+.ant-tooltip-arrow-content {
+  background: var(--md-sys-color-inverse-surface) !important;
+}
+
+/* ==================== M3 Badge ==================== */
+
+.ant-badge-count {
+  background: var(--md-sys-color-error) !important;
+  color: var(--md-sys-color-on-error) !important;
+  font-size: var(--md-sys-typescale-label-small) !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+/* ==================== M3 Steps ==================== */
+
+.ant-steps-item-process .ant-steps-item-icon {
+  background: var(--md-sys-color-primary) !important;
+  border-color: var(--md-sys-color-primary) !important;
+}
+
+.ant-steps-item-finish .ant-steps-item-icon {
+  border-color: var(--md-sys-color-primary) !important;
+  background: var(--md-sys-color-primary-container) !important;
+}
+
+.ant-steps-item-finish .ant-steps-item-icon .anticon {
+  color: var(--md-sys-color-on-primary-container) !important;
+}
+
+/* ==================== M3 Divider ==================== */
+
+.ant-divider {
+  border-color: var(--md-sys-color-outline-variant) !important;
+}
+
+/* ==================== M3 Empty ==================== */
+
+.ant-empty-description {
+  color: var(--md-sys-color-on-surface-variant) !important;
+  font-size: var(--md-sys-typescale-body-medium) !important;
+}
+
+/* ==================== M3 Scrollbar ==================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-extra-small);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--md-sys-color-outline);
+}
+
+/* ==================== M3 Selection ==================== */
+
+::selection {
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}
+
+/* ==================== M3 Focus Visible ==================== */
+
+.ant-btn:focus-visible,
+.ant-input:focus-visible,
+.ant-select-selector:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary) !important;
+  outline-offset: 2px !important;
+}
+
+/* ==================== M3 Ripple Effect (简化版) ==================== */
+
+@keyframes ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.md-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.md-ripple::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  background: currentColor;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.md-ripple:active::after {
+  animation: ripple 0.6s ease-out;
+}
+
+/* ==================== M3 FAB (Floating Action Button) ==================== */
+
+.md-fab {
+  width: 56px !important;
+  height: 56px !important;
+  border-radius: var(--md-sys-shape-large) !important;
+  background: var(--md-sys-color-primary-container) !important;
+  color: var(--md-sys-color-on-primary-container) !important;
+  box-shadow: var(--md-sys-elevation-3) !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.md-fab:hover {
+  box-shadow: var(--md-sys-elevation-4) !important;
+}
+
+.md-fab-small {
+  width: 40px !important;
+  height: 40px !important;
+}
+
+.md-fab-large {
+  width: 96px !important;
+  height: 96px !important;
+  border-radius: var(--md-sys-shape-extra-large) !important;
+}
+
+/* ==================== M3 Extended FAB ==================== */
+
+.md-fab-extended {
+  width: auto !important;
+  padding: 0 20px !important;
+  gap: 12px !important;
+}
+
+/* ==================== Utility Classes ==================== */
+
+.md-surface {
+  background: var(--md-sys-color-surface) !important;
+  color: var(--md-sys-color-on-surface) !important;
+}
+
+.md-surface-variant {
+  background: var(--md-sys-color-surface-variant) !important;
+  color: var(--md-sys-color-on-surface-variant) !important;
+}
+
+.md-primary {
+  background: var(--md-sys-color-primary) !important;
+  color: var(--md-sys-color-on-primary) !important;
+}
+
+.md-secondary {
+  background: var(--md-sys-color-secondary) !important;
+  color: var(--md-sys-color-on-secondary) !important;
+}
+
+.md-tertiary {
+  background: var(--md-sys-color-tertiary) !important;
+  color: var(--md-sys-color-on-tertiary) !important;
+}
+
+.md-error {
+  background: var(--md-sys-color-error) !important;
+  color: var(--md-sys-color-on-error) !important;
+}
+
+/* Elevation utilities */
+.md-elevation-0 { box-shadow: var(--md-sys-elevation-0) !important; }
+.md-elevation-1 { box-shadow: var(--md-sys-elevation-1) !important; }
+.md-elevation-2 { box-shadow: var(--md-sys-elevation-2) !important; }
+.md-elevation-3 { box-shadow: var(--md-sys-elevation-3) !important; }
+.md-elevation-4 { box-shadow: var(--md-sys-elevation-4) !important; }
+.md-elevation-5 { box-shadow: var(--md-sys-elevation-5) !important; }

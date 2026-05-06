@@ -5,6 +5,18 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WeCreator 企业管理</title>
+    <script>
+      // 防 FOUC：Vue 启动前先同步主题
+      (function () {
+        try {
+          var m = localStorage.getItem('wc_theme') || 'auto';
+          var d = m === 'dark' || (m === 'auto' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          var t = d ? 'dark' : 'light';
+          document.documentElement.setAttribute('data-theme', t);
+          document.documentElement.style.colorScheme = t;
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="app"></div>

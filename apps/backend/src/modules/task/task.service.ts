@@ -9,6 +9,7 @@ import { PrismaService } from '../../prisma';
 import { NoGeneratorService } from '../../common';
 import { assertTransition } from './task-status.machine';
 import { ProjectService } from '../project/project.service';
+import { CompanyNotificationService } from '../notification/company-notification.service';
 import {
   CreateTaskDto,
   UpdateDraftDto,
@@ -24,6 +25,7 @@ export class TaskService {
     private readonly prisma: PrismaService,
     private readonly noGen: NoGeneratorService,
     private readonly projectService: ProjectService,
+    private readonly companyNotificationService: CompanyNotificationService,
   ) {}
 
   // ================================================================
@@ -45,6 +47,7 @@ export class TaskService {
           endDate: dto.endDate ? new Date(dto.endDate) : undefined,
           address: dto.address,
           projectId: dto.projectId ? BigInt(dto.projectId) : undefined,
+          milestoneId: dto.milestoneId ? BigInt(dto.milestoneId) : undefined,
           status: 'draft',
           // V3.7
           priority: (dto.priority as any) || 'p2',
@@ -100,6 +103,8 @@ export class TaskService {
     // V3.7
     if (dto.priority !== undefined) data.priority = dto.priority;
     if (dto.acceptanceCriteria !== undefined) data.acceptanceCriteria = dto.acceptanceCriteria;
+    // V3.8: 里程碑关联
+    if (dto.milestoneId !== undefined) data.milestoneId = dto.milestoneId ? BigInt(dto.milestoneId) : null;
 
     await this.prisma.task.update({
       where: { id: BigInt(taskId) },
@@ -230,6 +235,8 @@ export class TaskService {
       this.prisma.task.findMany({
         where,
         include: {
+          milestone: { select: { id: true, name: true } },
+          project: { select: { id: true, name: true } },
           taskRoles: {
             include: {
               _count: {
@@ -299,6 +306,7 @@ export class TaskService {
     const task = await this.prisma.task.findUnique({
       where: { id: BigInt(taskId) },
       include: {
+        milestone: { select: { id: true, name: true, status: true, plannedDate: true } },
         taskRoles: {
           include: {
             assignments: {
@@ -435,6 +443,31 @@ export class TaskService {
     return { message: '任务已取消' };
   }
 
+  /**
+   * 删除任务（仅允许删除草稿/已取消/已关闭状态的任务）
+   */
+  async deleteTask(taskId: number, companyId: number) {
+    const task = await this.getTaskOrThrow(taskId, companyId);
+    const deletableStatuses = ['draft', 'cancelled', 'closed'];
+    if (!deletableStatuses.includes(task.status)) {
+      throw new ForbiddenException(
+        '只能删除草稿、已取消或已关闭状态的任务',
+      );
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      // 删除关联数据
+      await tx.taskAttachment.deleteMany({ where: { taskId: BigInt(taskId) } });
+      await tx.taskCheckpoint.deleteMany({ where: { taskId: BigInt(taskId) } });
+      await tx.taskComment.deleteMany({ where: { taskId: BigInt(taskId) } });
+      await tx.taskIssue.deleteMany({ where: { taskId: BigInt(taskId) } });
+      await tx.taskRole.deleteMany({ where: { taskId: BigInt(taskId) } });
+      await tx.task.delete({ where: { id: BigInt(taskId) } });
+    });
+
+    return { message: '任务已删除' };
+  }
+
   // ================================================================
   // 私有方法
   // ================================================================
@@ -453,6 +486,7 @@ export class TaskService {
   private formatTask(task: any) {
     return {
       taskId: Number(task.id),
+      taskNo: task.taskNo ?? null, // V3.7 任务编号
       title: task.title,
       taskMode: task.taskMode,
       status: task.status,
@@ -463,6 +497,11 @@ export class TaskService {
       publishedAt: task.publishedAt,
       createdAt: task.createdAt,
       roleCount: task.taskRoles?.length || 0,
+      // V3.8: 里程碑关联
+      projectId: task.projectId ? Number(task.projectId) : null,
+      projectName: task.project?.name ?? null,
+      milestoneId: task.milestoneId ? Number(task.milestoneId) : null,
+      milestoneName: task.milestone?.name ?? null,
     };
   }
 
@@ -602,7 +641,8 @@ export class TaskService {
       });
       this.logger.log(`分配 #${assignment.id} 验收通过 → completed`);
 
-      // V3.7 Step 5.7: 检查任务所有 assignment 是否均已 completed → task 也改为 completed
+      // V3.7 Step 5.7 + V3.9: 检查任务所有 assignment 是否均已 completed
+      // V3.9: 不再自动切换任务状态为 completed，而是等待零工发起验收申请
       const pendingCount = await this.prisma.roleAssignment.count({
         where: {
           taskRole: { taskId: BigInt(taskId) },
@@ -610,21 +650,7 @@ export class TaskService {
         },
       });
       if (pendingCount === 0) {
-        const task = await this.prisma.task.update({
-          where: { id: BigInt(taskId) },
-          data: { status: 'completed' as any },
-          select: { projectId: true, title: true },
-        });
-        this.logger.log(`任务自动完成: task=${taskId}`);
-
-        // 同步项目阶段
-        if (task.projectId) {
-          try {
-            await this.projectService.syncPhaseFromTasks(Number(task.projectId));
-          } catch (e: any) {
-            this.logger.warn(`syncPhaseFromTasks 失败: project=${task.projectId} err=${e?.message}`);
-          }
-        }
+        this.logger.log(`任务所有分配均已完成: task=${taskId}，等待零工发起验收申请`);
       }
     }
 
@@ -639,6 +665,7 @@ export class TaskService {
     const task = await this.prisma.task.findUnique({
       where: { id: BigInt(taskId) },
       include: {
+        milestone: { select: { id: true, name: true, status: true, plannedDate: true } },
         taskRoles: {
           include: {
             assignments: {
@@ -657,6 +684,7 @@ export class TaskService {
     });
     return {
       taskId:      Number(task.id),
+      taskNo:      task.taskNo ?? null, // V3.7 任务编号
       title:       task.title,
       description: task.description,
       taskMode:    task.taskMode,
@@ -667,6 +695,10 @@ export class TaskService {
       endDate:     task.endDate,
       address:     task.address,
       publishedAt: task.publishedAt,
+      // V3.8: 里程碑关联
+      projectId:     task.projectId ? Number(task.projectId) : null,
+      milestoneId:   task.milestoneId ? Number(task.milestoneId) : null,
+      milestoneName: task.milestone?.name ?? null,
       roles: task.taskRoles.map((role) => ({
         taskRoleId:   Number(role.id),
         roleName:     role.roleName,
@@ -757,6 +789,251 @@ export class TaskService {
       fileType: a.fileType,
       createdAt: a.createdAt,
     }));
+  }
+
+  // ================================================================
+  // V3.9: 任务审批（招募完成 → 进行中）
+  // ================================================================
+  async approveTask(taskId: number, companyId: number) {
+    const task = await this.getTaskOrThrow(taskId, companyId);
+    assertTransition(task.status, 'in_progress');
+
+    await this.prisma.task.update({
+      where: { id: BigInt(taskId) },
+      data: { status: 'in_progress' },
+    });
+
+    this.logger.log(`任务审批通过: task=${taskId} published → in_progress`);
+    return { message: '任务审批通过，已进入执行阶段', status: 'in_progress' };
+  }
+
+  // ================================================================
+  // V3.9: 零工发起验收申请（进行中 → 验收中）
+  // ================================================================
+  async requestAcceptance(assignmentId: number, workerId: number) {
+    // 查找分配记录
+    const assignment = await this.prisma.roleAssignment.findFirst({
+      where: { id: BigInt(assignmentId), workerId: BigInt(workerId), status: 'accepted' },
+      include: {
+        taskRole: {
+          include: {
+            task: { select: { id: true, title: true, companyId: true, createdBy: true, status: true } },
+          },
+        },
+      },
+    });
+    if (!assignment) throw new NotFoundException('未找到执行中的任务分配');
+
+    const task = (assignment as any).taskRole.task;
+    if (task.status !== 'in_progress') {
+      throw new BadRequestException('任务当前状态不支持发起验收申请');
+    }
+
+    // 任务状态转为 reviewing
+    assertTransition(task.status, 'reviewing');
+    await this.prisma.task.update({
+      where: { id: task.id },
+      data: { status: 'reviewing' },
+    });
+
+    // 发送企业端通知
+    try {
+      await this.companyNotificationService.create({
+        companyId: Number(task.companyId),
+        userId: Number(task.createdBy),
+        type: 'acceptance_request',
+        title: '零工发起验收申请',
+        content: `任务「${task.title}」的零工已完成工作，发起了验收申请，请及时处理。`,
+        refType: 'task',
+        refId: Number(task.id),
+      });
+    } catch (e: any) {
+      this.logger.warn(`发送验收申请通知失败: ${e?.message}`);
+    }
+
+    this.logger.log(`验收申请: task=${Number(task.id)} assignment=${assignmentId}`);
+    return { message: '验收申请已发送，请等待企业确认', status: 'reviewing' };
+  }
+
+  // ================================================================
+  // V3.9: 企业验收确认（验收中 → 待付款）
+  // ================================================================
+  async acceptTask(taskId: number, companyId: number) {
+    const task = await this.getTaskOrThrow(taskId, companyId);
+    assertTransition(task.status, 'pending_payment');
+
+    await this.prisma.task.update({
+      where: { id: BigInt(taskId) },
+      data: { status: 'pending_payment' as any },
+    });
+
+    this.logger.log(`验收确认: task=${taskId} reviewing → pending_payment`);
+    return { message: '验收已确认，任务进入待付款阶段', status: 'pending_payment' };
+  }
+
+  // ================================================================
+  // V3.9: 企业验收驳回（验收中 → 进行中）
+  // ================================================================
+  async rejectAcceptance(taskId: number, companyId: number, reason: string) {
+    const task = await this.getTaskOrThrow(taskId, companyId);
+    assertTransition(task.status, 'in_progress');
+
+    await this.prisma.task.update({
+      where: { id: BigInt(taskId) },
+      data: { status: 'in_progress' },
+    });
+
+    this.logger.log(`验收驳回: task=${taskId} reviewing → in_progress, reason=${reason}`);
+    return { message: '验收已驳回，任务回到进行中', status: 'in_progress', reason };
+  }
+
+  // ================================================================
+  // V3.9: 任务执行过程节点查询
+  // ================================================================
+  async getExecutionNodes(taskId: number, companyId: number) {
+    await this.getTaskOrThrow(taskId, companyId);
+
+    // 1. 查询检查点（模板节点）
+    const checkpoints = await this.prisma.taskCheckpoint.findMany({
+      where: { taskId: BigInt(taskId) },
+      orderBy: { sortOrder: 'asc' },
+    });
+
+    // 2. 查询日报（工作日志）
+    const progressUpdates = await this.prisma.progressUpdate.findMany({
+      where: { taskId: BigInt(taskId) },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    // 3. 查询附件（过程交付物）
+    const attachments = await this.prisma.taskAttachment.findMany({
+      where: { taskId: BigInt(taskId) },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    // 4. 查询角色信息用于关联日报的零工名
+    const roles = await this.prisma.taskRole.findMany({
+      where: { taskId: BigInt(taskId) },
+      include: {
+        assignments: {
+          include: {
+            worker: { select: { id: true, realName: true } },
+          },
+        },
+      },
+    });
+    const workerMap = new Map<string, string>();
+    for (const r of roles) {
+      for (const a of r.assignments) {
+        workerMap.set(String(a.workerId), (a.worker as any)?.realName || `零工#${a.workerId}`);
+      }
+    }
+
+    // 5. 按节点组装数据
+    const nodes = checkpoints.map((cp) => {
+      // 找该节点时间范围内的日报（按 sortOrder 前后节点的日期范围筛选）
+      const cpDate = new Date(cp.plannedDate);
+      const logs = progressUpdates
+        .filter((pu) => {
+          const puDate = new Date(pu.createdAt);
+          // 简化逻辑：将日报关联到最近的检查点
+          return puDate <= cpDate;
+        })
+        .map((pu) => ({
+          id: Number(pu.id),
+          workerId: Number(pu.workerId),
+          workerName: workerMap.get(String(pu.workerId)) || `零工#${pu.workerId}`,
+          progressPct: pu.progressPct,
+          content: pu.content,
+          dailySummary: pu.dailySummary,
+          tomorrowPlan: pu.tomorrowPlan,
+          issues: pu.issues,
+          screenshots: pu.screenshots,
+          createdAt: pu.createdAt,
+        }));
+
+      // 该节点时间范围内的附件
+      const nodeAttachments = attachments
+        .filter((att) => new Date(att.createdAt) <= cpDate)
+        .map((att) => ({
+          attachmentId: Number(att.id),
+          fileName: att.fileName,
+          fileUrl: att.fileUrl,
+          fileSize: Number(att.fileSize),
+          fileType: att.fileType,
+          createdAt: att.createdAt,
+        }));
+
+      return {
+        nodeId: Number(cp.id),
+        name: cp.name,
+        type: cp.type,
+        status: cp.status,
+        plannedDate: cp.plannedDate,
+        description: cp.description,
+        submitContent: cp.submitContent,
+        submittedAt: cp.submittedAt,
+        reviewComment: cp.reviewComment,
+        reviewedAt: cp.reviewedAt,
+        revisionCount: cp.revisionCount,
+        // 进度比：取该节点关联日报中的最大进度
+        progressPct: logs.length > 0 ? Math.max(...logs.map((l) => l.progressPct)) : 0,
+        // 工作日志（日报汇总）
+        logs,
+        // 过程交付物
+        attachments: nodeAttachments,
+      };
+    });
+
+    // 如果没有检查点，返回一个默认节点包含所有数据
+    if (nodes.length === 0) {
+      return {
+        nodes: [{
+          nodeId: 0,
+          name: '整体执行',
+          type: 'progress_check',
+          status: 'pending',
+          plannedDate: null,
+          description: null,
+          progressPct: progressUpdates.length > 0
+            ? Math.max(...progressUpdates.map((pu) => pu.progressPct))
+            : 0,
+          logs: progressUpdates.map((pu) => ({
+            id: Number(pu.id),
+            workerId: Number(pu.workerId),
+            workerName: workerMap.get(String(pu.workerId)) || `零工#${pu.workerId}`,
+            progressPct: pu.progressPct,
+            content: pu.content,
+            dailySummary: pu.dailySummary,
+            tomorrowPlan: pu.tomorrowPlan,
+            issues: pu.issues,
+            screenshots: pu.screenshots,
+            createdAt: pu.createdAt,
+          })),
+          attachments: attachments.map((att) => ({
+            attachmentId: Number(att.id),
+            fileName: att.fileName,
+            fileUrl: att.fileUrl,
+            fileSize: Number(att.fileSize),
+            fileType: att.fileType,
+            createdAt: att.createdAt,
+          })),
+        }],
+      };
+    }
+
+    // 移除被前节点包含的重复日报/附件（确保每条日报只出现在最近的节点中）
+    const usedLogIds = new Set<number>();
+    const usedAttIds = new Set<number>();
+    const deduped = nodes.map((node) => {
+      const uniqueLogs = node.logs.filter((l) => !usedLogIds.has(l.id));
+      uniqueLogs.forEach((l) => usedLogIds.add(l.id));
+      const uniqueAtts = node.attachments.filter((a) => !usedAttIds.has(a.attachmentId));
+      uniqueAtts.forEach((a) => usedAttIds.add(a.attachmentId));
+      return { ...node, logs: uniqueLogs, attachments: uniqueAtts };
+    });
+
+    return { nodes: deduped };
   }
 
 }

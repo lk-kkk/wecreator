@@ -9,7 +9,8 @@
  */
 import { Injectable } from '@nestjs/common';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsIn, IsString } from 'class-validator';
+import { IsOptional, IsIn, IsString, IsArray, IsBoolean, IsNumber } from 'class-validator';
+import { Type } from 'class-transformer';
 import { PrismaService } from '../../prisma';
 import { CompanyNotificationType, Prisma } from '@prisma/client';
 
@@ -33,7 +34,7 @@ export class NotificationQueryDto {
   @ApiPropertyOptional({ description: '通知类型筛选' })
   @IsOptional() @IsIn([
     'issue_report', 'risk_alert', 'milestone_remind', 'acceptance',
-    'checkpoint', 'comment_mention', 'daily_missing', 'status_change',
+    'task_application', 'checkpoint', 'comment_mention', 'daily_missing', 'status_change',
   ])
   type?: string;
 
@@ -43,7 +44,16 @@ export class NotificationQueryDto {
 }
 
 export class MarkReadDto {
+  @ApiPropertyOptional({ description: '通知ID列表', type: [Number] })
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  @Type(() => Number)
   ids?: number[];
+
+  @ApiPropertyOptional({ description: '是否全部已读' })
+  @IsOptional()
+  @IsBoolean()
   all?: boolean;
 }
 

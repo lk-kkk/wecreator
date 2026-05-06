@@ -21,11 +21,16 @@ export default defineConfig({
       '@': resolve(__dirname, 'src'),
     },
   },
+  build: {
+    cssMinify: 'esbuild',
+    minify: 'esbuild',
+    chunkSizeWarningLimit: 1500,
+  },
   server: {
     port: 5174,
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: 'http://localhost:3000',
         changeOrigin: true,
       },
     },

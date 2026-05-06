@@ -44,8 +44,17 @@
               </template>
             </a-list-item-meta>
             <template #actions>
+              <!-- 报名审批类型：显示审批按钮 -->
+              <template v-if="item.type === 'task_application' && item.refType === 'task_application' && item.refId">
+                <a-space>
+                  <a-button
+                    type="primary" size="small"
+                    @click.stop="goReviewApplication(item)"
+                  >去审批</a-button>
+                </a-space>
+              </template>
               <a-button
-                v-if="!item.isRead"
+                v-else-if="!item.isRead"
                 type="link"
                 size="small"
                 @click.stop="markRead(item.id)"
@@ -91,6 +100,7 @@ const TYPE_META: Record<string, { color: string; icon: string }> = {
   risk_alert:       { color: '#faad14', icon: '🟡' },
   milestone_remind: { color: '#faad14', icon: '🏁' },
   acceptance:       { color: '#1890ff', icon: '✅' },
+  task_application: { color: '#722ed1', icon: '📝' },
   checkpoint:       { color: '#13c2c2', icon: '📋' },
   comment_mention:  { color: '#722ed1', icon: '💬' },
   daily_missing:    { color: '#faad14', icon: '📝' },
@@ -114,7 +124,8 @@ async function fetchNotifications() {
   loading.value = true
   try {
     const res = await notificationApi.list(buildParams())
-    notifications.value = res?.list ?? []
+    // 报名审批已移至工作台待办，通知中心不再展示
+    notifications.value = (res?.list ?? []).filter(n => n.type !== 'task_application')
     total.value = res?.total ?? 0
     unreadCount.value = res?.unread ?? 0
   } catch (e: any) {
@@ -161,8 +172,21 @@ async function markAllRead() {
 
 function openNotification(n: Notification) {
   if (!n.isRead) markRead(n.id)
-  if (n.refType === 'task' && n.refId) router.push(`/task/${n.refId}`)
-  else if (n.refType === 'project' && n.refId) router.push(`/project/${n.refId}`)
+  if (n.type === 'task_application' && n.refType === 'task_application' && n.refId) {
+    // 报名通知跳转到任务详情页的报名管理
+    router.push(`/task/${n.refId}`)
+  } else if (n.refType === 'task' && n.refId) {
+    router.push(`/task/${n.refId}`)
+  } else if (n.refType === 'project' && n.refId) {
+    router.push(`/project/${n.refId}`)
+  }
+}
+
+function goReviewApplication(n: Notification) {
+  if (!n.isRead) markRead(n.id)
+  if (n.refId) {
+    router.push(`/task/${n.refId}`)
+  }
 }
 
 onMounted(fetchNotifications)

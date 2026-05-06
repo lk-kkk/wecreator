@@ -40,6 +40,10 @@ export interface CreateTaskParams {
   priority?: TaskPriority
   /** V3.7 验收标准 */
   acceptanceCriteria?: string
+  /** V3.8 关联项目 */
+  projectId?: number
+  /** V3.8 关联里程碑 */
+  milestoneId?: number
   roles?: {
     roleName: string
     headcount: number
@@ -80,6 +84,10 @@ export const taskApi = {
   cancel: (id: number) =>
     request.post<any, any>(`/tasks/${id}/cancel`),
 
+  /** 删除任务（仅草稿/已取消/已关闭） */
+  delete: (id: number) =>
+    request.delete<any, any>(`/tasks/${id}`),
+
   list: (params?: TaskListParams) =>
     request.get<any, any>('/tasks', { params }),
 
@@ -112,4 +120,20 @@ export const taskApi = {
   }) => request.post<any, any>(`/tasks/${taskId}/attachments`, data).then((r: any) => r.data),
   deleteAttachment: (taskId: number, attachmentId: number) =>
     request.delete<any, any>(`/tasks/${taskId}/attachments/${attachmentId}`),
+
+  /** V3.9: 任务审批通过（招募完成→进行中） */
+  approveTask: (id: number) =>
+    request.post<any, any>(`/tasks/${id}/approve`),
+
+  /** V3.9: 验收确认（验收中→待付款） */
+  acceptTask: (id: number) =>
+    request.post<any, any>(`/tasks/${id}/accept`),
+
+  /** V3.9: 验收驳回（验收中→进行中） */
+  rejectAcceptance: (id: number, reason: string) =>
+    request.post<any, any>(`/tasks/${id}/reject-acceptance`, { reason }),
+
+  /** V3.9: 任务执行过程节点 */
+  getExecutionNodes: (id: number) =>
+    request.get<any, any>(`/tasks/${id}/execution-nodes`),
 }

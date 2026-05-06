@@ -206,17 +206,17 @@ defineExpose({ reset: () => { uploadedFiles.value = []; previewUrl.value = '' } 
 }
 .dragger-area:hover { border-color: var(--color-primary); }
 .dragger-icon  { font-size: 32px; margin: 0 0 8px; }
-.dragger-hint  { font-size: 14px; color: #555; margin: 0 0 4px; }
+.dragger-hint  { font-size: 12px; color: #555; margin: 0 0 4px; }
 .dragger-note  { font-size: 12px; color: #aaa; margin: 0; }
 .dragger-progress { padding: 8px 0; }
-.prog-text { font-size: 13px; color: var(--color-primary); display: block; margin-top: 8px; }
+.prog-text { font-size: 12px; color: var(--color-primary); display: block; margin-top: 8px; }
 
 /* 文件列表 */
 .file-list { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
 .file-item {
   display: flex; align-items: center; gap: 8px; padding: 6px 10px;
   background: var(--color-bg-hover); border-radius: 6px; border: 1px solid #f0f0f0;
-  font-size: 13px;
+  font-size: 12px;
 }
 .file-icon { font-size: 16px; }
 .file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #333; }

@@ -1,0 +1,318 @@
+/**
+ * WeCreator — UI 增强样式
+ * 
+ * 在 Ant Design Vue tokens 基础上追加：
+ * - 主按钮蓝色渐变
+ * - 卡片/菜单微交互
+ * - 登录页样式统一
+ * 
+ * 参照 uipic.png 的现代简约风格
+ */
+
+/* ==================== 全局基础 ==================== */
+html, body, #app {
+  background: #FFFFFF;
+  color: #1D2939;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',
+    'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==================== 主按钮：蓝色渐变 ==================== */
+.ant-btn-primary:not(.ant-btn-dangerous):not(:disabled):not(.ant-btn-background-ghost):not(.ant-btn-link) {
+  background: linear-gradient(135deg, #4E8CFF 0%, #2B6BE5 100%) !important;
+  border: none !important;
+  box-shadow: 0 2px 4px rgba(43, 107, 229, 0.20);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ant-btn-primary:not(.ant-btn-dangerous):not(:disabled):not(.ant-btn-background-ghost):not(.ant-btn-link):hover {
+  background: linear-gradient(135deg, #5B97FF 0%, #3578EF 100%) !important;
+  box-shadow: 0 4px 12px rgba(43, 107, 229, 0.28);
+  transform: translateY(-1px);
+}
+
+.ant-btn-primary:not(.ant-btn-dangerous):not(:disabled):not(.ant-btn-background-ghost):not(.ant-btn-link):active {
+  background: linear-gradient(135deg, #3D7EFF 0%, #1E5AD1 100%) !important;
+  box-shadow: 0 1px 2px rgba(43, 107, 229, 0.24);
+  transform: translateY(0);
+}
+
+.ant-btn-primary:disabled,
+.ant-btn-primary[disabled] {
+  background: #F2F4F7 !important;
+  color: #98A2B3 !important;
+  box-shadow: none !important;
+}
+
+/* 次按钮（default）悬停柔和 */
+.ant-btn-default:not(:disabled):hover {
+  border-color: #C5D7FD !important;
+  color: #3D7EFF !important;
+  background: #F5F7FA !important;
+}
+
+/* 大号按钮 */
+.ant-btn-lg {
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* ==================== 卡片 ==================== */
+.ant-card {
+  border: 1px solid #EAECF0 !important;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04) !important;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.ant-card-hoverable:hover {
+  box-shadow: 0 12px 16px -4px rgba(16, 24, 40, 0.08), 0 4px 6px -2px rgba(16, 24, 40, 0.04) !important;
+  transform: translateY(-2px);
+}
+
+.ant-card-head {
+  border-bottom: 1px solid #F2F4F7 !important;
+  min-height: 52px;
+}
+
+.ant-card-head-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1D2939;
+}
+
+/* ==================== 菜单现代化 ==================== */
+.ant-menu-light.ant-menu-inline,
+.ant-menu-light.ant-menu-vertical {
+  background: transparent !important;
+  border-inline-end: none !important;
+}
+
+.ant-menu-light .ant-menu-item {
+  color: #475467;
+  font-weight: 500;
+}
+
+.ant-menu-light .ant-menu-item-selected {
+  background: #EEF2F8 !important;
+  color: #2B6BE5 !important;
+  font-weight: 600;
+}
+
+.ant-menu-light .ant-menu-item-selected::after {
+  display: none !important;
+}
+
+.ant-menu-light .ant-menu-item:hover,
+.ant-menu-light .ant-menu-submenu-title:hover {
+  color: #1D2939 !important;
+  background: #F5F7FA !important;
+}
+
+.ant-menu-light .ant-menu-submenu-selected > .ant-menu-submenu-title {
+  color: #2B6BE5 !important;
+}
+
+/* 子菜单项缩进优化 */
+.ant-menu-light .ant-menu-sub.ant-menu-inline {
+  background: transparent !important;
+}
+
+/* ==================== 输入框 ==================== */
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-select .ant-select-selector,
+.ant-picker,
+.ant-input-number,
+.ant-input-password {
+  background: #FFFFFF !important;
+  border-color: #EAECF0 !important;
+  color: #1D2939 !important;
+  transition: all 0.2s ease;
+}
+
+.ant-input:hover,
+.ant-input-affix-wrapper:hover,
+.ant-select:not(.ant-select-disabled):hover .ant-select-selector,
+.ant-picker:hover {
+  border-color: #C5D7FD !important;
+}
+
+.ant-input:focus,
+.ant-input-affix-wrapper-focused,
+.ant-select-focused .ant-select-selector,
+.ant-picker-focused {
+  border-color: #3D7EFF !important;
+  box-shadow: 0 0 0 4px rgba(78, 140, 255, 0.18) !important;
+}
+
+/* ==================== 表格 ==================== */
+.ant-table {
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+.ant-table-thead > tr > th {
+  background: #FAFBFC !important;
+  color: #475467 !important;
+  font-weight: 600 !important;
+  border-bottom: 1px solid #EAECF0 !important;
+  font-size: 12px;
+}
+
+.ant-table-tbody > tr > td {
+  border-bottom: 1px solid #F2F4F7 !important;
+  color: #1D2939;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: #FAFBFC !important;
+}
+
+/* ==================== 标签/Tag ==================== */
+.ant-tag {
+  border-radius: 6px;
+  font-weight: 500;
+  border: none;
+  padding: 2px 8px;
+}
+
+/* ==================== Modal ==================== */
+.ant-modal-content {
+  border-radius: 16px !important;
+  box-shadow: 0 20px 25px -5px rgba(16, 24, 40, 0.10), 0 10px 10px -5px rgba(16, 24, 40, 0.04) !important;
+}
+
+.ant-modal-header {
+  border-bottom: 1px solid #F2F4F7 !important;
+}
+
+.ant-modal-title {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #1D2939 !important;
+}
+
+/* ==================== Dropdown ==================== */
+.ant-dropdown-menu {
+  border-radius: 10px !important;
+  padding: 6px !important;
+  box-shadow: 0 12px 16px -4px rgba(16, 24, 40, 0.08), 0 4px 6px -2px rgba(16, 24, 40, 0.04) !important;
+  border: 1px solid #F2F4F7;
+}
+
+.ant-dropdown-menu-item {
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  margin: 1px 0;
+}
+
+.ant-dropdown-menu-item:hover {
+  background: #F5F7FA !important;
+}
+
+/* ==================== 滚动条（现代化） ==================== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #EAECF0;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #D0D5DD;
+}
+
+/* ==================== 登录/注册页（强制亮色 + 渐变背景） ==================== */
+.auth-layout,
+.login-page,
+.register-page,
+.auth-bg,
+body.auth-body {
+  background: linear-gradient(135deg, #F0F4FF 0%, #FFFFFF 50%, #E8EFFE 100%) !important;
+  min-height: 100vh;
+}
+
+.auth-card,
+.login-card,
+.register-card {
+  background: #FFFFFF !important;
+  border-radius: 20px !important;
+  box-shadow: 0 20px 40px -8px rgba(16, 24, 40, 0.12), 0 8px 16px -4px rgba(16, 24, 40, 0.06) !important;
+  border: 1px solid #F2F4F7 !important;
+}
+
+/* ==================== Tabs ==================== */
+.ant-tabs-tab {
+  font-weight: 500 !important;
+}
+
+.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #3D7EFF !important;
+  font-weight: 600 !important;
+}
+
+.ant-tabs-ink-bar {
+  background: linear-gradient(90deg, #4E8CFF 0%, #2B6BE5 100%) !important;
+  height: 3px !important;
+}
+
+/* ==================== 分页 ==================== */
+.ant-pagination-item-active {
+  background: linear-gradient(135deg, #4E8CFF 0%, #2B6BE5 100%) !important;
+  border-color: transparent !important;
+}
+
+.ant-pagination-item-active a {
+  color: #FFFFFF !important;
+}
+
+/* ==================== Steps ==================== */
+.ant-steps-item-finish .ant-steps-item-icon {
+  background: linear-gradient(135deg, #4E8CFF 0%, #2B6BE5 100%) !important;
+  border-color: transparent !important;
+}
+
+.ant-steps-item-finish .ant-steps-item-icon > .ant-steps-icon {
+  color: #FFFFFF !important;
+}
+
+.ant-steps-item-process .ant-steps-item-icon {
+  background: linear-gradient(135deg, #4E8CFF 0%, #2B6BE5 100%) !important;
+  border-color: transparent !important;
+}
+
+/* ==================== Switch ==================== */
+.ant-switch-checked {
+  background: linear-gradient(135deg, #4E8CFF 0%, #2B6BE5 100%) !important;
+}
+
+/* ==================== Progress ==================== */
+.ant-progress-bg {
+  background: linear-gradient(90deg, #4E8CFF 0%, #2B6BE5 100%) !important;
+}
+
+/* ==================== 去除毛玻璃效果（亮色下不需要） ==================== */
+.wc-vibrancy,
+.ant-layout-header[style*="backdrop-filter"] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ==================== 修复暗色残留 ==================== */
+[data-theme="dark"] {
+  /* 强制覆盖任何可能的 dark 主题样式 */
+  background: #FFFFFF !important;
+  color: #1D2939 !important;
+}

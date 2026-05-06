@@ -74,4 +74,11 @@ export const taskApi = {
       method: 'POST',
       data,
     }),
+
+  /** V3.9: 发起验收申请 */
+  requestAcceptance: (assignmentId: number) =>
+    request<{ message: string; status: string }>({
+      url: `/worker/tasks/${assignmentId}/request-acceptance`,
+      method: 'POST',
+    }),
 }

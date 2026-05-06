@@ -124,6 +124,24 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresRole: 'super_admin' },
       },
       { path: 'ai/agents', redirect: '/settings/agents' }, // 兼容旧路由
+      {
+        path: 'settings/roles',
+        name: 'RoleConfig',
+        component: () => import('@/pages/settings/RoleConfigPage.vue'),
+        meta: { requiresRole: 'super_admin' },
+      },
+      {
+        path: 'settings/checkpoints',
+        name: 'CheckpointConfig',
+        component: () => import('@/pages/settings/CheckpointConfigPage.vue'),
+        meta: { requiresRole: 'super_admin' },
+      },
+      {
+        path: 'settings/skills',
+        name: 'SkillConfig',
+        component: () => import('@/pages/settings/SkillConfigPage.vue'),
+        meta: { requiresRole: 'super_admin' },
+      },
 
       // ── 🔔 通知中心 ──
       {

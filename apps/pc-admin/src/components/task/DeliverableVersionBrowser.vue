@@ -88,7 +88,7 @@ function formatTime(d: string) {
 .dv-group { margin-bottom: 16px; }
 .dv-role {
   font-weight: 600; padding: 8px 12px; background: #f5f5f5;
-  border-radius: 4px; margin-bottom: 8px; font-size: 13px;
+  border-radius: 4px; margin-bottom: 8px; font-size: 12px;
 }
 .dv-version {
   padding: 10px 12px; border-left: 3px solid #d9d9d9;
@@ -106,14 +106,14 @@ function formatTime(d: string) {
   padding: 2px 6px; border-radius: 4px;
 }
 .dv-time { color: #999; font-size: 12px; margin-left: auto; }
-.dv-note { font-size: 13px; margin-top: 6px; line-height: 1.6; color: #333; }
+.dv-note { font-size: 12px; margin-top: 6px; line-height: 1.6; color: #333; }
 .dv-files { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
 .dv-file {
   display: flex; align-items: center; gap: 6px;
   padding: 4px 8px; background: #fff;
   border-radius: 4px; font-size: 12px;
 }
-.file-icon { font-size: 14px; }
+.file-icon { font-size: 12px; }
 .file-link { flex: 1; color: #1890ff; text-decoration: none; }
 .file-link:hover { text-decoration: underline; }
 .file-size { color: #999; }

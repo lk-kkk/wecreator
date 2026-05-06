@@ -125,18 +125,27 @@ export class MessageGateway implements OnGatewayConnection, OnGatewayDisconnect 
       fileSize?: number;
     },
   ) {
-    if (!client.userId) throw new WsException('Unauthorized');
+    if (!client.userId) return { success: false, error: 'Unauthorized' };
 
-    const { conversationId, type = 'text', content, fileName, fileSize } = dto;
+    const conversationId = Number(dto?.conversationId);
+    if (!conversationId || Number.isNaN(conversationId)) {
+      return { success: false, error: '缺少会话或会话非法' };
+    }
+    const content = (dto?.content ?? '').toString().trim();
+    if (!content) return { success: false, error: '消息内容为空' };
+
+    const { type = 'text', fileName, fileSize } = dto;
 
     // 1. 鉴权：确认用户属于该会话
     const conversation = await this.messageService.getConversationById(conversationId);
-    if (!conversation) throw new WsException('Conversation not found');
+    if (!conversation) return { success: false, error: '会话不存在' };
 
     const allowed =
       (client.userType === 'company' && Number(conversation.companyUserId) === client.userId) ||
       (client.userType === 'worker'  && Number(conversation.workerId)       === client.userId);
-    if (!allowed) throw new WsException('Forbidden');
+    if (!allowed) return { success: false, error: '无权操作该会话' };
+
+    try {
 
     // 2. 持久化到 MongoDB
     const saved = await this.messageService.saveMessage({
@@ -174,7 +183,11 @@ export class MessageGateway implements OnGatewayConnection, OnGatewayDisconnect 
     });
     await this.redis.publish(REDIS_CHANNEL, payload);
 
-    return { success: true, messageId: String(saved._id) };
+      return { success: true, messageId: String(saved._id) };
+    } catch (err) {
+      this.logger.error(`发送消息失败: ${err?.message}`, err?.stack);
+      return { success: false, error: '服务器错误，请稍后重试' };
+    }
   }
 
   // ── 已读回执 ─────────────────────────────────────────────

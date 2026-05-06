@@ -429,7 +429,7 @@ onBeforeUnmount(() => {
 }
 
 .brand-desc {
-  font-size: 15px;
+  font-size: 12px;
   color: rgba(255, 255, 255, 0.80);
   line-height: 1.7;
   margin-bottom: 40px;
@@ -462,7 +462,7 @@ onBeforeUnmount(() => {
   background: rgba(255, 255, 255, 0.15);
   border: 1.5px solid rgba(255, 255, 255, 0.4);
   color: #fff;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -480,7 +480,7 @@ onBeforeUnmount(() => {
 }
 
 .step-title {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   color: #fff;
 }
@@ -532,7 +532,7 @@ onBeforeUnmount(() => {
 }
 
 .register-subtitle {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--color-text-tertiary);
   margin: 0;
 }
@@ -599,12 +599,12 @@ onBeforeUnmount(() => {
 }
 
 .agreement-row :deep(.ant-checkbox-wrapper) {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--color-text-secondary);
 }
 
 .agreement-link {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--color-primary);
   cursor: pointer;
   text-decoration: none;
@@ -615,7 +615,7 @@ onBeforeUnmount(() => {
 /* 注册按钮 */
 .register-btn {
   height: 44px !important;
-  font-size: 15px !important;
+  font-size: 12px !important;
   font-weight: 600 !important;
   border-radius: 8px !important;
 }
@@ -635,7 +635,7 @@ onBeforeUnmount(() => {
 
 .security-icon {
   color: var(--color-primary);
-  font-size: 13px;
+  font-size: 12px;
   margin-top: 1px;
   flex-shrink: 0;
 }
@@ -663,21 +663,21 @@ onBeforeUnmount(() => {
 }
 
 .success-text {
-  font-size: 14px;
+  font-size: 12px;
   color: var(--color-text-secondary);
   margin-bottom: 6px;
   line-height: 1.6;
 }
 
 .success-hint {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--color-text-tertiary);
   margin-bottom: 24px;
 }
 
 .success-btn {
   height: 44px !important;
-  font-size: 15px !important;
+  font-size: 12px !important;
   font-weight: 600 !important;
   border-radius: 8px !important;
 }

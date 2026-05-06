@@ -76,6 +76,16 @@ export class ProjectController {
     return this.svc.updateProjectStatus(user.companyId!, id, dto);
   }
 
+  @Delete(':id')
+  @Roles('super_admin', 'task_admin')
+  @ApiOperation({ summary: '删除项目（仅规划中/已归档）' })
+  deleteProject(
+    @CurrentUser() user: CurrentUserPayload,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.svc.deleteProject(user.companyId!, id);
+  }
+
   // ─── Milestones ───
 
   @Get(':id/milestones')

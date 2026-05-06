@@ -300,6 +300,69 @@ export class DashboardService {
     );
   }
 
+  // ================================================================
+  // 待审批报名列表（企业端工作台）
+  // ================================================================
+  async getPendingApplications(companyId: number, page = 1, pageSize = 10) {
+    const where = {
+      status: 'pending' as const,
+      taskRole: { task: { companyId: BigInt(companyId) } },
+    };
+
+    const [list, total] = await Promise.all([
+      this.prisma.taskApplication.findMany({
+        where,
+        include: {
+          worker: {
+            select: {
+              id: true, realName: true, nickname: true, avatarUrl: true,
+              city: true, avgRating: true, completedCount: true, level: true,
+              bio: true, skillTags: true, isVerified: true,
+            },
+          },
+          taskRole: {
+            select: {
+              id: true, roleName: true, headcount: true, budget: true,
+              task: { select: { id: true, title: true, taskMode: true, status: true } },
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.taskApplication.count({ where }),
+    ]);
+
+    return {
+      total,
+      page,
+      pageSize,
+      list: list.map(a => ({
+        applicationId: Number(a.id),
+        workerName: a.worker.realName || a.worker.nickname || `零工#${Number(a.worker.id)}`,
+        avatarUrl: a.worker.avatarUrl,
+        taskTitle: a.taskRole.task.title,
+        taskId: Number(a.taskRole.task.id),
+        roleName: a.taskRole.roleName,
+        createdAt: a.createdAt,
+        // 详情弹窗所需
+        introduction: a.intro,
+        expectPay: a.expectPay ? Number(a.expectPay) : null,
+        workerId: Number(a.worker.id),
+        city: a.worker.city,
+        avgRating: Number(a.worker.avgRating),
+        completedCount: a.worker.completedCount,
+        level: a.worker.level,
+        bio: a.worker.bio,
+        skills: Array.isArray(a.worker.skillTags) ? (a.worker.skillTags as string[]) : [],
+        verified: a.worker.isVerified,
+        taskMode: a.taskRole.task.taskMode,
+        roleBudget: Number(a.taskRole.budget),
+      })),
+    };
+  }
+
   // ── 工具：补全30天日期序列 ────────────────────────────────────────
   private _buildTrend(rows: Array<{ day: string; cnt: bigint }>) {
     const map = new Map<string, number>();

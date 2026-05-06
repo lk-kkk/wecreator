@@ -200,7 +200,7 @@ defineExpose({ reload: load })
   display: flex; justify-content: space-between; align-items: center;
   padding: 0 8px 12px; border-bottom: 1px solid #f0f0f0; margin-bottom: 8px;
 }
-.summary { color: #666; font-size: 13px; }
+.summary { color: #666; font-size: 12px; }
 .text-red { color: #ff4d4f; }
 .text-blue { color: #1677ff; }
 .text-green { color: #52c41a; }
@@ -212,12 +212,12 @@ defineExpose({ reload: load })
 .issue-in_progress { border-left-color: #faad14; }
 .issue-resolved { border-left-color: #52c41a; }
 .issue-line1 { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.issue-icon { font-size: 14px; }
+.issue-icon { font-size: 12px; }
 .issue-title { font-weight: 600; }
 .issue-time { color: #999; font-size: 12px; margin-left: auto; }
 .issue-meta { color: #666; font-size: 12px; margin-top: 4px; }
 .sla-timer { color: #ff4d4f; }
-.issue-desc { font-size: 13px; margin-top: 6px; line-height: 1.6; white-space: pre-wrap; }
+.issue-desc { font-size: 12px; margin-top: 6px; line-height: 1.6; white-space: pre-wrap; }
 .issue-attachments { margin-top: 4px; }
 .attach-link { margin-right: 8px; font-size: 12px; }
 .issue-response {

@@ -1,0 +1,22 @@
+{
+  "id": "ws_54dcb97b",
+  "name": "wecreator",
+  "slug": "wecreator",
+  "defaults": {
+    "permissionMode": "allow-all",
+    "cyclablePermissionModes": [
+      "safe",
+      "allow-all",
+      "ask"
+    ],
+    "enabledSourceSlugs": [],
+    "model": null,
+    "thinkingLevel": "high",
+    "defaultLlmConnection": null
+  },
+  "localMcpServers": {
+    "enabled": true
+  },
+  "createdAt": 1776731395415,
+  "updatedAt": 1777869829312
+}

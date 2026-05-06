@@ -3,9 +3,10 @@ import { AssignmentController, WorkerTaskController } from './assignment.control
 import { AssignmentService } from './assignment.service';
 import { TaskModule } from '../task/task.module';
 import { ProjectModule } from '../project/project.module';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
-  imports:     [TaskModule, ProjectModule],
+  imports:     [TaskModule, ProjectModule, NotificationModule],
   controllers: [AssignmentController, WorkerTaskController],
   providers:   [AssignmentService],
   exports:     [AssignmentService],

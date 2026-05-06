@@ -30,13 +30,13 @@ export const milestoneApi = {
   list: (projectId: number) =>
     request.get<any, Milestone[]>(`/projects/${projectId}/milestones`),
 
-  create: (projectId: number, data: { name: string; description?: string; plannedDate: string }) =>
+  create: (projectId: number, data: { name: string; description?: string; plannedDate: string; taskIds?: number[] }) =>
     request.post<any, Milestone>(`/projects/${projectId}/milestones`, data),
 
   update: (
     projectId: number,
     mid: number,
-    data: { name?: string; description?: string; plannedDate?: string },
+    data: { name?: string; description?: string; plannedDate?: string; taskIds?: number[] },
   ) => request.put<any, Milestone>(`/projects/${projectId}/milestones/${mid}`, data),
 
   /** 标记完成（可上传附件） */

@@ -111,4 +111,24 @@ export class WorkerTaskController {
   ) {
     return this.taskService.submitDeliverable(id, user.userId, dto);
   }
+
+  // V3.9 — 零工发起验收申请
+  @Post(':assignmentId/request-acceptance')
+  @ApiOperation({ summary: 'V3.9 发起验收申请' })
+  async requestAcceptance(
+    @Param('assignmentId', ParseIntPipe) id: number,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.taskService.requestAcceptance(id, user.userId);
+  }
+
+  // 工作日志列表（查看该任务下所有人的日报）
+  @Get(':assignmentId/logs')
+  @ApiOperation({ summary: '获取任务工作日志' })
+  async getLogs(
+    @Param('assignmentId', ParseIntPipe) id: number,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.assignmentService.getWorkLogs(id, user.userId);
+  }
 }

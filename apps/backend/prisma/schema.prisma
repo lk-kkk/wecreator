@@ -37,6 +37,8 @@ model Company {
   users          CompanyUser[]
   tasks          Task[]
   customRoles    CompanyCustomRole[]
+  customSkills   CompanyCustomSkill[]
+  checkpointTemplates CompanyCheckpointTemplate[]
   workerPool     CompanyWorkerPool[]
   projects       Project[]
   llmConfig      LlmConfig?
@@ -83,6 +85,45 @@ model CompanyCustomRole {
 
   @@unique([companyId, name])
   @@map("company_custom_roles")
+}
+
+/// 企业自定义检查点模板（与角色配置并列，发布任务时同步）
+model CompanyCheckpointTemplate {
+  id              BigInt   @id @default(autoincrement())
+  companyId       BigInt   @map("company_id")
+  name            String   @db.VarChar(50)           // 检查点名称
+  progress        Int      @default(50)              // 默认进度百分比(5-95)
+  deliverableDesc String?  @map("deliverable_desc") @db.VarChar(300) // 交付物描述
+  allowedFormats  Json?    @map("allowed_formats")   // JSON: [‘pdf’, ‘docx’, ...]
+  category        String?  @db.VarChar(30)           // 分类（如：设计类、开发类）
+  sortOrder       Int      @default(0) @map("sort_order") // 排序
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@index([companyId, isActive])
+  @@map("company_checkpoint_templates")
+}
+
+/// 企业自定义技能配置（与角色配置、检查点配置并列）
+model CompanyCustomSkill {
+  id        BigInt   @id @default(autoincrement())
+  companyId BigInt   @map("company_id")
+  name        String   @db.VarChar(50)           // 技能名称
+  category    String?  @db.VarChar(30)           // 分类（如：设计类、开发类）
+  description String?  @db.VarChar(200)          // 技能描述
+  hot         Boolean  @default(false)           // 是否热门
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@unique([companyId, name])
+  @@index([companyId, isActive])
+  @@map("company_custom_skills")
 }
 
 // ============================================================
@@ -176,6 +217,7 @@ model Task {
   companyId          BigInt            @map("company_id")
   createdBy          BigInt            @map("created_by")
   projectId          BigInt?           @map("project_id") // V3.6: 关联项目(可为空)
+  milestoneId        BigInt?           @map("milestone_id") // V3.8: 关联里程碑(可为空)
   taskNo             String?           @unique @map("task_no") @db.VarChar(20) // V3.7: TSK-YYYYMMDD-NNN
   title              String            @db.VarChar(100)
   description        String?           @db.Text // 背景 + 目标合并
@@ -205,6 +247,7 @@ model Task {
 
   company         Company          @relation(fields: [companyId], references: [id])
   project         Project?         @relation(fields: [projectId], references: [id])
+  milestone       Milestone?       @relation(fields: [milestoneId], references: [id])
   taskRoles       TaskRole[]
   deliverables    Deliverable[]
   attachments     TaskAttachment[]
@@ -216,6 +259,7 @@ model Task {
   @@index([companyId, status])
   @@index([status, createdAt])
   @@index([projectId])
+  @@index([milestoneId]) // V3.8: 里程碑关联筛选
   @@index([companyId, priority]) // V3.7: 任务优先级筛选
   @@index([companyId, riskLevel]) // V3.7: 风险等级筛选
   @@map("tasks")
@@ -777,6 +821,7 @@ model Milestone {
   updatedAt   DateTime        @updatedAt @map("updated_at")
 
   project     Project               @relation(fields: [projectId], references: [id])
+  tasks       Task[]
   attachments MilestoneAttachment[]
 
   @@index([projectId, sortOrder])
@@ -1073,6 +1118,7 @@ enum TaskStatus {
   published
   in_progress
   reviewing
+  pending_payment // V3.9: 待付款
   completed
   closed
   cancelled
@@ -1204,6 +1250,8 @@ enum CompanyNotificationType {
   risk_alert
   milestone_remind
   acceptance
+  acceptance_request // V3.9: 零工发起验收申请
+  task_application   // 零工报名申请通知
   checkpoint
   comment_mention
   daily_missing

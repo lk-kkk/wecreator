@@ -65,9 +65,11 @@
         :pagination="{ current: page, pageSize: 20, total, showTotal: (t: number) => `共 ${t} 项` }"
         @change="onTableChange" row-key="id" size="middle">
         <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'projectNo'">
+            <span style="color:#666">{{ record.projectNo }}</span>
+          </template>
           <template v-if="column.key === 'name'">
             <a @click="goDetail(record.id)" style="font-weight:500">{{ record.name }}</a>
-            <div style="color:#999;font-size:11px">{{ record.projectNo }}</div>
           </template>
           <template v-if="column.key === 'status'">
             <a-tag :color="statusColor(record.status)">{{ statusLabel(record.status) }}</a-tag>
@@ -95,6 +97,17 @@
               <a style="color:#ff4d4f">归档</a>
             </a-popconfirm>
             <span v-else style="color:#bbb">已归档</span>
+            <template v-if="['planning', 'archived'].includes(record.status)">
+              <a-divider type="vertical" />
+              <a-popconfirm
+                title="确认删除该项目？删除后不可恢复"
+                @confirm="deleteProject(record.id)"
+                ok-text="删除" cancel-text="取消"
+                ok-button-props="{ danger: true }"
+              >
+                <a style="color:#ff4d4f">删除</a>
+              </a-popconfirm>
+            </template>
           </template>
         </template>
       </a-table>
@@ -159,7 +172,8 @@ const form = ref({
 })
 
 const columns = [
-  { title: '项目', key: 'name', dataIndex: 'name' },
+  { title: '项目编号', key: 'projectNo', dataIndex: 'projectNo', width: 130 },
+  { title: '项目名称', key: 'name', dataIndex: 'name' },
   { title: '状态', key: 'status', dataIndex: 'status', width: 100 },
   { title: '阶段', dataIndex: 'phase', width: 90 },
   { title: '负责人', key: 'managerName', width: 90 },
@@ -167,7 +181,7 @@ const columns = [
   { title: '风险', key: 'riskLevel', width: 80 },
   { title: '进度', key: 'progress', width: 150 },
   { title: '更新时间', dataIndex: 'updatedAt', width: 150, customRender: ({ text }: any) => text?.slice(0, 10) },
-  { title: '操作', key: 'action', width: 110 },
+  { title: '操作', key: 'action', width: 160 },
 ]
 
 const statusMap: Record<string, { label: string; color: string }> = {
@@ -189,8 +203,9 @@ const calcProgress = (p: any) => {
 
 async function loadManagers() {
   try {
-    const res = await request.get('/admin/subaccounts')
-    managerOptions.value = (res.data || []).map((u: any) => ({ value: u.id, label: u.name }))
+    const res: any = await request.get('/admin/subaccounts')
+    const list = Array.isArray(res) ? res : (res?.list ?? [])
+    managerOptions.value = list.map((u: any) => ({ value: u.id, label: u.name }))
   } catch {}
 }
 
@@ -200,16 +215,16 @@ async function fetchList() {
     const params: any = { page: page.value, pageSize: 20 }
     if (filterStatus.value) params.status = filterStatus.value
     if (searchKeyword.value) params.keyword = searchKeyword.value
-    const res = await request.get('/projects', { params })
-    list.value = res.data?.list || []
-    total.value = res.data?.total || 0
+    const res: any = await request.get('/projects', { params })
+    list.value = res?.list || []
+    total.value = res?.total || 0
   } finally { loading.value = false }
 }
 
 async function fetchBoard() {
   try {
-    const res = await request.get('/projects/board')
-    boardData.value = res.data || []
+    const res: any = await request.get('/projects/board')
+    boardData.value = Array.isArray(res) ? res : (res?.list ?? [])
   } catch {}
 }
 
@@ -252,6 +267,14 @@ async function archiveProject(id: number) {
   } catch (e: any) { message.error(e?.response?.data?.message || '归档失败') }
 }
 
+async function deleteProject(id: number) {
+  try {
+    await request.delete(`/projects/${id}`)
+    message.success('项目已删除')
+    fetchList(); fetchBoard()
+  } catch (e: any) { message.error(e?.response?.data?.message || '删除失败') }
+}
+
 function goDetail(id: number) { router.push(`/project/${id}`) }
 
 onMounted(() => { fetchList(); fetchBoard(); loadManagers(); if (viewMode.value === 'board') analyticsApi.track({ event: 'project_board_view' }) })
@@ -265,6 +288,6 @@ onMounted(() => { fetchList(); fetchBoard(); loadManagers(); if (viewMode.value 
 .board-card.risk-yellow { border-left: 3px solid #faad14; }
 .board-card.risk-green { border-left: 3px solid #52c41a; }
 .board-title { display: flex; align-items: center; gap: 8px; }
-.board-meta { display: flex; gap: 16px; margin-top: 8px; font-size: 13px; color: #666; }
+.board-meta { display: flex; gap: 16px; margin-top: 8px; font-size: 12px; color: #666; }
 .board-warning { margin-top: 6px; color: #ff4d4f; font-size: 12px; }
 </style>

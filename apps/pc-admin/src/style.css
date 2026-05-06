@@ -1,90 +1,8 @@
 /**
- * WeCreator PC Admin — Global Styles V1.1
- * 基于设计规范 V1.1（画板1496.png 视觉稿）
+ * WeCreator PC Admin — Global Styles (Material Design 3)
+ * 设计令牌已迁移至 styles/theme-material.css
+ * 本文件仅保留：Reset + Ant Design 基础组件覆盖层
  */
-
-/* ==================== Design Tokens ==================== */
-:root {
-  /* 品牌色 */
-  --color-primary:          #0858F4;
-  --color-primary-hover:    #2470F8;
-  --color-primary-active:   #0446D0;
-  --color-primary-light:    #4480F8;
-  --color-primary-lighter:  #80A8F8;
-  --color-primary-bg:       #D0DCFC;
-  --color-primary-bg-soft:  #E4ECF8;
-  --color-primary-border:   #A0BCF8;
-
-  /* 活力橙 */
-  --color-accent:       #FC6400;
-  --color-accent-light: #FC9854;
-  --color-accent-bg:    #FEE8D5;
-
-  /* 语义色 */
-  --color-success:      #38D048;
-  --color-success-bg:   #E8FCEC;
-  --color-warning:      #FC8C40;
-  --color-warning-bg:   #FEF0E0;
-  --color-error:        #E8383C;
-  --color-error-bg:     #FCE0E0;
-  --color-teal:         #34B8A8;
-  --color-teal-bg:      #D0F4F0;
-  --color-purple:       #E04CFC;
-  --color-purple-bg:    #F8E4FC;
-
-  /* 中性色 */
-  --color-text-primary:   #181818;
-  --color-text-secondary: #505050;
-  --color-text-tertiary:  #888888;
-  --color-text-disabled:  #C0C0C0;
-  --color-border:         #E0E0E0;
-  --color-border-light:   #F0F0F0;
-  --color-bg-page:        #F0F0F0;
-  --color-bg-card:        #FFFFFF;
-  --color-bg-hover:       #F8F8F8;
-  --color-bg-sidebar:     #FFFFFF;
-  --color-bg-header:      #FFFFFF;
-  --color-bg-mask:        rgba(0, 0, 0, 0.40);
-
-  /* 任务状态 */
-  --status-draft-fg:      #888888;
-  --status-draft-bg:      #F0F0F0;
-  --status-matching-fg:   #0858F4;
-  --status-matching-bg:   #D0DCFC;
-  --status-progress-fg:   #34B8A8;
-  --status-progress-bg:   #D0F4F0;
-  --status-review-fg:     #FC6400;
-  --status-review-bg:     #FEE8D5;
-  --status-completed-fg:  #38D048;
-  --status-completed-bg:  #E8FCEC;
-  --status-closed-fg:     #888888;
-  --status-closed-bg:     #EEEEEE;
-
-  /* 间距 */
-  --space-1: 4px;  --space-2: 8px;   --space-3: 12px;
-  --space-4: 16px; --space-5: 20px;  --space-6: 24px;
-  --space-8: 32px; --space-10: 40px; --space-12: 48px;
-
-  /* 圆角 */
-  --radius-sm: 4px; --radius-md: 6px;
-  --radius-lg: 8px; --radius-xl: 12px;
-
-  /* 阴影（轻薄化） */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.10);
-
-  /* 布局 */
-  --layout-header-height: 56px;
-  --layout-sider-width: 220px;
-  --layout-sider-collapsed: 64px;
-
-  /* 动效 */
-  --ease-out: cubic-bezier(0, 0, 0.2, 1);
-  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-  --duration-fast: 150ms;
-  --duration-normal: 250ms;
-}
 
 /* ==================== Reset ==================== */
 *, *::before, *::after {
@@ -94,10 +12,9 @@
 html, body {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
-    'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+  font-family: var(--font-family-base);
   font-size: 14px;
-  line-height: 1.5714;
+  line-height: 1.5;
   color: var(--color-text-primary);
   background: var(--color-bg-page);
   -webkit-font-smoothing: antialiased;
@@ -165,7 +82,7 @@ html, body {
 }
 
 .ant-menu-title-content {
-  font-size: 14px !important;
+  font-size: 12px !important;
 }
 
 /* Card */
@@ -177,7 +94,7 @@ html, body {
 
 .ant-card-head {
   border-bottom: 1px solid var(--color-border-light) !important;
-  font-size: 14px !important;
+  font-size: 12px !important;
   font-weight: 600 !important;
   color: var(--color-text-primary) !important;
   min-height: 48px !important;
@@ -203,7 +120,7 @@ html, body {
 .ant-table-tbody > tr > td {
   border-bottom: 1px solid var(--color-border-light) !important;
   color: var(--color-text-primary) !important;
-  font-size: 14px !important;
+  font-size: 12px !important;
 }
 
 .ant-table-tbody > tr:hover > td {
@@ -363,7 +280,7 @@ html, body {
 }
 
 .wc-card-title {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--color-text-primary);
   margin-bottom: 16px;
@@ -407,7 +324,7 @@ html, body {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--color-text-secondary);
 }
 
@@ -463,7 +380,7 @@ html, body {
 
 /* Primary Large（登录/注册主按钮） */
 .ant-btn-lg.ant-btn-primary {
-  font-size: 15px !important;
+  font-size: 13px !important;
   font-weight: 600 !important;
   letter-spacing: 0.04em !important;
   border-radius: var(--radius-lg) !important;
@@ -474,7 +391,7 @@ html, body {
 .ant-btn-lg.ant-btn-default,
 .ant-btn-lg:not(.ant-btn-primary):not(.ant-btn-text):not(.ant-btn-link) {
   height: 36px !important;
-  font-size: 14px !important;
+  font-size: 12px !important;
   border-radius: var(--radius-md) !important;
 }
 
@@ -483,7 +400,7 @@ html, body {
 .ant-btn:not(.ant-btn-primary):not(.ant-btn-lg):not(.ant-btn-sm):not(.ant-btn-text):not(.ant-btn-link) {
   height: 32px !important;
   border-radius: var(--radius-md) !important;
-  font-size: 13px !important;
+  font-size: 12px !important;
 }
 
 /* Small（标签内、操作列） */
@@ -559,12 +476,12 @@ html, body {
 .wc-h1 { font-size: 24px; font-weight: 700; color: var(--color-text-primary); line-height: 1.25; letter-spacing: -0.3px; }
 .wc-h2 { font-size: 20px; font-weight: 600; color: var(--color-text-primary); line-height: 1.3;  }
 .wc-h3 { font-size: 16px; font-weight: 600; color: var(--color-text-primary); line-height: 1.4;  }
-.wc-h4 { font-size: 14px; font-weight: 600; color: var(--color-text-primary); line-height: 1.5;  }
+.wc-h4 { font-size: 12px; font-weight: 600; color: var(--color-text-primary); line-height: 1.5;  }
 
 /* 正文层级 */
-.wc-body-lg { font-size: 15px; color: var(--color-text-secondary); line-height: 1.6; }
-.wc-body    { font-size: 14px; color: var(--color-text-secondary); line-height: 1.57; }
-.wc-body-sm { font-size: 13px; color: var(--color-text-secondary); line-height: 1.54; }
+.wc-body-lg { font-size: 12px; color: var(--color-text-secondary); line-height: 1.6; }
+.wc-body    { font-size: 12px; color: var(--color-text-secondary); line-height: 1.5; }
+.wc-body-sm { font-size: 12px; color: var(--color-text-secondary); line-height: 1.5; }
 .wc-caption { font-size: 12px; color: var(--color-text-tertiary);  line-height: 1.5;  }
 .wc-label   { font-size: 12px; color: var(--color-text-tertiary); font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
 
@@ -582,12 +499,12 @@ html, body {
 .ant-input::placeholder,
 .ant-input-password input::placeholder {
   color: var(--color-text-disabled) !important;
-  font-size: 13px !important;
+  font-size: 12px !important;
 }
 
 /* 表单 label 精修 */
 .ant-form-item-label > label {
-  font-size: 13px !important;
+  font-size: 12px !important;
   font-weight: 500 !important;
   color: var(--color-text-secondary) !important;
 }
@@ -643,7 +560,7 @@ html, body {
 
 .ant-dropdown-menu-item {
   border-radius: var(--radius-sm) !important;
-  font-size: 13px !important;
+  font-size: 12px !important;
   color: var(--color-text-secondary) !important;
   transition: background var(--duration-fast) var(--ease-out) !important;
 }
@@ -666,7 +583,7 @@ html, body {
 .ant-pagination-item {
   border-radius: var(--radius-sm) !important;
   border-color: var(--color-border) !important;
-  font-size: 13px !important;
+  font-size: 12px !important;
 }
 
 .ant-pagination-item:hover {
@@ -693,7 +610,7 @@ html, body {
 
 .ant-empty-description {
   color: var(--color-text-tertiary) !important;
-  font-size: 13px !important;
+  font-size: 12px !important;
 }
 
 .ant-empty-image {
@@ -836,7 +753,7 @@ img:not([src]) {
 }
 
 .ant-drawer-title {
-  font-size: 16px !important;
+  font-size: 14px !important;
   font-weight: 600 !important;
   color: var(--color-text-primary) !important;
 }
@@ -875,7 +792,7 @@ img:not([src]) {
 /* ── Modal 精细规范（补充） ── */
 
 .ant-modal-title {
-  font-size: 16px !important;
+  font-size: 14px !important;
   font-weight: 600 !important;
   color: var(--color-text-primary) !important;
 }
@@ -899,7 +816,7 @@ img:not([src]) {
 .ant-message-notice-content {
   border-radius: var(--radius-lg) !important;
   box-shadow: var(--shadow-md) !important;
-  font-size: 13px !important;
+  font-size: 12px !important;
   padding: 8px 16px !important;
 }
 
@@ -917,14 +834,14 @@ img:not([src]) {
 }
 
 .ant-popover-title {
-  font-size: 13px !important;
+  font-size: 12px !important;
   font-weight: 600 !important;
   border-bottom: 1px solid var(--color-border-light) !important;
   padding: 10px 16px 8px !important;
 }
 
 .ant-popover-inner-content {
-  font-size: 13px !important;
+  font-size: 12px !important;
   color: var(--color-text-secondary) !important;
   padding: 10px 16px !important;
 }
@@ -944,7 +861,7 @@ img:not([src]) {
 }
 
 .ant-segmented-item-label {
-  font-size: 13px !important;
+  font-size: 12px !important;
   color: var(--color-text-secondary) !important;
 }
 

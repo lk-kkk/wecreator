@@ -9,6 +9,21 @@
       <template #extra>
         <a-tag :color="statusColor[task?.status]">{{ statusLabel[task?.status] }}</a-tag>
         <a-button v-if="task?.status === 'published'" danger @click="handleCancel">取消任务</a-button>
+        <!-- V3.9: 验收确认/驳回 -->
+        <template v-if="task?.status === 'reviewing'">
+          <a-popconfirm
+            title="确认验收通过？任务将进入待付款阶段"
+            @confirm="handleAcceptTask"
+            ok-text="确认" cancel-text="取消"
+          >
+            <a-button type="primary">✅ 验收确认</a-button>
+          </a-popconfirm>
+          <a-button danger style="margin-left: 8px" @click="showRejectAcceptanceModal">❌ 验收驳回</a-button>
+        </template>
+        <!-- V3.9: 确认付款 -->
+        <a-button v-if="task?.status === 'pending_payment'" type="primary" @click="handlePayTask">
+          💰 确认付款
+        </a-button>
       </template>
     </a-page-header>
 
@@ -27,6 +42,7 @@
                 <span :style="{ color: riskColor(task.riskLevel), fontSize: '16px' }">●</span>
               </a-tooltip>
               <a-tag v-if="task.acceptanceStatus" :color="acceptanceColor(task.acceptanceStatus)">{{ acceptanceLabel(task.acceptanceStatus) }}</a-tag>
+              <a-tag v-if="task.milestoneName" color="cyan">🏁 {{ task.milestoneName }}</a-tag>
             </div>
             <a-descriptions :column="1" size="small">
               <a-descriptions-item label="任务模式">{{ task.taskMode === 'task_package' ? '任务包' : '日薪制' }}</a-descriptions-item>
@@ -54,23 +70,31 @@
               <a-badge :count="pendingApplications.length" :number-style="{ backgroundColor: '#faad14' }" />
             </template>
             <div v-for="app in applications" :key="app.applicationId" class="application-row">
-              <a-avatar :src="app.worker.avatarUrl || undefined" :size="36">{{ (app.worker.realName || '?')[0] }}</a-avatar>
+              <a-avatar :src="app.avatarUrl || undefined" :size="36">{{ (app.workerName || '?')[0] }}</a-avatar>
               <div style="flex:1;min-width:0;margin-left:8px">
-                <div style="font-weight:600">{{ app.worker.realName || `零工#${app.worker.workerId}` }}
-                  <span style="font-weight:400;color:#999;font-size:12px;margin-left:4px">申请: {{ app.role.roleName }}</span>
+                <div style="font-weight:600">{{ app.workerName || `零工#${app.workerId}` }}
+                  <span style="font-weight:400;color:#999;font-size:12px;margin-left:4px">申请: {{ app.roleName }}</span>
+                  <a-tag v-if="app.verified" color="green" style="margin-left:4px;font-size:11px">已认证</a-tag>
                 </div>
-                <div style="font-size:12px;color:#666;margin-top:2px">{{ app.worker.city || '未知' }} · ⭐{{ (app.worker.avgRating || 0).toFixed(1) }} · {{ app.worker.completedCount || 0 }}单</div>
-                <div style="font-size:12px;color:#888;margin-top:4px;font-style:italic">「{{ app.intro }}」</div>
-                <div v-if="app.expectPay" style="font-size:12px;color:#ff4d4f;margin-top:2px">期望报酬: ¥{{ Number(app.expectPay).toLocaleString() }}</div>
+                <div style="font-size:12px;color:#666;margin-top:2px">{{ app.city || '未知' }} · ⭐{{ (app.avgRating || 0).toFixed(1) }} · {{ app.completedCount || 0 }}单</div>
+                <div v-if="app.skills && app.skills.length" style="margin-top:4px">
+                  <a-tag v-for="skill in app.skills.slice(0, 4)" :key="skill" color="blue" style="font-size:11px">{{ skill }}</a-tag>
+                  <span v-if="app.skills.length > 4" style="font-size:11px;color:#999">+{{ app.skills.length - 4 }}</span>
+                </div>
+                <div v-if="app.introduction" style="font-size:12px;color:#888;margin-top:4px;font-style:italic">「{{ app.introduction }}」</div>
+                <div style="display:flex;gap:12px;margin-top:2px;font-size:12px">
+                  <span v-if="app.expectPay" style="color:#ff4d4f">期望报酬: ¥{{ Number(app.expectPay).toLocaleString() }}</span>
+                  <span v-if="app.availableAt" style="color:#1890ff">可开始: {{ new Date(app.availableAt).toLocaleDateString() }}</span>
+                </div>
               </div>
               <div style="display:flex;gap:6px;align-items:center;margin-left:8px">
                 <template v-if="app.status === 'pending'">
                   <a-popconfirm title="确认后零工将直接进入执行状态" @confirm="handleReviewApp(app.applicationId, 'approved')" ok-text="确认" cancel-text="取消">
                     <a-button type="primary" size="small">✅ 确认</a-button>
                   </a-popconfirm>
-                  <a-button size="small" danger @click="showRejectModal(app.applicationId)">婩拒</a-button>
+                  <a-button size="small" danger @click="showRejectModal(app.applicationId)">婉拒</a-button>
                 </template>
-                <a-tag v-else :color="app.status === 'approved' ? 'green' : 'red'">{{ app.status === 'approved' ? '已确认' : '已婩拒' }}</a-tag>
+                <a-tag v-else :color="app.status === 'approved' ? 'green' : 'red'">{{ app.status === 'approved' ? '已确认' : '已婉拒' }}</a-tag>
               </div>
             </div>
           </a-card>
@@ -93,13 +117,16 @@
             </div>
 
             <!-- 邀约按钮（角色有空位时显示） -->
-            <div v-if="task?.status === 'published' || task?.status === 'in_progress'" style="margin-bottom:8px">
+            <div v-if="(task?.status === 'published' || task?.status === 'in_progress') && (role.assignments?.length || 0) < role.headcount" style="margin-bottom:8px">
               <a-button size="small" type="primary" ghost @click="openInviteDrawer(role)">
                 <team-outlined /> 邀约零工到此角色
               </a-button>
               <span style="color:#999;margin-left:8px;font-size:12px">
                 已邀 {{ role.assignments?.length || 0 }} / {{ role.headcount }} 人
               </span>
+            </div>
+            <div v-else-if="(task?.status === 'published' || task?.status === 'in_progress') && (role.assignments?.length || 0) >= role.headcount" style="margin-bottom:8px">
+              <a-tag color="green">✅ 已招满 {{ role.headcount }} 人</a-tag>
             </div>
 
             <!-- 已接单零工 -->
@@ -126,6 +153,9 @@
           <!-- V3.7 协作与过程管控 Tabs -->
           <a-card :bordered="false" class="v37-tabs-card">
             <a-tabs v-model:activeKey="v37Tab" size="small">
+              <a-tab-pane key="execution" tab="📊 执行过程">
+                <TaskExecutionNodes :task-id="taskId" />
+              </a-tab-pane>
               <a-tab-pane key="checkpoints" tab="📋 检查点">
                 <TaskCheckpointPanel :task-id="taskId" :current-user-id="currentUserId" />
               </a-tab-pane>
@@ -140,6 +170,13 @@
               </a-tab-pane>
               <a-tab-pane key="issues" tab="⚠️ 问题">
                 <TaskIssuesPanel :task-id="taskId" />
+              </a-tab-pane>
+              <a-tab-pane key="messages" tab="💬 消息记录">
+                <TaskMessagesPanel
+                  :task-id="taskId"
+                  :roles="task.roles || []"
+                  @open="onOpenConvFromList"
+                />
               </a-tab-pane>
             </a-tabs>
           </a-card>
@@ -183,6 +220,24 @@
         </div>
       </a-spin>
     </a-drawer>
+
+    <!-- V3.9 验收驳回弹窗 -->
+    <a-modal
+      v-model:open="rejectAcceptanceModalVisible"
+      title="验收驳回"
+      @ok="handleRejectAcceptanceConfirm"
+      :ok-button-props="{ disabled: rejectAcceptanceReason.trim().length < 5 }"
+      ok-text="确认驳回" cancel-text="取消"
+    >
+      <div style="margin-bottom: 8px; color: #666; font-size: 12px;">
+        请填写驳回原因（5-500字），任务将回到进行中状态
+      </div>
+      <a-textarea
+        v-model:value="rejectAcceptanceReason"
+        placeholder="例如：交付物不符合验收标准，请补充XX内容..."
+        :maxlength="500" :rows="4" show-count
+      />
+    </a-modal>
   </div>
 </template>
 
@@ -193,15 +248,18 @@ import dayjs from 'dayjs'
 import { message } from 'ant-design-vue'
 import { TeamOutlined } from '@ant-design/icons-vue'
 import { taskApi } from '@/api/task'
+import { financeApi } from '@/api/finance'
 import { recommendApi } from '@/api/recommendation'
 import request from '@/api/request'
 import DeliverableReview from '@/components/DeliverableReview.vue'
 import ImChatPanel from '@/components/ImChatPanel.vue'
+import TaskMessagesPanel from '@/components/TaskMessagesPanel.vue'
 import TaskCheckpointPanel from '@/components/task/TaskCheckpointPanel.vue'
 import TaskCommentsPanel from '@/components/task/TaskCommentsPanel.vue'
 import TaskIssuesPanel from '@/components/task/TaskIssuesPanel.vue'
 import TaskProgressLogPanel from '@/components/task/TaskProgressLogPanel.vue'
 import DeliverableVersionBrowser from '@/components/task/DeliverableVersionBrowser.vue'
+import TaskExecutionNodes from '@/components/task/TaskExecutionNodes.vue'
 
 const route = useRoute()
 const taskId = Number(route.params.id)
@@ -213,7 +271,7 @@ const applications = ref<any[]>([])
 const pendingApplications = computed(() => applications.value.filter((a: any) => a.status === 'pending'))
 
 // V3.7: 当前用户与 Tab
-const v37Tab = ref('checkpoints')
+const v37Tab = ref('execution')
 const currentUserId = computed<number | undefined>(() => {
   try {
     const u = JSON.parse(localStorage.getItem('wc_user') || '{}')
@@ -236,10 +294,12 @@ const acceptanceColor = (a: string) =>
 const statusColor: Record<string, string> = {
   draft: 'default', pending_review: 'processing', published: 'blue',
   in_progress: 'green', completed: 'green', cancelled: 'red',
+  pending_payment: 'gold', reviewing: 'orange',
 }
 const statusLabel: Record<string, string> = {
   draft: '草稿', pending_review: '审核中', published: '已发布',
   in_progress: '执行中', completed: '已完成', cancelled: '已取消',
+  pending_payment: '待付款', reviewing: '验收中',
 }
 const assignStatusColor: Record<string, string> = {
   invited: 'orange', accepted: 'green', rejected: 'red', expired: 'default', completed: 'purple',
@@ -273,8 +333,68 @@ async function handleCancel() {
   load()
 }
 
+// ── V3.9: 验收/付款 ──
+const rejectAcceptanceModalVisible = ref(false)
+const rejectAcceptanceReason = ref('')
+
+async function handleAcceptTask() {
+  try {
+    await taskApi.acceptTask(taskId)
+    message.success('验收确认，任务进入待付款阶段')
+    load()
+  } catch (e: any) {
+    message.error(e?.message || '验收确认失败')
+  }
+}
+
+function showRejectAcceptanceModal() {
+  rejectAcceptanceReason.value = ''
+  rejectAcceptanceModalVisible.value = true
+}
+
+async function handleRejectAcceptanceConfirm() {
+  if (rejectAcceptanceReason.value.trim().length < 5) {
+    message.warning('驳回原因至少5字')
+    return
+  }
+  try {
+    await taskApi.rejectAcceptance(taskId, rejectAcceptanceReason.value.trim())
+    message.success('验收已驳回，任务回到进行中')
+    rejectAcceptanceModalVisible.value = false
+    load()
+  } catch (e: any) {
+    message.error(e?.message || '驳回失败')
+  }
+}
+
+async function handlePayTask() {
+  try {
+    await financeApi.payForTask(taskId)
+    message.success('付款成功，任务已完成 ✅')
+    load()
+  } catch (e: any) {
+    message.error(e?.message || '付款失败')
+  }
+}
+
 function openImPanel(assignment: any, role: any) {
   activeConversation.value = { assignment, role, taskId }
+}
+
+// 从「消息记录」列表点击某条会话 → 左栈对话面板
+// payload: { workerId, assignment?, role? }
+function onOpenConvFromList(payload: { workerId: number; assignment?: any; role?: any }) {
+  // 优先使用传入的完整 assignment；否则从 task.roles 里找
+  let assignment = payload.assignment
+  let role = payload.role
+  if (!assignment && task.value?.roles) {
+    for (const r of task.value.roles) {
+      const a = (r.assignments || []).find((x: any) => Number(x.workerId) === Number(payload.workerId))
+      if (a) { assignment = a; role = r; break }
+    }
+  }
+  if (!assignment) assignment = { workerId: payload.workerId, workerName: `零工#${payload.workerId}` }
+  activeConversation.value = { assignment, role: role || null, taskId }
 }
 
 // V3.4: 申请管理
@@ -398,7 +518,7 @@ onMounted(load)
 }
 .worker-name {
   min-width: 80px;
-  font-size: 13px;
+  font-size: 12px;
 }
 .progress-bar {
   flex: 1;
@@ -409,7 +529,7 @@ onMounted(load)
   margin-right: 8px;
 }
 .desc-text {
-  font-size: 13px;
+  font-size: 12px;
   color: #666;
   line-height: 1.6;
 }
@@ -450,7 +570,7 @@ onMounted(load)
   margin-top: 12px; padding: 10px 12px; background: #f6ffed;
   border-left: 3px solid #52c41a; border-radius: 0 4px 4px 0;
 }
-.acceptance-title { font-weight: 600; color: #389e0d; margin-bottom: 4px; font-size: 13px; }
-.acceptance-text { font-size: 13px; color: #333; line-height: 1.6; white-space: pre-wrap; }
+.acceptance-title { font-weight: 600; color: #389e0d; margin-bottom: 4px; font-size: 12px; }
+.acceptance-text { font-size: 12px; color: #333; line-height: 1.6; white-space: pre-wrap; }
 .v37-tabs-card { margin-top: 12px; }
 </style>

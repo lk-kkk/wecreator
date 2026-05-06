@@ -102,6 +102,68 @@ export class CreateCustomRoleDto {
   commonSkills?: string[];
 }
 
+export class CreateCheckpointTemplateDto {
+  @ApiProperty({ description: '检查点名称', maxLength: 50 })
+  @IsString()
+  @MaxLength(50)
+  name: string;
+
+  @ApiPropertyOptional({ description: '进度百分比(5-95)', default: 50 })
+  @IsOptional()
+  @Type(() => Number)
+  progress?: number;
+
+  @ApiPropertyOptional({ description: '交付物描述', maxLength: 300 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  deliverableDesc?: string;
+
+  @ApiPropertyOptional({
+    description: '允许的文件格式',
+    type: [String],
+    example: ['pdf', 'docx', 'image'],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  allowedFormats?: string[];
+
+  @ApiPropertyOptional({ description: '分类', maxLength: 30 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  category?: string;
+
+  @ApiPropertyOptional({ description: '排序', default: 0 })
+  @IsOptional()
+  @Type(() => Number)
+  sortOrder?: number;
+}
+
+export class CreateCustomSkillDto {
+  @ApiProperty({ description: '技能名称', maxLength: 50 })
+  @IsString()
+  @MaxLength(50)
+  name: string;
+
+  @ApiPropertyOptional({ description: '分类', maxLength: 30 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  category?: string;
+
+  @ApiPropertyOptional({ description: '技能描述', maxLength: 200 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  description?: string;
+
+  @ApiPropertyOptional({ description: '是否热门', default: false })
+  @IsOptional()
+  hot?: boolean;
+}
+
 // ── Service ──────────────────────────────────────────────────────────
 @Injectable()
 export class TaskTemplateService {
@@ -383,6 +445,280 @@ export class TaskTemplateService {
       commonSkills: r.commonSkills ?? [],
       isActive: r.isActive,
       createdAt: r.createdAt,
+    };
+  }
+
+  // ================================================================
+  // 企业检查点模板 CRUD
+  // ================================================================
+  private readonly MAX_CHECKPOINT_TEMPLATES = 50;
+
+  async listCheckpointTemplates(companyId: number) {
+    const items = await this.prisma.companyCheckpointTemplate.findMany({
+      where: {
+        companyId: BigInt(companyId),
+        isActive: true,
+      },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+    });
+    return items.map((t) => this._formatCheckpoint(t));
+  }
+
+  async createCheckpointTemplate(
+    companyId: number,
+    dto: CreateCheckpointTemplateDto,
+  ) {
+    const count = await this.prisma.companyCheckpointTemplate.count({
+      where: { companyId: BigInt(companyId), isActive: true },
+    });
+    if (count >= this.MAX_CHECKPOINT_TEMPLATES) {
+      throw new BadRequestException(
+        `检查点模板已达上限（${this.MAX_CHECKPOINT_TEMPLATES}个）`,
+      );
+    }
+
+    // 验证进度范围
+    const progress = dto.progress ?? 50;
+    if (progress < 5 || progress > 95) {
+      throw new BadRequestException('进度必须在5-95之间');
+    }
+
+    const template = await this.prisma.companyCheckpointTemplate.create({
+      data: {
+        companyId: BigInt(companyId),
+        name: dto.name,
+        progress,
+        deliverableDesc: dto.deliverableDesc,
+        allowedFormats: dto.allowedFormats ?? undefined,
+        category: dto.category,
+        sortOrder: dto.sortOrder ?? 0,
+      },
+    });
+    return this._formatCheckpoint(template);
+  }
+
+  async updateCheckpointTemplate(
+    companyId: number,
+    templateId: number,
+    dto: Partial<CreateCheckpointTemplateDto>,
+  ) {
+    const template = await this.prisma.companyCheckpointTemplate.findFirst({
+      where: {
+        id: BigInt(templateId),
+        companyId: BigInt(companyId),
+        isActive: true,
+      },
+    });
+    if (!template) throw new NotFoundException('检查点模板不存在');
+
+    // 验证进度范围
+    if (dto.progress !== undefined && (dto.progress < 5 || dto.progress > 95)) {
+      throw new BadRequestException('进度必须在5-95之间');
+    }
+
+    const updated = await this.prisma.companyCheckpointTemplate.update({
+      where: { id: BigInt(templateId) },
+      data: {
+        ...(dto.name !== undefined ? { name: dto.name } : {}),
+        ...(dto.progress !== undefined ? { progress: dto.progress } : {}),
+        ...(dto.deliverableDesc !== undefined
+          ? { deliverableDesc: dto.deliverableDesc }
+          : {}),
+        ...(dto.allowedFormats !== undefined
+          ? { allowedFormats: dto.allowedFormats }
+          : {}),
+        ...(dto.category !== undefined ? { category: dto.category } : {}),
+        ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
+      },
+    });
+    return this._formatCheckpoint(updated);
+  }
+
+  async deleteCheckpointTemplate(companyId: number, templateId: number) {
+    const template = await this.prisma.companyCheckpointTemplate.findFirst({
+      where: {
+        id: BigInt(templateId),
+        companyId: BigInt(companyId),
+      },
+    });
+    if (!template) throw new NotFoundException('检查点模板不存在');
+
+    // 软删除
+    await this.prisma.companyCheckpointTemplate.update({
+      where: { id: BigInt(templateId) },
+      data: { isActive: false },
+    });
+    return { success: true };
+  }
+
+  async reorderCheckpointTemplates(
+    companyId: number,
+    templateIds: number[],
+  ) {
+    // 批量更新排序
+    await Promise.all(
+      templateIds.map((id, index) =>
+        this.prisma.companyCheckpointTemplate.updateMany({
+          where: {
+            id: BigInt(id),
+            companyId: BigInt(companyId),
+          },
+          data: { sortOrder: index },
+        }),
+      ),
+    );
+    return { success: true };
+  }
+
+  private _formatCheckpoint(t: any) {
+    return {
+      templateId: Number(t.id),
+      name: t.name,
+      progress: t.progress,
+      deliverableDesc: t.deliverableDesc,
+      allowedFormats: t.allowedFormats ?? [],
+      category: t.category,
+      sortOrder: t.sortOrder,
+      isActive: t.isActive,
+      createdAt: t.createdAt,
+    };
+  }
+
+  // ================================================================
+  // 企业自定义技能 CRUD
+  // ================================================================
+  private readonly MAX_CUSTOM_SKILLS = 200;
+
+  async listCustomSkills(companyId: number) {
+    const items = await this.prisma.companyCustomSkill.findMany({
+      where: {
+        companyId: BigInt(companyId),
+        isActive: true,
+      },
+      orderBy: [{ category: 'asc' }, { createdAt: 'desc' }],
+    });
+    return items.map((s) => this._formatSkill(s));
+  }
+
+  async createCustomSkill(companyId: number, dto: CreateCustomSkillDto) {
+    const count = await this.prisma.companyCustomSkill.count({
+      where: { companyId: BigInt(companyId), isActive: true },
+    });
+    if (count >= this.MAX_CUSTOM_SKILLS) {
+      throw new BadRequestException(
+        `自定义技能已达上限（${this.MAX_CUSTOM_SKILLS}个）`,
+      );
+    }
+
+    // 检查同名
+    const exists = await this.prisma.companyCustomSkill.findUnique({
+      where: {
+        companyId_name: {
+          companyId: BigInt(companyId),
+          name: dto.name,
+        },
+      },
+    });
+    if (exists) {
+      if (!exists.isActive) {
+        // 恢复已软删除的
+        const restored = await this.prisma.companyCustomSkill.update({
+          where: { id: exists.id },
+          data: { isActive: true, category: dto.category, description: dto.description, hot: dto.hot ?? false },
+        });
+        return this._formatSkill(restored);
+      }
+      throw new BadRequestException('同名技能已存在');
+    }
+
+    const skill = await this.prisma.companyCustomSkill.create({
+      data: {
+        companyId: BigInt(companyId),
+        name: dto.name,
+        category: dto.category,
+        description: dto.description,
+        hot: dto.hot ?? false,
+      },
+    });
+    return this._formatSkill(skill);
+  }
+
+  async updateCustomSkill(
+    companyId: number,
+    skillId: number,
+    dto: Partial<CreateCustomSkillDto>,
+  ) {
+    const skill = await this.prisma.companyCustomSkill.findFirst({
+      where: {
+        id: BigInt(skillId),
+        companyId: BigInt(companyId),
+        isActive: true,
+      },
+    });
+    if (!skill) throw new NotFoundException('技能不存在');
+
+    if (dto.name && dto.name !== skill.name) {
+      const conflict = await this.prisma.companyCustomSkill.findUnique({
+        where: {
+          companyId_name: {
+            companyId: BigInt(companyId),
+            name: dto.name,
+          },
+        },
+      });
+      if (conflict) throw new BadRequestException('同名技能已存在');
+    }
+
+    const updated = await this.prisma.companyCustomSkill.update({
+      where: { id: BigInt(skillId) },
+      data: {
+        ...(dto.name !== undefined ? { name: dto.name } : {}),
+        ...(dto.category !== undefined ? { category: dto.category } : {}),
+        ...(dto.description !== undefined ? { description: dto.description } : {}),
+        ...(dto.hot !== undefined ? { hot: dto.hot } : {}),
+      },
+    });
+    return this._formatSkill(updated);
+  }
+
+  async deleteCustomSkill(companyId: number, skillId: number) {
+    const skill = await this.prisma.companyCustomSkill.findFirst({
+      where: { id: BigInt(skillId), companyId: BigInt(companyId) },
+    });
+    if (!skill) throw new NotFoundException('技能不存在');
+
+    await this.prisma.companyCustomSkill.update({
+      where: { id: BigInt(skillId) },
+      data: { isActive: false },
+    });
+    return { success: true };
+  }
+
+  async batchCreateCustomSkills(
+    companyId: number,
+    skills: CreateCustomSkillDto[],
+  ) {
+    const results: any[] = [];
+    for (const dto of skills) {
+      try {
+        const skill = await this.createCustomSkill(companyId, dto);
+        results.push(skill);
+      } catch {
+        // 跳过重复项
+      }
+    }
+    return { added: results.length, skills: results };
+  }
+
+  private _formatSkill(s: any) {
+    return {
+      skillId: Number(s.id),
+      name: s.name,
+      category: s.category,
+      description: s.description,
+      hot: s.hot,
+      isActive: s.isActive,
+      createdAt: s.createdAt,
     };
   }
 }

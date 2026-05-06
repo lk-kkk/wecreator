@@ -1,0 +1,228 @@
+/**
+ * WeCreator — Material Design 3 主题
+ * 
+ * 设计规范：
+ * - Material Design 3 (Material You) 色彩系统
+ * - 动态色彩 + 表面层级 (Surface tones)
+ * - 状态层 (State layers)
+ * - 高程系统 (Elevation)
+ * - 圆角规范 (Shape scale)
+ * 
+ * 参考：https://m3.material.io/
+ */
+
+:root,
+:root[data-theme="light"] {
+  /* ==================== Material 3 色彩系统 ==================== */
+  
+  /* Primary 主色 —— 蓝色调 */
+  --md-sys-color-primary: #1B6EF3;
+  --md-sys-color-on-primary: #FFFFFF;
+  --md-sys-color-primary-container: #D8E2FF;
+  --md-sys-color-on-primary-container: #001A41;
+  --md-sys-color-primary-hover: #1560D4;
+  --md-sys-color-primary-pressed: #0F4FB3;
+  
+  /* Secondary 次要色 */
+  --md-sys-color-secondary: #565E71;
+  --md-sys-color-on-secondary: #FFFFFF;
+  --md-sys-color-secondary-container: #DAE2F9;
+  --md-sys-color-on-secondary-container: #131C2B;
+  
+  /* Tertiary 第三色 */
+  --md-sys-color-tertiary: #705575;
+  --md-sys-color-on-tertiary: #FFFFFF;
+  --md-sys-color-tertiary-container: #FAD8FD;
+  --md-sys-color-on-tertiary-container: #28132F;
+  
+  /* Error 错误色 */
+  --md-sys-color-error: #BA1A1A;
+  --md-sys-color-on-error: #FFFFFF;
+  --md-sys-color-error-container: #FFDAD6;
+  --md-sys-color-on-error-container: #410002;
+  
+  /* Surface 表面色 —— M3 核心 */
+  --md-sys-color-surface: #FDFBFF;
+  --md-sys-color-on-surface: #1B1B1F;
+  --md-sys-color-surface-variant: #E1E2EC;
+  --md-sys-color-on-surface-variant: #44474F;
+  --md-sys-color-surface-container-lowest: #FFFFFF;
+  --md-sys-color-surface-container-low: #F6F3F7;
+  --md-sys-color-surface-container: #F0EDF1;
+  --md-sys-color-surface-container-high: #EAE7EC;
+  --md-sys-color-surface-container-highest: #E4E1E6;
+  
+  /* Outline 轮廓 */
+  --md-sys-color-outline: #74777F;
+  --md-sys-color-outline-variant: #C4C6D0;
+  
+  /* Inverse */
+  --md-sys-color-inverse-surface: #303034;
+  --md-sys-color-inverse-on-surface: #F2F0F4;
+  --md-sys-color-inverse-primary: #ADC6FF;
+  
+  /* Scrim */
+  --md-sys-color-scrim: #000000;
+  --md-sys-color-shadow: #000000;
+
+  /* ==================== 功能色 ==================== */
+  --color-success: #1E8E3E;
+  --color-success-container: #C4EED0;
+  --color-warning: #E37400;
+  --color-warning-container: #FFDDB3;
+  --color-error: #BA1A1A;
+  --color-error-container: #FFDAD6;
+  --color-info: #1B6EF3;
+  --color-info-container: #D8E2FF;
+
+  /* ==================== 映射到项目变量（兼容层） ==================== */
+  --color-bg-page:        var(--md-sys-color-surface);
+  --color-bg-container:   var(--md-sys-color-surface-container-lowest);
+  --color-bg-sidebar:     var(--md-sys-color-surface-container-low);
+  --color-bg-header:      var(--md-sys-color-surface);
+  --color-bg-card:        var(--md-sys-color-surface-container-lowest);
+  --color-bg-card-2:      var(--md-sys-color-surface-container-low);
+  --color-bg-hover:       rgba(27, 110, 243, 0.08);
+  --color-bg-active:      rgba(27, 110, 243, 0.12);
+  --color-bg-subtle:      var(--md-sys-color-surface-container-low);
+  --color-bg-elevated:    var(--md-sys-color-surface-container-low);
+  --color-bg-mask:        rgba(0, 0, 0, 0.32);
+
+  /* 主色 */
+  --color-primary:          var(--md-sys-color-primary);
+  --color-primary-hover:    var(--md-sys-color-primary-hover);
+  --color-primary-active:   var(--md-sys-color-primary-pressed);
+  --color-primary-light:    #5B93F5;
+  --color-primary-lighter:  #A3C4FF;
+  --color-primary-bg:       var(--md-sys-color-primary-container);
+  --color-primary-bg-soft:  #EDF2FF;
+  --color-primary-border:   #B4CBFF;
+
+  /* 文字 */
+  --color-text-primary:     var(--md-sys-color-on-surface);
+  --color-text-secondary:   var(--md-sys-color-on-surface-variant);
+  --color-text-tertiary:    var(--md-sys-color-outline);
+  --color-text-disabled:    rgba(27, 27, 31, 0.38);
+  --color-text-placeholder: rgba(27, 27, 31, 0.38);
+  --color-text-inverse:     var(--md-sys-color-on-primary);
+
+  /* 边框 */
+  --color-border:           var(--md-sys-color-outline-variant);
+  --color-border-light:     var(--md-sys-color-surface-variant);
+  --color-border-strong:    var(--md-sys-color-outline);
+  --color-border-primary:   var(--md-sys-color-primary);
+
+  /* 任务状态 */
+  --status-draft-fg:      #44474F;
+  --status-draft-bg:      #E4E1E6;
+  --status-matching-fg:   #1B6EF3;
+  --status-matching-bg:   #D8E2FF;
+  --status-progress-fg:   #006C4C;
+  --status-progress-bg:   #C4EED0;
+  --status-review-fg:     #E37400;
+  --status-review-bg:     #FFDDB3;
+  --status-completed-fg:  #1E8E3E;
+  --status-completed-bg:  #C4EED0;
+  --status-closed-fg:     #74777F;
+  --status-closed-bg:     #F0EDF1;
+
+  /* ==================== M3 高程系统 (Elevation) ==================== */
+  /* M3 使用 surface tint + shadow 组合 */
+  --md-sys-elevation-0: none;
+  --md-sys-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15);
+  --md-sys-elevation-2: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px 2px rgba(0, 0, 0, 0.15);
+  --md-sys-elevation-3: 0 4px 8px 3px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --md-sys-elevation-4: 0 6px 10px 4px rgba(0, 0, 0, 0.15), 0 2px 3px rgba(0, 0, 0, 0.3);
+  --md-sys-elevation-5: 0 8px 12px 6px rgba(0, 0, 0, 0.15), 0 4px 4px rgba(0, 0, 0, 0.3);
+
+  /* 兼容旧变量 */
+  --shadow-xs: var(--md-sys-elevation-0);
+  --shadow-sm: var(--md-sys-elevation-1);
+  --shadow-md: var(--md-sys-elevation-2);
+  --shadow-lg: var(--md-sys-elevation-3);
+  --shadow-xl: var(--md-sys-elevation-4);
+  --shadow-focus: 0 0 0 3px rgba(27, 110, 243, 0.20);
+  --shadow-focus-primary: 0 0 0 3px rgba(27, 110, 243, 0.20);
+
+  /* ==================== M3 Shape Scale (圆角) ==================== */
+  --md-sys-shape-none: 0px;
+  --md-sys-shape-extra-small: 4px;
+  --md-sys-shape-small: 8px;
+  --md-sys-shape-medium: 12px;
+  --md-sys-shape-large: 16px;
+  --md-sys-shape-extra-large: 28px;
+  --md-sys-shape-full: 9999px;
+
+  /* 兼容旧变量 */
+  --radius-xs: var(--md-sys-shape-extra-small);
+  --radius-sm: var(--md-sys-shape-small);
+  --radius-md: var(--md-sys-shape-medium);
+  --radius-lg: var(--md-sys-shape-large);
+  --radius-xl: var(--md-sys-shape-extra-large);
+  --radius-full: var(--md-sys-shape-full);
+
+  /* ==================== M3 Typography Scale ==================== */
+  --font-family-base: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-family-mono: 'Roboto Mono', 'JetBrains Mono', 'Fira Code', monospace;
+
+  --md-sys-typescale-display-large: 57px;
+  --md-sys-typescale-display-medium: 45px;
+  --md-sys-typescale-display-small: 36px;
+  --md-sys-typescale-headline-large: 32px;
+  --md-sys-typescale-headline-medium: 28px;
+  --md-sys-typescale-headline-small: 24px;
+  --md-sys-typescale-title-large: 22px;
+  --md-sys-typescale-title-medium: 16px;
+  --md-sys-typescale-title-small: 14px;
+  --md-sys-typescale-body-large: 16px;
+  --md-sys-typescale-body-medium: 14px;
+  --md-sys-typescale-body-small: 12px;
+  --md-sys-typescale-label-large: 14px;
+  --md-sys-typescale-label-medium: 12px;
+  --md-sys-typescale-label-small: 11px;
+
+  /* ==================== 布局尺寸 ==================== */
+  --layout-header-height: 64px;
+  --layout-sider-width: 256px;
+  --layout-sider-collapsed-width: 72px;
+
+  /* ==================== M3 Motion ==================== */
+  --md-sys-motion-duration-short1: 50ms;
+  --md-sys-motion-duration-short2: 100ms;
+  --md-sys-motion-duration-short3: 150ms;
+  --md-sys-motion-duration-short4: 200ms;
+  --md-sys-motion-duration-medium1: 250ms;
+  --md-sys-motion-duration-medium2: 300ms;
+  --md-sys-motion-duration-medium3: 350ms;
+  --md-sys-motion-duration-medium4: 400ms;
+  --md-sys-motion-duration-long1: 450ms;
+  --md-sys-motion-duration-long2: 500ms;
+  --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --md-sys-motion-easing-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+
+  /* 兼容旧变量 */
+  --duration-fast: var(--md-sys-motion-duration-short3);
+  --duration-normal: var(--md-sys-motion-duration-medium1);
+  --duration-slow: var(--md-sys-motion-duration-medium3);
+  --ease-in-out: var(--md-sys-motion-easing-standard);
+  --ease-out: var(--md-sys-motion-easing-emphasized-decelerate);
+  --ease-in: var(--md-sys-motion-easing-emphasized-accelerate);
+
+  /* ==================== M3 State Layers ==================== */
+  --md-sys-state-hover-opacity: 0.08;
+  --md-sys-state-focus-opacity: 0.12;
+  --md-sys-state-pressed-opacity: 0.12;
+  --md-sys-state-dragged-opacity: 0.16;
+
+  /* ==================== 兼容旧变量（毛玻璃等） ==================== */
+  --vibrancy-bg: transparent;
+  --vibrancy-filter: none;
+}
+
+/* ==================== 暗色主题占位 ==================== */
+:root[data-theme="dark"] {
+  --color-bg-page: var(--md-sys-color-surface);
+  --color-text-primary: var(--md-sys-color-on-surface);
+}

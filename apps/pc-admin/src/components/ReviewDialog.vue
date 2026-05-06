@@ -172,7 +172,7 @@ function handleCancel() {
 .dimension-header {
   display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
 }
-.dim-label { font-weight: 600; font-size: 14px; min-width: 64px; }
+.dim-label { font-weight: 600; font-size: 12px; min-width: 64px; }
 .dim-tip   { font-size: 12px; color: #999; flex: 1; }
 .dim-score { font-size: 12px; font-weight: 600; }
 .score-good { color: var(--color-success); }
@@ -189,5 +189,5 @@ function handleCancel() {
 
 .comment-area { margin-top: 16px; }
 .quick-tags   { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.tag-label    { font-size: 13px; color: #666; margin-right: 4px; }
+.tag-label    { font-size: 12px; color: #666; margin-right: 4px; }
 </style>

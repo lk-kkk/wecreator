@@ -1,0 +1,133 @@
+/**
+ * WeCreator — 现代简约亮色主题
+ * 
+ * 设计规范：
+ * - 纯白背景，现代简约风格
+ * - 蓝色渐变主色调（按钮/高亮）
+ * - 轻柔阴影 + 大圆角
+ * - 高对比度文字（WCAG AA+）
+ */
+
+:root,
+:root[data-theme="light"] {
+  /* ==================== 背景色系 ==================== */
+  --color-bg-page:        #FFFFFF;    /* 主背景：纯白 */
+  --color-bg-container:   #FFFFFF;    /* 容器背景 */
+  --color-bg-sidebar:     #FFFFFF;    /* 侧边栏：白色 */
+  --color-bg-header:      #FFFFFF;    /* 顶栏：白色 */
+  --color-bg-card:        #FFFFFF;    /* 卡片：白色 */
+  --color-bg-card-2:      #FAFBFC;    /* 次级卡片 */
+  --color-bg-hover:       #F5F7FA;    /* 悬停态：浅灰蓝 */
+  --color-bg-active:      #EEF2F8;    /* 激活态：更浅蓝 */
+  --color-bg-subtle:      #FAFBFC;    /* 弱化背景区 */
+  --color-bg-elevated:    #FFFFFF;    /* 悬浮层（popover/tooltip） */
+  --color-bg-mask:        rgba(0, 0, 0, 0.45);
+
+  /* ==================== 主色渐变（按钮/高亮） ==================== */
+  --color-primary:          #3D7EFF;    /* 主色纯色 */
+  --color-primary-hover:    #2B6BE5;    /* 悬停 */
+  --color-primary-active:   #1E5AD1;    /* 激活 */
+  --color-primary-light:    #6B9FFF;    /* 浅色 */
+  --color-primary-lighter:  #A3C4FF;    /* 更浅 */
+  --color-primary-bg:       #E8EFFE;    /* 浅色背景 */
+  --color-primary-bg-soft:  #F0F4FF;    /* 更浅背景 */
+  --color-primary-border:   #C5D7FD;    /* 浅色边框 */
+
+  /* 渐变定义 */
+  --gradient-primary: linear-gradient(135deg, #4E8CFF 0%, #2B6BE5 100%);
+  --gradient-primary-hover: linear-gradient(135deg, #5B97FF 0%, #3578EF 100%);
+
+  /* ==================== 文字色系 ==================== */
+  --color-text-primary:     #1D2939;    /* 主文字：深灰黑 */
+  --color-text-secondary:   #475467;    /* 次文字：中灰 */
+  --color-text-tertiary:    #667085;    /* 辅助文字 */
+  --color-text-disabled:    #98A2B3;    /* 禁用 */
+  --color-text-placeholder: #98A2B3;    /* 占位符 */
+  --color-text-inverse:     #FFFFFF;    /* 反色（按钮上文字） */
+
+  /* ==================== 边框 ==================== */
+  --color-border:           #EAECF0;    /* 默认边框：浅灰 */
+  --color-border-light:     #F2F4F7;    /* 更浅 */
+  --color-border-strong:    #D0D5DD;    /* 较强 */
+  --color-border-primary:   #4E8CFF;    /* 主色边框（focus） */
+
+  /* ==================== 功能色 ==================== */
+  --color-success:      #12B76A;
+  --color-success-bg:   #ECFDF3;
+  --color-success-border: #6CE9A6;
+  --color-warning:      #F79009;
+  --color-warning-bg:   #FFFAEB;
+  --color-warning-border: #FEC84B;
+  --color-error:        #F04438;
+  --color-error-bg:     #FEF3F2;
+  --color-error-border: #FDA29B;
+  --color-info:         #4E8CFF;
+  --color-info-bg:      #E8EFFE;
+  --color-info-border:  #B2CCFF;
+
+  /* 活力橙（辅助色） */
+  --color-accent:       #FF9500;
+  --color-accent-light: #FFB340;
+  --color-accent-bg:    #FFF2E0;
+
+  /* 青色（辅助色） */
+  --color-teal:         #14B8A6;
+  --color-teal-bg:      #E0F3F7;
+
+  /* 紫色（辅助色） */
+  --color-purple:       #9B51E0;
+  --color-purple-bg:    #F3E5FA;
+
+  /* ==================== 任务状态 ==================== */
+  --status-draft-fg:      #667085;
+  --status-draft-bg:      #F2F4F7;
+  --status-matching-fg:   #3D7EFF;
+  --status-matching-bg:   #E8EFFE;
+  --status-progress-fg:   #14B8A6;
+  --status-progress-bg:   #E0F3F7;
+  --status-review-fg:     #F79009;
+  --status-review-bg:     #FFFAEB;
+  --status-completed-fg:  #12B76A;
+  --status-completed-bg:  #ECFDF3;
+  --status-closed-fg:     #98A2B3;
+  --status-closed-bg:     #F9FAFB;
+
+  /* ==================== 阴影（轻柔） ==================== */
+  --shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-sm: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-md: 0 4px 8px -2px rgba(16, 24, 40, 0.06), 0 2px 4px -2px rgba(16, 24, 40, 0.04);
+  --shadow-lg: 0 12px 16px -4px rgba(16, 24, 40, 0.08), 0 4px 6px -2px rgba(16, 24, 40, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(16, 24, 40, 0.10), 0 10px 10px -5px rgba(16, 24, 40, 0.04);
+  --shadow-focus: 0 0 0 4px rgba(78, 140, 255, 0.18);
+  --shadow-focus-primary: 0 0 0 4px rgba(78, 140, 255, 0.18);
+
+  /* ==================== 圆角 ==================== */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* ==================== 布局尺寸 ==================== */
+  --layout-header-height: 56px;
+  --layout-sider-width: 220px;
+  --layout-sider-collapsed-width: 64px;
+
+  /* ==================== 动画 ==================== */
+  --duration-fast: 0.15s;
+  --duration-normal: 0.25s;
+  --duration-slow: 0.35s;
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.0, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  /* ==================== 毛玻璃效果（可选） ==================== */
+  --vibrancy-filter: blur(20px) saturate(180%);
+}
+
+/* ==================== 暗色主题（已移除，保留占位避免报错） ==================== */
+:root[data-theme="dark"] {
+  /* 如果意外触发 dark，回退到 light */
+  --color-bg-page: #FFFFFF;
+  --color-text-primary: #1D2939;
+}

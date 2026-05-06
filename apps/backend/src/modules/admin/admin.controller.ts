@@ -16,7 +16,7 @@ import type { CurrentUserPayload } from '../auth/decorators/current-user.decorat
 import { SubaccountService, CreateSubaccountDto, UpdateSubaccountDto } from '../auth/subaccount.service';
 import { DashboardService }        from '../task/dashboard.service';
 import { InvoiceService, ApplyInvoiceDto, IssueInvoiceDto, RejectInvoiceDto } from '../finance/invoice.service';
-import { TaskTemplateService, CreateTemplateDto, CreateFromTemplateDto, CreateCustomRoleDto } from '../task/task-template.service';
+import { TaskTemplateService, CreateTemplateDto, CreateFromTemplateDto, CreateCustomRoleDto, CreateCheckpointTemplateDto, CreateCustomSkillDto } from '../task/task-template.service';
 
 // ═══════════════════════════════════════════════════════════════════
 // SubaccountController — /admin/subaccounts
@@ -94,6 +94,19 @@ export class DashboardController {
   company(@CurrentUser() user: CurrentUserPayload) {
     if (user.userType !== 'company') throw new ForbiddenException('仅企业账号可访问');
     return this.svc.getCompanyDashboard(user.companyId!);
+  }
+
+  @Get('pending-applications')
+  @ApiOperation({ summary: '工作台待审批报名列表' })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'pageSize', required: false })
+  pendingApplications(
+    @CurrentUser() user: CurrentUserPayload,
+    @Query('page') page = 1,
+    @Query('pageSize') pageSize = 10,
+  ) {
+    if (user.userType !== 'company') throw new ForbiddenException('仅企业账号可访问');
+    return this.svc.getPendingApplications(user.companyId!, Number(page), Number(pageSize));
   }
 
   @Get('platform')
@@ -226,5 +239,97 @@ export class CustomRoleController {
   @ApiOperation({ summary: '删除自定义角色' })
   remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: CurrentUserPayload) {
     return this.svc.deleteCustomRole(user.companyId!, id);
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════
+// CheckpointTemplateController — /checkpoint-templates
+// ═════════════════════════════════════════════════════════════════
+@ApiTags('checkpoint-templates')
+@Controller('checkpoint-templates')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth('access-token')
+export class CheckpointTemplateController {
+  constructor(private readonly svc: TaskTemplateService) {}
+
+  @Get()
+  @ApiOperation({ summary: '企业检查点模板列表' })
+  list(@CurrentUser() user: CurrentUserPayload) {
+    return this.svc.listCheckpointTemplates(user.companyId!);
+  }
+
+  @Post()
+  @ApiOperation({ summary: '创建检查点模板（上限5^0个）' })
+  create(@CurrentUser() user: CurrentUserPayload, @Body() dto: CreateCheckpointTemplateDto) {
+    return this.svc.createCheckpointTemplate(user.companyId!, dto);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: '修改检查点模板' })
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: CurrentUserPayload,
+    @Body() dto: Partial<CreateCheckpointTemplateDto>,
+  ) {
+    return this.svc.updateCheckpointTemplate(user.companyId!, id, dto);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '删除检查点模板' })
+  remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: CurrentUserPayload) {
+    return this.svc.deleteCheckpointTemplate(user.companyId!, id);
+  }
+
+  @Post('reorder')
+  @ApiOperation({ summary: '调整检查点模板排序' })
+  reorder(@CurrentUser() user: CurrentUserPayload, @Body() body: { templateIds: number[] }) {
+    return this.svc.reorderCheckpointTemplates(user.companyId!, body.templateIds);
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════
+// CustomSkillController — /custom-skills
+// ═════════════════════════════════════════════════════════════════
+@ApiTags('custom-skills')
+@Controller('custom-skills')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth('access-token')
+export class CustomSkillController {
+  constructor(private readonly svc: TaskTemplateService) {}
+
+  @Get()
+  @ApiOperation({ summary: '企业自定义技能列表' })
+  list(@CurrentUser() user: CurrentUserPayload) {
+    return this.svc.listCustomSkills(user.companyId!);
+  }
+
+  @Post()
+  @ApiOperation({ summary: '创建自定义技能（上限200个）' })
+  create(@CurrentUser() user: CurrentUserPayload, @Body() dto: CreateCustomSkillDto) {
+    return this.svc.createCustomSkill(user.companyId!, dto);
+  }
+
+  @Post('batch')
+  @ApiOperation({ summary: '批量添加技能（从模板）' })
+  batchCreate(@CurrentUser() user: CurrentUserPayload, @Body() body: { skills: CreateCustomSkillDto[] }) {
+    return this.svc.batchCreateCustomSkills(user.companyId!, body.skills);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: '修改自定义技能' })
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: CurrentUserPayload,
+    @Body() dto: Partial<CreateCustomSkillDto>,
+  ) {
+    return this.svc.updateCustomSkill(user.companyId!, id, dto);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '删除自定义技能' })
+  remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: CurrentUserPayload) {
+    return this.svc.deleteCustomSkill(user.companyId!, id);
   }
 }

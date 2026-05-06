@@ -1,0 +1,626 @@
+/**
+ * WeCreator — Apple Design Details
+ * 在 theme-apple.css 变量基础上叠加 Apple 视觉细节
+ */
+
+/* ========== 全局过渡（主题切换平滑） ========== */
+html,
+body,
+.ant-layout,
+.ant-layout-sider,
+.ant-layout-header,
+.ant-card,
+.ant-modal-content,
+.ant-dropdown-menu,
+.ant-popover-inner,
+.ant-menu-item,
+.ant-input,
+.ant-select-selector,
+.ant-btn {
+  transition:
+    background-color var(--duration-normal) var(--ease-out),
+    border-color var(--duration-normal) var(--ease-out),
+    color var(--duration-normal) var(--ease-out),
+    box-shadow var(--duration-normal) var(--ease-out);
+}
+
+/* ========== 字体替换 ========== */
+html,
+body,
+#app,
+.ant-layout {
+  font-family: var(--font-family-base) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1, "tnum" 1;
+}
+
+code,
+pre,
+.wc-mono {
+  font-family: var(--font-family-mono);
+}
+
+/* ========== 毛玻璃材质 utility ========== */
+.wc-vibrancy {
+  background: var(--vibrancy-bg);
+  backdrop-filter: var(--vibrancy-filter);
+  -webkit-backdrop-filter: var(--vibrancy-filter);
+}
+
+.wc-vibrancy-strong {
+  background: var(--vibrancy-bg);
+  backdrop-filter: saturate(180%) blur(40px);
+  -webkit-backdrop-filter: saturate(180%) blur(40px);
+}
+
+/* Header / Sidebar 默认应用毛玻璃 */
+.ant-layout-header {
+  backdrop-filter: var(--vibrancy-filter) !important;
+  -webkit-backdrop-filter: var(--vibrancy-filter) !important;
+}
+
+.ant-layout-sider {
+  backdrop-filter: var(--vibrancy-filter) !important;
+  -webkit-backdrop-filter: var(--vibrancy-filter) !important;
+}
+
+/* ========== 按钮 Apple 式点击反馈 ========== */
+.ant-btn:not(:disabled):active {
+  transform: scale(0.97) !important;
+  transition-duration: 80ms !important;
+}
+
+.ant-btn-primary:not(:disabled):hover {
+  box-shadow: 0 4px 14px rgba(0, 122, 255, 0.32) !important;
+  transform: translateY(-0.5px);
+}
+
+:root[data-theme="dark"] .ant-btn-primary:not(:disabled):hover {
+  box-shadow: 0 4px 14px rgba(10, 132, 255, 0.40) !important;
+}
+
+/* 大圆角 pill 按钮变体 */
+.ant-btn.wc-pill {
+  border-radius: var(--radius-full) !important;
+  padding-inline: 20px !important;
+}
+
+/* ========== 滚动条 Apple 细长款 ========== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: var(--radius-full);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background 150ms;
+}
+*:hover > ::-webkit-scrollbar-thumb,
+::-webkit-scrollbar:hover::-webkit-scrollbar-thumb {
+  background: rgba(60, 60, 67, 0.28);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(60, 60, 67, 0.50) !important;
+  background-clip: padding-box;
+}
+:root[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+:root[data-theme="dark"] *:hover > ::-webkit-scrollbar-thumb,
+:root[data-theme="dark"] ::-webkit-scrollbar:hover::-webkit-scrollbar-thumb {
+  background: rgba(235, 235, 245, 0.24);
+  background-clip: padding-box;
+}
+:root[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(235, 235, 245, 0.44) !important;
+  background-clip: padding-box;
+}
+
+/* ========== 选中文本 ========== */
+::selection {
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+}
+
+/* ========== 菜单项 Apple 软圆角 + 微缩 ========== */
+.ant-menu-item {
+  border-radius: var(--radius-md) !important;
+  margin-inline: 8px !important;
+  width: calc(100% - 16px) !important;
+}
+
+.ant-menu-item:active {
+  transform: scale(0.98);
+}
+
+/* ========== 卡片大圆角 ========== */
+.ant-card {
+  border-radius: var(--radius-lg) !important;
+}
+
+.ant-modal-content {
+  border-radius: var(--radius-xl) !important;
+}
+
+.ant-dropdown-menu,
+.ant-popover-inner {
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-lg) !important;
+  background: var(--color-bg-elevated) !important;
+  border: 0.5px solid var(--color-border-light) !important;
+}
+
+.ant-tooltip-inner {
+  border-radius: var(--radius-md) !important;
+  backdrop-filter: var(--vibrancy-filter);
+  -webkit-backdrop-filter: var(--vibrancy-filter);
+}
+
+/* ========== 输入类 Apple 圆角 ========== */
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-select-selector,
+.ant-input-number,
+.ant-picker {
+  border-radius: var(--radius-md) !important;
+}
+
+.ant-input:focus,
+.ant-input-affix-wrapper-focused,
+.ant-select-focused .ant-select-selector,
+.ant-picker-focused {
+  box-shadow: var(--shadow-focus-primary) !important;
+}
+
+/* ========== 暗色下表格/卡片背景适配 ========== */
+:root[data-theme="dark"] .ant-layout {
+  background: var(--color-bg-page) !important;
+}
+:root[data-theme="dark"] .ant-layout-content {
+  background: var(--color-bg-page) !important;
+}
+:root[data-theme="dark"] .ant-card,
+:root[data-theme="dark"] .ant-modal-content,
+:root[data-theme="dark"] .ant-drawer-content,
+:root[data-theme="dark"] .ant-notification-notice,
+:root[data-theme="dark"] .ant-message-notice-content {
+  background: var(--color-bg-card) !important;
+}
+
+:root[data-theme="dark"] .ant-table {
+  background: transparent !important;
+  color: var(--color-text-primary) !important;
+}
+:root[data-theme="dark"] .ant-table-thead > tr > th {
+  background: var(--color-bg-card-2) !important;
+  color: var(--color-text-secondary) !important;
+  border-bottom-color: var(--color-border-light) !important;
+}
+:root[data-theme="dark"] .ant-table-tbody > tr > td {
+  background: var(--color-bg-card) !important;
+  color: var(--color-text-primary) !important;
+  border-bottom-color: var(--color-border-light) !important;
+}
+:root[data-theme="dark"] .ant-table-tbody > tr:hover > td {
+  background: var(--color-bg-hover) !important;
+}
+:root[data-theme="dark"] .ant-table-placeholder > td {
+  background: var(--color-bg-card) !important;
+}
+
+:root[data-theme="dark"] .ant-input,
+:root[data-theme="dark"] .ant-input-affix-wrapper,
+:root[data-theme="dark"] .ant-input-number,
+:root[data-theme="dark"] .ant-select-selector,
+:root[data-theme="dark"] .ant-picker {
+  background: var(--color-bg-card-2) !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-text-primary) !important;
+}
+:root[data-theme="dark"] .ant-input::placeholder,
+:root[data-theme="dark"] .ant-input-number-input::placeholder {
+  color: var(--color-text-placeholder) !important;
+}
+:root[data-theme="dark"] .ant-select-selection-placeholder {
+  color: var(--color-text-placeholder) !important;
+}
+:root[data-theme="dark"] .ant-select-arrow,
+:root[data-theme="dark"] .ant-picker-suffix {
+  color: var(--color-text-tertiary) !important;
+}
+
+:root[data-theme="dark"] .ant-btn-default {
+  background: var(--color-bg-card-2) !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-text-primary) !important;
+}
+:root[data-theme="dark"] .ant-btn-default:hover {
+  background: var(--color-bg-hover) !important;
+  border-color: var(--color-primary-border) !important;
+  color: var(--color-primary) !important;
+}
+
+:root[data-theme="dark"] .ant-tabs-tab {
+  color: var(--color-text-secondary) !important;
+}
+:root[data-theme="dark"] .ant-tabs > .ant-tabs-nav::before {
+  border-bottom-color: var(--color-border-light) !important;
+}
+
+:root[data-theme="dark"] .ant-divider {
+  border-color: var(--color-border-light) !important;
+}
+
+:root[data-theme="dark"] .ant-empty-description {
+  color: var(--color-text-tertiary) !important;
+}
+
+:root[data-theme="dark"] .ant-pagination-item {
+  background: transparent !important;
+  border-color: var(--color-border) !important;
+}
+:root[data-theme="dark"] .ant-pagination-item a {
+  color: var(--color-text-secondary) !important;
+}
+
+:root[data-theme="dark"] .ant-dropdown-menu-item {
+  color: var(--color-text-secondary) !important;
+}
+:root[data-theme="dark"] .ant-dropdown-menu-item:hover {
+  background: var(--color-bg-hover) !important;
+  color: var(--color-text-primary) !important;
+}
+
+:root[data-theme="dark"] .ant-tooltip-inner {
+  background: rgba(44, 44, 46, 0.92) !important;
+  color: var(--color-text-primary) !important;
+}
+
+:root[data-theme="dark"] .ant-modal-title,
+:root[data-theme="dark"] .ant-drawer-title {
+  color: var(--color-text-primary) !important;
+}
+
+:root[data-theme="dark"] .ant-modal-close-x {
+  color: var(--color-text-tertiary) !important;
+}
+
+:root[data-theme="dark"] .ant-modal-header,
+:root[data-theme="dark"] .ant-modal-footer,
+:root[data-theme="dark"] .ant-drawer-header {
+  background: transparent !important;
+  border-color: var(--color-border-light) !important;
+}
+
+:root[data-theme="dark"] .ant-steps-item-title,
+:root[data-theme="dark"] .ant-steps-item-description {
+  color: var(--color-text-secondary) !important;
+}
+
+/* ========== 主题切换器组件样式 ========== */
+.wc-theme-switcher {
+  display: inline-flex;
+  align-items: center;
+  background: var(--color-bg-card-2);
+  border-radius: var(--radius-full);
+  padding: 3px;
+  gap: 2px;
+}
+.wc-theme-switcher .seg {
+  width: 28px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--duration-fast) var(--ease-out);
+  background: transparent;
+  border: none;
+  padding: 0;
+  line-height: 1;
+}
+.wc-theme-switcher .seg:hover {
+  color: var(--color-text-primary);
+}
+.wc-theme-switcher .seg.active {
+  background: var(--color-bg-card);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+.wc-theme-switcher .seg:active {
+  transform: scale(0.92);
+}
+
+/* ========== 段落 / 标题 Apple 字重和字距 ========== */
+h1, h2, h3, h4, h5, h6,
+.ant-typography h1, .ant-typography h2, .ant-typography h3, .ant-typography h4 {
+  letter-spacing: -0.02em;
+  font-feature-settings: "ss01" 1;
+}
+
+.wc-display { font-size: 40px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; }
+.wc-title   { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
+
+/* ========== Badge / Tag 大圆角 ========== */
+.ant-tag {
+  border-radius: var(--radius-sm) !important;
+  padding-inline: 10px !important;
+  font-weight: 500 !important;
+}
+
+/* ========== 禁用 ant layout 默认阴影以便我们自己控制 ========== */
+.ant-layout-sider {
+  box-shadow: none !important;
+  border-right: 0.5px solid var(--color-border-light) !important;
+}
+.ant-layout-header {
+  box-shadow: none !important;
+  border-bottom: 0.5px solid var(--color-border-light) !important;
+}
+
+/* ==========================================================
+   Apple HIG 按钮规范 —— 全面重写
+   五大变体：Filled 主操作 / Tinted 次操作 / Gray 弱操作 / Plain 纯文字 / Destructive 危险
+   参考：https://developer.apple.com/design/human-interface-guidelines/buttons
+   ========================================================== */
+
+/* 基础：高度、圆角、字重、动效 */
+.ant-btn {
+  font-weight: 500 !important;
+  letter-spacing: -0.01em !important;
+  border-radius: var(--radius-md) !important;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out),
+    transform 80ms var(--ease-out) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+}
+
+.ant-btn:not(:disabled):active {
+  transform: scale(0.97) !important;
+}
+
+/* ---------- Filled / Primary（主操作） ---------- */
+.ant-btn-primary {
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 0 0 0.5px rgba(0, 0, 0, 0.04) !important;
+}
+.ant-btn-primary > span,
+.ant-btn-primary > .anticon {
+  color: #FFFFFF !important;
+}
+.ant-btn-primary:not(:disabled):hover {
+  background: var(--color-primary-hover) !important;
+  border-color: var(--color-primary-hover) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 14px rgba(0, 122, 255, 0.32) !important;
+  transform: translateY(-0.5px);
+}
+.ant-btn-primary:not(:disabled):active {
+  background: var(--color-primary-active) !important;
+  border-color: var(--color-primary-active) !important;
+  color: #FFFFFF !important;
+  transform: scale(0.97) !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme="dark"] .ant-btn-primary:not(:disabled):hover {
+  box-shadow: 0 4px 14px rgba(10, 132, 255, 0.44) !important;
+}
+
+/* ---------- Default（线框 / Gray） ---------- */
+.ant-btn-default {
+  background: var(--color-bg-card) !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-text-primary) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+.ant-btn-default > span,
+.ant-btn-default > .anticon {
+  color: inherit !important;
+}
+.ant-btn-default:not(:disabled):hover {
+  background: var(--color-bg-hover) !important;
+  border-color: var(--color-primary-border) !important;
+  color: var(--color-primary) !important;
+}
+.ant-btn-default:not(:disabled):hover > span,
+.ant-btn-default:not(:disabled):hover > .anticon {
+  color: var(--color-primary) !important;
+}
+.ant-btn-default:not(:disabled):active {
+  background: var(--color-primary-bg-soft) !important;
+  border-color: var(--color-primary) !important;
+  color: var(--color-primary-active) !important;
+}
+
+:root[data-theme="dark"] .ant-btn-default {
+  background: var(--color-bg-card-2) !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-text-primary) !important;
+}
+:root[data-theme="dark"] .ant-btn-default:not(:disabled):hover {
+  background: rgba(10, 132, 255, 0.16) !important;
+  border-color: var(--color-primary) !important;
+  color: var(--color-primary) !important;
+}
+
+/* ---------- Text（纯文字） ---------- */
+.ant-btn-text {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  color: var(--color-text-primary) !important;
+}
+.ant-btn-text > span,
+.ant-btn-text > .anticon {
+  color: inherit !important;
+}
+.ant-btn-text:not(:disabled):hover {
+  background: var(--color-bg-hover) !important;
+  color: var(--color-text-primary) !important;
+}
+.ant-btn-text:not(:disabled):active {
+  background: var(--color-primary-bg-soft) !important;
+}
+
+/* ---------- Link（链接） ---------- */
+.ant-btn-link {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  color: var(--color-primary) !important;
+  padding-inline: 4px !important;
+  font-weight: 400 !important;
+}
+.ant-btn-link > span,
+.ant-btn-link > .anticon {
+  color: inherit !important;
+}
+.ant-btn-link:not(:disabled):hover {
+  background: transparent !important;
+  color: var(--color-primary-hover) !important;
+  text-decoration: none !important;
+}
+.ant-btn-link:not(:disabled):active {
+  color: var(--color-primary-active) !important;
+}
+
+/* ---------- Dashed ---------- */
+.ant-btn-dashed {
+  background: transparent !important;
+  border-color: var(--color-border) !important;
+  border-style: dashed !important;
+  color: var(--color-text-secondary) !important;
+}
+.ant-btn-dashed:not(:disabled):hover {
+  border-color: var(--color-primary-border) !important;
+  color: var(--color-primary) !important;
+  background: var(--color-primary-bg-soft) !important;
+}
+
+/* ---------- Dangerous 危险 ---------- */
+/* Primary Danger：红底白字 */
+.ant-btn-dangerous.ant-btn-primary {
+  background: var(--color-error) !important;
+  border-color: var(--color-error) !important;
+  color: #FFFFFF !important;
+}
+.ant-btn-dangerous.ant-btn-primary > span,
+.ant-btn-dangerous.ant-btn-primary > .anticon {
+  color: #FFFFFF !important;
+}
+.ant-btn-dangerous.ant-btn-primary:not(:disabled):hover {
+  background: #FF6159 !important;
+  border-color: #FF6159 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 14px rgba(255, 59, 48, 0.36) !important;
+}
+
+/* Default Danger：红框红字 */
+.ant-btn-dangerous:not(.ant-btn-primary):not(.ant-btn-link):not(.ant-btn-text) {
+  background: var(--color-bg-card) !important;
+  border-color: var(--color-error) !important;
+  color: var(--color-error) !important;
+}
+.ant-btn-dangerous:not(.ant-btn-primary):not(.ant-btn-link):not(.ant-btn-text):hover {
+  background: var(--color-error-bg) !important;
+  border-color: var(--color-error) !important;
+  color: var(--color-error) !important;
+}
+:root[data-theme="dark"] .ant-btn-dangerous:not(.ant-btn-primary):not(.ant-btn-link):not(.ant-btn-text) {
+  background: var(--color-bg-card-2) !important;
+}
+
+/* Link Danger */
+.ant-btn-dangerous.ant-btn-link {
+  color: var(--color-error) !important;
+}
+.ant-btn-dangerous.ant-btn-link:hover {
+  color: #FF6159 !important;
+}
+
+/* Text Danger */
+.ant-btn-dangerous.ant-btn-text {
+  color: var(--color-error) !important;
+}
+.ant-btn-dangerous.ant-btn-text:hover {
+  background: var(--color-error-bg) !important;
+  color: var(--color-error) !important;
+}
+
+/* ---------- 尺寸 ---------- */
+.ant-btn-lg {
+  height: 44px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em !important;
+  border-radius: var(--radius-lg) !important;
+  padding-inline: 20px !important;
+}
+
+.ant-btn-sm {
+  height: 28px !important;
+  font-size: 12px !important;
+  padding-inline: 12px !important;
+  border-radius: var(--radius-sm) !important;
+}
+
+/* ---------- Disabled（统一样式） ---------- */
+.ant-btn:disabled,
+.ant-btn[disabled],
+.ant-btn:disabled:hover,
+.ant-btn[disabled]:hover {
+  opacity: 0.40 !important;
+  cursor: not-allowed !important;
+  pointer-events: auto !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+.ant-btn-primary:disabled,
+.ant-btn-primary[disabled] {
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: #FFFFFF !important;
+}
+
+/* ---------- 图标间距 ---------- */
+.ant-btn > .anticon + span,
+.ant-btn > span + .anticon {
+  margin-inline-start: 0 !important;
+}
+
+/* ---------- Loading 图标跟随字色 ---------- */
+.ant-btn-primary .ant-btn-loading-icon {
+  color: #FFFFFF !important;
+}
+.ant-btn-default .ant-btn-loading-icon {
+  color: var(--color-primary) !important;
+}
+
+/* ---------- Popconfirm / 表格内小按钮修正 ---------- */
+.ant-popconfirm-buttons .ant-btn {
+  font-size: 12px !important;
+}
+
+/* ---------- 表单 Action Row ---------- */
+.ant-form-item .ant-btn {
+  min-width: 72px;
+}

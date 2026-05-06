@@ -225,7 +225,7 @@ defineExpose({ reload: load })
   display: flex; justify-content: space-between; align-items: center;
   padding: 0 8px 12px; border-bottom: 1px solid #f0f0f0; margin-bottom: 8px;
 }
-.cp-summary { color: #666; font-size: 13px; }
+.cp-summary { color: #666; font-size: 12px; }
 .cp-item {
   padding: 10px 12px; border-left: 3px solid #d9d9d9; background: #fafafa;
   margin-bottom: 8px; border-radius: 0 4px 4px 0;

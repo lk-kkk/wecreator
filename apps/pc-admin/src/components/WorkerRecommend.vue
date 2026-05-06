@@ -254,14 +254,14 @@ const RadarChart = defineComponent({
   position: absolute; top: 12px; right: 12px;
   width: 36px; height: 36px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 700;
+  font-size: 12px; font-weight: 700;
 }
 .badge-gold { background: var(--color-warning-bg); color: var(--color-warning); border: 1px solid var(--color-warning); }
 .badge-blue { background: var(--color-primary-bg-soft); color: var(--color-primary); border: 1px solid var(--color-primary-border); }
 .badge-gray { background: var(--color-bg-page); color: #999; border: 1px solid var(--color-border); }
 
 .worker-header { display: flex; align-items: center; gap: 10px; }
-.worker-name  { font-weight: 600; font-size: 14px; color: #333; }
+.worker-name  { font-weight: 600; font-size: 12px; color: #333; }
 .worker-level { margin-top: 2px; }
 
 .stats-row   { display: flex; align-items: center; gap: 4px; }

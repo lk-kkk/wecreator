@@ -61,7 +61,7 @@
           <span v-if="!record.roles?.length" style="color:#ccc">—</span>
         </template>
         <template v-if="column.key === 'rating'">
-          <a-rate :value="record.avgRating" :count="5" disabled allow-half style="font-size:14px" />
+          <a-rate :value="record.avgRating" :count="5" disabled allow-half style="font-size:12px" />
           <span style="margin-left:4px;color:#666">{{ record.avgRating?.toFixed(1) }}</span>
         </template>
         <template v-if="column.key === 'completionRate'">
@@ -106,7 +106,7 @@
 
         <a-descriptions :column="2" size="small">
           <a-descriptions-item label="评分">
-            <a-rate :value="selectedWorker.avgRating" disabled allow-half style="font-size:14px" />
+            <a-rate :value="selectedWorker.avgRating" disabled allow-half style="font-size:12px" />
             <span style="margin-left:4px">{{ selectedWorker.avgRating?.toFixed(1) }}</span>
           </a-descriptions-item>
           <a-descriptions-item label="完成数">{{ selectedWorker.completedCount ?? 0 }} 单</a-descriptions-item>
@@ -344,7 +344,7 @@ onMounted(async () => {
 }
 .worker-name-text {
   font-weight: 600;
-  font-size: 13px;
+  font-size: 12px;
 }
 .worker-city {
   font-size: 12px;

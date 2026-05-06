@@ -312,7 +312,7 @@ function navigateAfterLogin() {
   align-items: center;
   gap: 12px;
   color: rgba(255, 255, 255, 0.90);
-  font-size: 15px;
+  font-size: 12px;
 }
 
 .feature-icon {
@@ -354,44 +354,70 @@ function navigateAfterLogin() {
 .login-panel {
   width: 480px;
   flex-shrink: 0;
-  background: #FFFFFF;
+  background: linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 40px;
+  position: relative;
+}
+
+.login-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 80% 20%, rgba(61, 126, 255, 0.03) 0%, transparent 50%),
+              radial-gradient(circle at 20% 80%, rgba(252, 100, 0, 0.02) 0%, transparent 50%);
+  pointer-events: none;
 }
 
 .login-card {
   width: 100%;
   max-width: 380px;
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  padding: 40px 32px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04),
+              0 0 1px rgba(0, 0, 0, 0.04);
 }
 
 .login-header {
   margin-bottom: 32px;
+  text-align: center;
 }
 
 .login-title {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 700;
   color: var(--color-text-primary);
   margin: 0 0 8px;
+  background: linear-gradient(135deg, #1D2939 0%, #475467 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .login-subtitle {
-  font-size: 14px;
+  font-size: 12px;
   color: var(--color-text-tertiary);
   margin: 0;
 }
 
 /* 表单 */
 .login-form :deep(.ant-form-item-label > label) {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--color-text-secondary);
   font-weight: 500;
 }
 
 .form-input :deep(input) {
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .form-options {
@@ -402,12 +428,12 @@ function navigateAfterLogin() {
 }
 
 .form-options :deep(.ant-checkbox-wrapper) {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--color-text-secondary);
 }
 
 .forgot-link {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--color-primary);
   cursor: pointer;
   text-decoration: none;
@@ -420,7 +446,7 @@ function navigateAfterLogin() {
 
 .login-btn {
   height: 44px !important;
-  font-size: 15px !important;
+  font-size: 12px !important;
   font-weight: 600 !important;
   letter-spacing: 2px;
   border-radius: 8px !important;
@@ -428,7 +454,7 @@ function navigateAfterLogin() {
 
 .register-link {
   text-align: center;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--color-text-tertiary);
 }
 
@@ -457,7 +483,7 @@ function navigateAfterLogin() {
 
 .security-icon {
   color: var(--color-primary);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 /* ── 警告弹窗 ──────────────────────────────────────── */
@@ -476,14 +502,14 @@ function navigateAfterLogin() {
 }
 
 .warning-text {
-  font-size: 15px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--color-text-primary);
   margin-bottom: 8px;
 }
 
 .warning-hint {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--color-text-tertiary);
   margin-bottom: 24px;
 }

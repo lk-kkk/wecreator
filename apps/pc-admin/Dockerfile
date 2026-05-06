@@ -6,7 +6,10 @@
 # ── Stage 1: 构建 ─────────────────────────────
 FROM node:20-alpine AS builder
 
-RUN corepack enable && corepack prepare pnpm@10 --activate
+RUN sed -i 's|dl-cdn.alpinelinux.org|mirrors.aliyun.com|g' /etc/apk/repositories
+
+RUN corepack enable && corepack prepare pnpm@10 --activate && \
+    pnpm config set registry https://registry.npmmirror.com
 
 WORKDIR /app
 
@@ -21,16 +24,13 @@ RUN pnpm install --frozen-lockfile
 COPY packages/shared/ packages/shared/
 COPY apps/pc-admin/ apps/pc-admin/
 
-# 构建（输出到 apps/pc-admin/dist）
-RUN cd apps/pc-admin && pnpm run build
+# 构建（跳过 vue-tsc，本地已 typecheck；服务端唯构建产物）
+RUN cd apps/pc-admin && pnpm exec vite build
 
-# ── Stage 2: Nginx 托管 ───────────────────────
+# ── Stage 2: Nginx 托管（此阶段仅用于 volume 注入）
 FROM nginx:1.27-alpine AS runner
 
 # 拷贝构建产物到 Nginx 目录
 COPY --from=builder /app/apps/pc-admin/dist /usr/share/nginx/html/pc-admin
-
-# 拷贝 Nginx 配置（由外部 volume 挂载或用默认配置）
-# 注意：实际配置由 docker-compose 中的 nginx 容器统一管理
 
 EXPOSE 80

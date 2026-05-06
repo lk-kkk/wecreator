@@ -13,6 +13,54 @@
     </div>
 
     <a-spin :spinning="loading" tip="加载中...">
+      <!-- 顶部行：待办任务 + 任务发布趋势（各占 1/2） -->
+      <div class="top-row">
+        <!-- 待办任务：报名审批 -->
+        <div class="wc-card todo-card top-col">
+          <div class="wc-card-title" style="display:flex;align-items:center;justify-content:space-between">
+            <span>📋 待办任务 — 报名审批</span>
+            <a-badge :count="todoTotal" :overflow-count="99" />
+          </div>
+          <a-table
+            :data-source="todoList"
+            :columns="todoColumns"
+            :loading="todoLoading"
+            :pagination="todoTotal > 5 ? { current: todoPage, pageSize: 5, total: todoTotal, showTotal: (t: number) => `共 ${t} 条`, size: 'small' } : false"
+            @change="handleTodoTableChange"
+            row-key="applicationId"
+            size="small"
+            :locale="{ emptyText: '暂无待审批报名 🎉' }"
+          >
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'workerName'">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <a-avatar :size="28" :src="record.avatarUrl || undefined" :style="{ background: 'var(--color-primary)', fontSize: '12px' }">
+                    {{ record.workerName?.[0] || '零' }}
+                  </a-avatar>
+                  <span>{{ record.workerName }}</span>
+                </div>
+              </template>
+              <template v-if="column.key === 'taskTitle'">
+                <span>{{ record.taskTitle }}</span>
+                <a-tag size="small" style="margin-left:6px">{{ record.roleName }}</a-tag>
+              </template>
+              <template v-if="column.key === 'createdAt'">
+                {{ formatTodoTime(record.createdAt) }}
+              </template>
+              <template v-if="column.key === 'action'">
+                <a-button type="link" size="small" @click="openReviewDialog(record)">查看详情</a-button>
+              </template>
+            </template>
+          </a-table>
+        </div>
+
+        <!-- 任务发布趋势 -->
+        <div class="wc-card chart-card top-col">
+          <div class="wc-card-title">任务发布趋势（近30日）</div>
+          <div ref="taskChartRef" class="chart-body" />
+        </div>
+      </div>
+
       <!-- KPI 指标卡 -->
       <div class="kpi-grid">
         <div class="kpi-card" v-for="kpi in kpiList" :key="kpi.key">
@@ -36,13 +84,7 @@
       </div>
 
       <!-- 图表行 -->
-      <div class="chart-row">
-        <!-- 任务发布趋势 -->
-        <div class="wc-card chart-card">
-          <div class="wc-card-title">任务发布趋势（近30日）</div>
-          <div ref="taskChartRef" class="chart-body" />
-        </div>
-
+      <div class="chart-row chart-row-single">
         <!-- 结算金额趋势 -->
         <div class="wc-card chart-card">
           <div class="wc-card-title">结算金额趋势（近30日）</div>
@@ -200,6 +242,13 @@
         </div>
       </div>
     </a-spin>
+
+    <!-- 报名审批弹窗 -->
+    <ApplicationReviewDialog
+      v-model:open="reviewDialogOpen"
+      :application="currentApplication"
+      @reviewed="onApplicationReviewed"
+    />
   </div>
 </template>
 
@@ -219,7 +268,9 @@ import {
 } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { dashboardApi } from '@/api/dashboard'
+import type { PendingApplication } from '@/api/dashboard'
 import { analyticsApi } from '@/api/analytics'
+import ApplicationReviewDialog from '@/components/ApplicationReviewDialog.vue'
 
 echarts.use([
   LineChart, BarChart, PieChart,
@@ -257,6 +308,59 @@ let modePieChart: any = null
 let priorityBarChart: any = null
 let riskPieChart: any = null
 let budgetBarChart: any = null
+
+// ── 待办任务：报名审批 ──────────────────────────────────────
+const todoLoading = ref(false)
+const todoList = ref<PendingApplication[]>([])
+const todoTotal = ref(0)
+const todoPage = ref(1)
+const reviewDialogOpen = ref(false)
+const currentApplication = ref<PendingApplication | null>(null)
+
+const todoColumns = [
+  { title: '零工名称', key: 'workerName', dataIndex: 'workerName', width: 160 },
+  { title: '报名任务', key: 'taskTitle', dataIndex: 'taskTitle', ellipsis: true },
+  { title: '时间', key: 'createdAt', dataIndex: 'createdAt', width: 160 },
+  { title: '操作', key: 'action', width: 100, align: 'center' as const },
+]
+
+function formatTodoTime(t: string) {
+  if (!t) return ''
+  return new Date(t).toLocaleString('zh-CN', {
+    month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+  })
+}
+
+async function loadTodoList() {
+  todoLoading.value = true
+  try {
+    const res = await dashboardApi.pendingApplications({ page: todoPage.value, pageSize: 5 })
+    todoList.value = res?.list ?? []
+    todoTotal.value = res?.total ?? 0
+  } catch {
+    todoList.value = []
+    todoTotal.value = 0
+  } finally {
+    todoLoading.value = false
+  }
+}
+
+function handleTodoTableChange(pagination: any) {
+  todoPage.value = pagination.current
+  loadTodoList()
+}
+
+function openReviewDialog(record: PendingApplication) {
+  currentApplication.value = record
+  reviewDialogOpen.value = true
+}
+
+function onApplicationReviewed() {
+  loadTodoList()
+  // 刷新主看板数据（任务状态可能变化）
+  loadData()
+}
 
 // ── KPI 列表（computed）──────────────────────────────────────
 const kpiList = computed(() => [
@@ -477,7 +581,10 @@ function renderCharts() {
   }
 }
 
-onMounted(loadData)
+onMounted(() => {
+  loadData()
+  loadTodoList()
+})
 
 // V3.7 Phase 6 图表渲染
 function renderV37Charts() {
@@ -613,7 +720,7 @@ function renderV37Charts() {
 }
 
 .kpi-suffix {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 400;
   color: var(--color-text-tertiary);
   margin-left: 2px;
@@ -630,12 +737,43 @@ function renderV37Charts() {
 .trend-down { color: var(--color-error); }
 .kpi-trend-placeholder { height: 18px; }
 
+/* 顶部并列行：待办任务 + 任务发布趋势 */
+.top-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.top-col {
+  padding: 20px;
+  min-width: 0;
+}
+
+/* 待办任务卡片 */
+.todo-card {
+  margin-bottom: 0;
+}
+
+.todo-card :deep(.ant-table-thead > tr > th) {
+  background: var(--color-bg-hover);
+  font-size: 12px;
+}
+
+.todo-card :deep(.ant-table-tbody > tr > td) {
+  font-size: 12px;
+}
+
 /* 图表行 */
 .chart-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   margin-bottom: 16px;
+}
+
+.chart-row-single {
+  grid-template-columns: 1fr;
 }
 
 .chart-card { padding: 20px; }
@@ -663,12 +801,12 @@ function renderV37Charts() {
 }
 
 .s-label {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--color-text-tertiary);
 }
 
 .s-val {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--color-text-primary);
 }
@@ -739,5 +877,6 @@ function renderV37Charts() {
 @media (max-width: 1280px) {
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
   .detail-row { grid-template-columns: 1fr; }
+  .top-row { grid-template-columns: 1fr; }
 }
 </style>

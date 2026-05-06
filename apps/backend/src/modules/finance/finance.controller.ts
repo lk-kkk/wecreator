@@ -82,4 +82,15 @@ export class FinanceController {
     if (user.userType !== 'company') throw new ForbiddenException('仅企业账号可访问');
     return this.financeService.getTransactions(user.companyId!, { type, page, pageSize });
   }
+
+  // V3.9: 任务付款
+  @Post('tasks/:taskId/pay')
+  @ApiOperation({ summary: 'V3.9 任务付款（待付款→已完成）' })
+  async payForTask(
+    @Param('taskId') taskId: number,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    if (user.userType !== 'company') throw new ForbiddenException('仅企业账号可访问');
+    return this.financeService.payForTask(user.companyId!, Number(taskId));
+  }
 }

@@ -1,10 +1,10 @@
 import { BadRequestException } from '@nestjs/common';
 
 /**
- * 任务 7 态状态机
+ * 任务 8 态状态机 (V3.9)
  *
- * draft → pending_review → published → in_progress → reviewing → completed → closed
- *                                                       ↗ (退回重新提交)
+ * draft → pending_review → published → in_progress → reviewing → pending_payment → completed → closed
+ *                                                       ↗ (驳回重新提交)
  * draft/published → cancelled
  */
 
@@ -14,6 +14,7 @@ export type TaskStatusType =
   | 'published'
   | 'in_progress'
   | 'reviewing'
+  | 'pending_payment'
   | 'completed'
   | 'closed'
   | 'cancelled';
@@ -22,9 +23,10 @@ export type TaskStatusType =
 const TRANSITIONS: Record<string, string[]> = {
   draft: ['pending_review', 'cancelled'],
   pending_review: ['published', 'draft'], // 审核不通过退回草稿
-  published: ['in_progress', 'cancelled'],
-  in_progress: ['reviewing'],
-  reviewing: ['completed', 'in_progress'], // 退回
+  published: ['in_progress', 'cancelled'], // V3.9: 审批通过→进行中
+  in_progress: ['reviewing'],              // 零工发起验收申请
+  reviewing: ['pending_payment', 'in_progress'], // V3.9: 验收确认→待付款；驳回→进行中
+  pending_payment: ['completed'],          // V3.9: 付款完成→已完成
   completed: ['closed'],
   closed: [],
   cancelled: [],
@@ -57,6 +59,7 @@ export const STATUS_LABELS: Record<TaskStatusType, string> = {
   published: '招募中',
   in_progress: '进行中',
   reviewing: '验收中',
+  pending_payment: '待付款', // V3.9
   completed: '已完成',
   closed: '已关闭',
   cancelled: '已取消',

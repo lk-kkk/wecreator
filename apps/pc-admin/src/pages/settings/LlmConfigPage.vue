@@ -14,7 +14,7 @@
       <a-row align="middle" :gutter="24">
         <a-col :flex="1">
           <a-space :size="16">
-            <a-tag :color="providerColor(config.provider)" style="font-size:13px;padding:2px 10px">{{ providerLabel(config.provider) }}</a-tag>
+            <a-tag :color="providerColor(config.provider)" style="font-size:12px;padding:2px 10px">{{ providerLabel(config.provider) }}</a-tag>
             <span style="color:#333"><strong>默认模型：</strong><a-typography-text code>{{ config.defaultModel }}</a-typography-text></span>
             <span style="color:#999;font-size:12px">Base URL: {{ truncUrl(config.baseUrl || config.customChatUrl) || '（默认）' }}</span>
             <span style="color:#999;font-size:12px">Key: {{ config.apiKeyMasked }}</span>
@@ -404,7 +404,7 @@ onMounted(() => { fetchConfig(); fetchPresets() })
 .llm-page { max-width: 1400px; }
 .config-summary { background: #fafafa; }
 .quick-presets { margin-bottom: 0; }
-.quick-label { font-size: 13px; color: #999; font-weight: 500; margin-right: 8px; }
+.quick-label { font-size: 12px; color: #999; font-weight: 500; margin-right: 8px; }
 .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .preset-chip { border-radius: 6px !important; }
 .preset-chip:hover { opacity: 0.8; transform: translateY(-1px); transition: all 0.15s; }
@@ -415,7 +415,7 @@ onMounted(() => { fetchConfig(); fetchPresets() })
 .preset-card.inactive { opacity: 0.55; }
 .preset-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .preset-card-title { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.preset-name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.preset-name { font-weight: 600; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .preset-card-body { margin-bottom: 10px; }
 .preset-info-row { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 4px; }
 .info-label { color: #999; min-width: 32px; flex-shrink: 0; }

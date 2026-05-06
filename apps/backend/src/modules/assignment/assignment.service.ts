@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma';
 import { ProjectService } from '../project/project.service';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class AssignmentService {
@@ -15,6 +16,7 @@ export class AssignmentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly projectService: ProjectService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   // ================================================================
@@ -113,18 +115,78 @@ export class AssignmentService {
     // 5. 分配slot_index
     const slotIndex = activeAssignments.length + 1;
 
-    // 6. 创建分配记录
-    const assignment = await this.prisma.roleAssignment.create({
-      data: {
-        taskRoleId: BigInt(taskRoleId),
-        workerId: BigInt(workerId),
-        slotIndex,
-        status: 'invited',
-        expiredAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h超时
-      },
+    // 6. 事务：创建分配记录 + 确保零工在企业零工库中
+    //    （V3.4 零工库模型：服务广场只展示 pool 中企业的任务，
+    //     邀约即代表企业信任零工，自动纳入零工库 inviteStatus=registered）
+    const workerInfo = await this.prisma.worker.findUnique({
+      where: { id: BigInt(workerId) },
+      select: { realName: true, nickname: true, isVerified: true },
+    });
+
+    const assignment = await this.prisma.$transaction(async (tx) => {
+      // 6a. 创建分配记录
+      const a = await tx.roleAssignment.create({
+        data: {
+          taskRoleId: BigInt(taskRoleId),
+          workerId: BigInt(workerId),
+          slotIndex,
+          status: 'invited',
+          expiredAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h超时
+        },
+      });
+
+      // 6b. 确保零工在企业零工库中
+      const existingPool = await tx.companyWorkerPool.findFirst({
+        where: { companyId: BigInt(companyId), workerId: BigInt(workerId) },
+        select: { id: true, inviteStatus: true },
+      });
+
+      if (!existingPool) {
+        // Pool 唯一键是 (companyId, prePhone)；对邀约已注册零工，
+        // 用占位 prePhone 避免与真实预录入手机号冲突
+        const preName = workerInfo?.realName || workerInfo?.nickname || `零工${workerId}`;
+        const prePhone = `invite:${workerId}`;
+        const inviteStatus = workerInfo?.isVerified ? 'verified' : 'registered';
+
+        await tx.companyWorkerPool.create({
+          data: {
+            companyId: BigInt(companyId),
+            workerId: BigInt(workerId),
+            preName,
+            prePhone,
+            inviteStatus,
+          },
+        });
+        this.logger.log(`自动纳入零工库: company=${companyId}, worker=${workerId}, status=${inviteStatus}`);
+      } else if (existingPool.inviteStatus === 'pending') {
+        // 已预录入但还未进入 registered：升级状态
+        await tx.companyWorkerPool.update({
+          where: { id: existingPool.id },
+          data: {
+            inviteStatus: workerInfo?.isVerified ? 'verified' : 'registered',
+            workerId: BigInt(workerId),
+          },
+        });
+      }
+
+      return a;
     });
 
     this.logger.log(`邀约: task=${taskId}, role=${taskRoleId}, worker=${workerId}, slot=${slotIndex}`);
+
+    // 发送通知给零工
+    try {
+      await this.notificationService.create({
+        recipientId: BigInt(workerId),
+        recipientType: 'worker' as any,
+        type: 'task_invite' as any,
+        title: '您有一条新的任务邀约',
+        content: `您被邀请参与任务「${task.title}」，请在24小时内确认。`,
+        relatedTaskId: BigInt(taskId),
+      });
+    } catch (e: any) {
+      this.logger.warn(`邀约通知发送失败: ${e?.message}`);
+    }
 
     return {
       assignmentId: Number(assignment.id),
@@ -260,6 +322,32 @@ export class AssignmentService {
       // V3.7: 未解决问题数（用于列表右上角 ⚠️ 图标）
       unresolvedIssueCount: issueCountMap.get(String(a.taskRole.task.id)) ?? 0,
     }));
+  }
+
+  /**
+   * 获取任务工作日志
+   */
+  async getWorkLogs(assignmentId: number, _userId: number) {
+    const assignment = await this.prisma.roleAssignment.findUnique({
+      where: { id: BigInt(assignmentId) },
+    });
+    if (!assignment) throw new NotFoundException('分配记录不存在');
+
+    const logs = await this.prisma.progressUpdate.findMany({
+      where: { assignmentId: BigInt(assignmentId) },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return {
+      list: logs.map((l: any) => ({
+        id: Number(l.id),
+        assignmentId: Number(l.assignmentId),
+        workerId: Number(l.workerId),
+        content: l.content,
+        progress: l.progress,
+        createdAt: l.createdAt,
+      })),
+    };
   }
 
   // ================================================================

@@ -34,7 +34,7 @@
                   </a-avatar>
                 </template>
                 <template #title>
-                  <span style="font-size:13px">{{ item.title }}</span>
+                  <span style="font-size:12px">{{ item.title }}</span>
                 </template>
                 <template #description>
                   <div style="font-size:12px;color:#666;line-height:1.4">
@@ -89,6 +89,7 @@ const TYPE_META: Record<string, { color: string; icon: string }> = {
   risk_alert:       { color: '#faad14', icon: '🟡' },
   milestone_remind: { color: '#faad14', icon: '🏁' },
   acceptance:       { color: '#1890ff', icon: '✅' },
+  task_application: { color: '#722ed1', icon: '📝' },
   checkpoint:       { color: '#13c2c2', icon: '📋' },
   comment_mention:  { color: '#722ed1', icon: '💬' },
   daily_missing:    { color: '#faad14', icon: '📝' },
@@ -121,7 +122,8 @@ async function loadRecent() {
   loading.value = true
   try {
     const res = await notificationApi.list({ page: 1, pageSize: 10, isRead: false })
-    items.value = res?.list ?? []
+    // 报名审批已移至工作台待办，铃铛不再展示
+    items.value = (res?.list ?? []).filter(n => n.type !== 'task_application')
     unreadCount.value = res?.unread ?? unreadCount.value
   } catch (e: any) {
     items.value = []
@@ -142,7 +144,9 @@ async function handleClick(n: Notification) {
   items.value = items.value.filter(i => i.id !== n.id)
 
   // 跳转到关联实体
-  if (n.refType === 'task' && n.refId) {
+  if (n.refType === 'task_application' && n.refId) {
+    router.push(`/task/${n.refId}`)
+  } else if (n.refType === 'task' && n.refId) {
     router.push(`/task/${n.refId}`)
   } else if (n.refType === 'project' && n.refId) {
     router.push(`/project/${n.refId}`)

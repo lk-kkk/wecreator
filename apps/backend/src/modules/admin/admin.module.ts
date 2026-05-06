@@ -5,6 +5,8 @@ import {
   InvoiceController,
   TaskTemplateController,
   CustomRoleController,
+  CheckpointTemplateController,
+  CustomSkillController,
 } from './admin.controller';
 import { AuthModule }          from '../auth/auth.module';
 import { SubaccountService }   from '../auth/subaccount.service';
@@ -20,6 +22,8 @@ import { TaskTemplateService } from '../task/task-template.service';
     InvoiceController,
     TaskTemplateController,
     CustomRoleController,
+    CheckpointTemplateController,
+    CustomSkillController,
   ],
   providers: [
     SubaccountService,

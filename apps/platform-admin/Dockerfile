@@ -1,12 +1,13 @@
 # ============================================================
 # WeCreator Platform Admin — Multi-stage Dockerfile
-# Vue 3 + Vite → Nginx 静态托管
 # ============================================================
 
-# ── Stage 1: 构建 ─────────────────────────────
 FROM node:20-alpine AS builder
 
-RUN corepack enable && corepack prepare pnpm@10 --activate
+RUN sed -i 's|dl-cdn.alpinelinux.org|mirrors.aliyun.com|g' /etc/apk/repositories
+
+RUN corepack enable && corepack prepare pnpm@10 --activate && \
+    pnpm config set registry https://registry.npmmirror.com
 
 WORKDIR /app
 
@@ -19,9 +20,8 @@ RUN pnpm install --frozen-lockfile
 COPY packages/shared/ packages/shared/
 COPY apps/platform-admin/ apps/platform-admin/
 
-RUN cd apps/platform-admin && pnpm run build
+RUN cd apps/platform-admin && pnpm exec vite build
 
-# ── Stage 2: Nginx 托管 ───────────────────────
 FROM nginx:1.27-alpine AS runner
 
 COPY --from=builder /app/apps/platform-admin/dist /usr/share/nginx/html/platform-admin

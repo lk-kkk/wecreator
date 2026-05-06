@@ -32,7 +32,7 @@
       <a-col :span="10">
         <a-card title="🏁 里程碑" :bordered="false" size="small">
           <template #extra>
-            <a-button type="link" size="small" @click="showMsCreate = true">+ 新增</a-button>
+            <a-button type="link" size="small" @click="openCreateMilestone">+ 新增</a-button>
           </template>
           <a-timeline v-if="milestones.length">
             <a-timeline-item v-for="m in milestones" :key="m.id"
@@ -44,6 +44,17 @@
                 <a-tag v-else color="processing" size="small">{{ m.plannedDate?.slice(0,10) }}</a-tag>
                 <a-button v-if="m.status==='pending'" type="link" size="small"
                   @click="completeMilestone(m.id)">✓ 完成</a-button>
+                <a-button v-if="m.status==='pending'" type="link" size="small"
+                  @click="openEditMilestone(m)">编辑</a-button>
+                <a-popconfirm
+                  v-if="m.status==='pending'"
+                  title="删除后将解除该里程碑下任务的关联，确认删除吗？"
+                  ok-text="删除"
+                  cancel-text="取消"
+                  @confirm="deleteMilestone(m.id)"
+                >
+                  <a-button type="link" danger size="small">删除</a-button>
+                </a-popconfirm>
               </div>
               <div v-if="m.description" style="color:#999;font-size:12px">{{ m.description }}</div>
             </a-timeline-item>
@@ -56,12 +67,12 @@
       <a-col :span="14">
         <a-card title="📋 关联任务" :bordered="false" size="small">
           <template #extra>
-            <span style="color:#666;font-size:13px;margin-right:12px">
+            <span style="color:#666;font-size:12px;margin-right:12px">
               关联预算：<strong style="color:var(--color-primary)">¥{{ totalBudget.toLocaleString() }}</strong>
             </span>
-            <a-button type="primary" size="small" @click="createRelatedTask">
+            <!-- <a-button type="primary" size="small" @click="createRelatedTask">
               <plus-outlined /> 新建关联任务
-            </a-button>
+            </a-button> -->
           </template>
           <a-list :data-source="project?.tasks || []" size="small">
             <template #renderItem="{ item }">
@@ -71,6 +82,7 @@
                     <a-space>
                       <a-tag>{{ item.taskMode === 'daily_rate' ? '人天' : '任务包' }}</a-tag>
                       <a-tag :color="taskStatusColor(item.status)">{{ taskStatusLabel(item.status) }}</a-tag>
+                      <a-tag v-if="item.milestoneName" color="cyan" size="small">🏁 {{ item.milestoneName }}</a-tag>
                       <span v-if="item.totalBudget" style="font-size:12px;color:#666">¥{{ Number(item.totalBudget).toLocaleString() }}</span>
                       <span v-for="r in item.roles" :key="r.id" style="font-size:12px;color:#999">
                         {{ r.roleName }}×{{ r.headcount }}
@@ -104,8 +116,15 @@
       </a-col>
     </a-row>
 
-    <!-- 新建里程碑弹窗 -->
-    <a-modal v-model:open="showMsCreate" title="新增里程碑" @ok="handleMsCreate" :confirm-loading="msCreating">
+    <!-- 新建/编辑里程碑弹窗 -->
+    <a-modal
+      v-model:open="showMsCreate"
+      :title="editingMilestoneId ? '编辑里程碑' : '新增里程碑'"
+      @ok="handleMsSubmit"
+      :confirm-loading="msCreating"
+      width="600px"
+      @cancel="resetMsForm"
+    >
       <a-form :label-col="{ span: 5 }" style="margin-top:16px">
         <a-form-item label="名称" required>
           <a-input v-model:value="msForm.name" placeholder="里程碑名称" :maxlength="50" />
@@ -116,6 +135,33 @@
         <a-form-item label="描述">
           <a-textarea v-model:value="msForm.description" :rows="2" />
         </a-form-item>
+        <a-form-item label="关联任务">
+          <a-select
+            v-model:value="msForm.taskIds"
+            mode="multiple"
+            placeholder="从任务广场选择任务"
+            :options="taskOptions"
+            :loading="tasksLoading"
+            :max-tag-count="3"
+            option-filter-prop="label"
+            show-search
+            allow-clear
+            style="width:100%"
+            @dropdown-visible-change="onTaskDropdownOpen"
+          >
+            <template #option="{ label, mode, status, project, isOtherProject }">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <span>{{ label }}</span>
+                <a-tag size="small">{{ mode === 'daily_rate' ? '人天' : '任务包' }}</a-tag>
+                <a-tag :color="taskStatusColor(status)" size="small">{{ taskStatusLabel(status) }}</a-tag>
+                <a-tag v-if="isOtherProject" color="warning" size="small">已关联：{{ project }}</a-tag>
+              </div>
+            </template>
+          </a-select>
+          <div style="color:#999;font-size:12px;margin-top:4px">
+            所选任务将被关联到本项目和该里程碑，最多 50 个。已关联到其他项目的任务会被改绑到当前项目。
+          </div>
+        </a-form-item>
       </a-form>
     </a-modal>
   </div>
@@ -123,20 +169,86 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { DownOutlined, PlusOutlined } from '@ant-design/icons-vue'
+import { DownOutlined } from '@ant-design/icons-vue'
+import dayjs from 'dayjs'
 import request from '@/api/request'
+import { taskApi } from '@/api/task'
 
 const route = useRoute()
-const router = useRouter()
 const projectId = Number(route.params.id)
 const project = ref<any>(null)
 const milestones = ref<any[]>([])
 
 const showMsCreate = ref(false)
 const msCreating = ref(false)
-const msForm = ref({ name: '', plannedDate: null as any, description: '' })
+const editingMilestoneId = ref<number | null>(null)
+const msForm = ref({
+  name: '',
+  plannedDate: null as any,
+  description: '',
+  taskIds: [] as number[],
+})
+
+// 任务广场选择
+const taskOptions = ref<any[]>([])
+const tasksLoading = ref(false)
+const tasksLoaded = ref(false)
+
+async function loadTaskOptions() {
+  if (tasksLoaded.value) return
+  tasksLoading.value = true
+  try {
+    // 拉取本公司所有任务（按需可翻页，第一期取前 100 条）
+    const res: any = await taskApi.list({ page: 1, pageSize: 100 })
+    const list: any[] = res?.list || []
+    // 在当前项目下已经绑定到其他里程碑的任务依然展示（可改绑）。已关闭/已取消隐藏。
+    taskOptions.value = list
+      .filter(t => !['closed', 'cancelled'].includes(t.status))
+      .map(t => ({
+        value: t.taskId,
+        label: t.title,
+        mode: t.taskMode,
+        status: t.status,
+        project: t.projectName || '',
+        isOtherProject: t.projectId && Number(t.projectId) !== projectId,
+      }))
+    tasksLoaded.value = true
+  } catch (e: any) {
+    message.error(e?.response?.data?.message || '加载任务列表失败')
+  } finally {
+    tasksLoading.value = false
+  }
+}
+
+function onTaskDropdownOpen(open: boolean) {
+  if (open) loadTaskOptions()
+}
+
+function resetMsForm() {
+  editingMilestoneId.value = null
+  msForm.value = { name: '', plannedDate: null, description: '', taskIds: [] }
+}
+
+function openCreateMilestone() {
+  resetMsForm()
+  showMsCreate.value = true
+}
+
+async function openEditMilestone(m: any) {
+  await loadTaskOptions()
+  editingMilestoneId.value = Number(m.id)
+  msForm.value = {
+    name: m.name || '',
+    plannedDate: m.plannedDate ? dayjs(m.plannedDate) : null,
+    description: m.description || '',
+    taskIds: (project.value?.tasks || [])
+      .filter((t: any) => Number(t.milestoneId) === Number(m.id))
+      .map((t: any) => Number(t.id)),
+  }
+  showMsCreate.value = true
+}
 
 const totalBudget = computed(() =>
   (project.value?.tasks || []).reduce((sum: number, t: any) => sum + (Number(t.totalBudget) || 0), 0)
@@ -169,25 +281,44 @@ const taskStatusLabel = (s: string) => {
 }
 
 async function fetchProject() {
-  const res = await request.get(`/projects/${projectId}`)
-  project.value = res.data
-  milestones.value = res.data?.milestones || []
+  const res: any = await request.get(`/projects/${projectId}`)
+  project.value = res
+  milestones.value = res?.milestones || []
 }
 
-async function handleMsCreate() {
+async function handleMsSubmit() {
   if (!msForm.value.name || !msForm.value.plannedDate) return message.warning('请填写必要信息')
   msCreating.value = true
   try {
-    await request.post(`/projects/${projectId}/milestones`, {
+    const payload = {
       name: msForm.value.name,
       plannedDate: msForm.value.plannedDate.format('YYYY-MM-DD'),
       description: msForm.value.description || undefined,
-    })
-    message.success('里程碑创建成功')
+      taskIds: msForm.value.taskIds ?? [],
+    }
+
+    if (editingMilestoneId.value) {
+      await request.put(`/projects/${projectId}/milestones/${editingMilestoneId.value}`, payload)
+      message.success('里程碑更新成功')
+    } else {
+      await request.post(`/projects/${projectId}/milestones`, payload)
+      message.success('里程碑创建成功')
+    }
+
     showMsCreate.value = false
-    msForm.value = { name: '', plannedDate: null, description: '' }
-    fetchProject()
+    resetMsForm()
+    await fetchProject()
   } finally { msCreating.value = false }
+}
+
+async function deleteMilestone(mid: number) {
+  try {
+    await request.delete(`/projects/${projectId}/milestones/${mid}`)
+    message.success('里程碑已删除')
+    await fetchProject()
+  } catch (e: any) {
+    message.error(e?.response?.data?.message || '删除失败')
+  }
 }
 
 async function completeMilestone(mid: number) {
@@ -202,10 +333,6 @@ async function onAction({ key }: { key: string }) {
     message.success('状态已更新')
     fetchProject()
   } catch (e: any) { message.error(e?.response?.data?.message || '操作失败') }
-}
-
-function createRelatedTask() {
-  router.push({ path: '/task/create', query: { projectId: String(projectId) } })
 }
 
 onMounted(fetchProject)

@@ -21,6 +21,12 @@ export default defineConfig({
       '@': resolve(__dirname, 'src'),
     },
   },
+  build: {
+    // Vite 8 默认 lightningcss，遇 backdrop-filter + 复杂选择器 会抛 Invalid state。切回 esbuild
+    cssMinify: 'esbuild',
+    minify: 'esbuild',
+    chunkSizeWarningLimit: 1500,
+  },
   server: {
     port: 5173,
     proxy: {

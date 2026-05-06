@@ -5,8 +5,12 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { InjectRedis } from '@nestjs-modules/ioredis';
+import Redis from 'ioredis';
 import { PrismaService } from '../../prisma';
 import { Message, MessageDocument } from './schemas/message.schema';
+
+const CHAT_BROADCAST_CHANNEL = 'wc:chat:broadcast';
 
 // ─────────────────────────────────────────────
 // DTOs（内部使用）
@@ -26,6 +30,7 @@ export class MessageService {
   constructor(
     private readonly prisma: PrismaService,
     @InjectModel(Message.name) private readonly messageModel: Model<MessageDocument>,
+    @InjectRedis() private readonly redis: Redis,
   ) {}
 
   // ──────────────────────────────────────────
@@ -158,6 +163,65 @@ export class MessageService {
       createdAt: new Date(),
     });
     return msg.save();
+  }
+
+  /**
+   * 统一发消息入口（HTTP / WS 共用）
+   * 1. 权限校验
+   * 2. 持久化到 MongoDB
+   * 3. 更新 conversation.lastMsgAt
+   * 4. （可选）Redis publish，如果对方 WS 连着就能实时收到
+   */
+  async sendMessage(
+    conversationId: number,
+    senderId: number,
+    senderType: 'company' | 'worker',
+    dto: { content: string; type: 'text' | 'image' | 'file'; fileName: string | null; fileSize: number | null },
+  ) {
+    const conv = await this.getConversationById(conversationId);
+    if (!conv) throw new NotFoundException('会话不存在');
+
+    const allowed =
+      (senderType === 'company' && Number(conv.companyUserId) === senderId) ||
+      (senderType === 'worker'  && Number(conv.workerId)       === senderId);
+    if (!allowed) throw new ForbiddenException('无权操作该会话');
+
+    const saved = await this.saveMessage({
+      conversationId,
+      senderId,
+      senderType,
+      type: dto.type,
+      content: dto.content,
+      fileName: dto.fileName,
+      fileSize: dto.fileSize,
+    });
+    await this.updateLastMsgAt(conversationId);
+
+    const msgOut = {
+      id:             String(saved._id),
+      conversationId,
+      senderId,
+      senderType,
+      type:           dto.type,
+      content:        dto.content,
+      fileName:       dto.fileName,
+      fileSize:       dto.fileSize,
+      createdAt:      saved.createdAt,
+    };
+
+    // 除非 Redis 不可用，否则推流给在线订阅者（可选增强，不阻塞主流程）
+    try {
+      await this.redis.publish(CHAT_BROADCAST_CHANNEL, JSON.stringify({
+        event: 'new_message',
+        conversationId,
+        message: msgOut,
+        targetUserIds: [Number(conv.companyUserId), Number(conv.workerId)],
+      }));
+    } catch {
+      // 无 Redis 也不影响 HTTP 发送成功
+    }
+
+    return msgOut;
   }
 
   async updateLastMsgAt(conversationId: number) {

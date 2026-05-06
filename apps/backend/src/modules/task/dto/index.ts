@@ -10,6 +10,7 @@ import {
   Min,
   Max,
   MaxLength,
+  MinLength,
   IsDateString,
   IsIn,
 } from 'class-validator';
@@ -98,6 +99,11 @@ export class CreateTaskDto {
   @IsNumber()
   projectId?: number;
 
+  @ApiPropertyOptional({ description: '关联里程碑ID（可选，需先选择项目）' })
+  @IsOptional()
+  @IsNumber()
+  milestoneId?: number;
+
   // V3.7 新增字段
   @ApiPropertyOptional({ description: '优先级', enum: ['p0', 'p1', 'p2'] })
   @IsOptional()
@@ -124,6 +130,7 @@ export class UpdateDraftDto {
   // V3.7
   @ApiPropertyOptional() @IsOptional() @IsIn(['p0', 'p1', 'p2']) priority?: 'p0' | 'p1' | 'p2';
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(1000) acceptanceCriteria?: string;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() milestoneId?: number;
 }
 
 // ============================================================
@@ -294,4 +301,15 @@ export class AddAttachmentDto {
   @IsString()
   @MaxLength(20)
   fileType: string;
+}
+
+// ============================================================
+// V3.9: 验收驳回
+// ============================================================
+export class RejectAcceptanceDto {
+  @ApiProperty({ description: '驳回原因' })
+  @IsString()
+  @MinLength(5)
+  @MaxLength(500)
+  reason: string;
 }

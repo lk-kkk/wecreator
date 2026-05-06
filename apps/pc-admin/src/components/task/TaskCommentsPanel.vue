@@ -152,9 +152,9 @@ defineExpose({ reload: load })
 .comment-item.is-important { border-left-color: #faad14; background: #fffbe6; }
 .comment-item.reply { margin-left: 32px; background: #fff; border-left-color: #e6e6e6; }
 .comment-line1 { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.author-name { font-weight: 600; font-size: 13px; }
+.author-name { font-weight: 600; font-size: 12px; }
 .comment-time { color: #999; font-size: 12px; margin-left: 4px; }
-.comment-content { margin-top: 6px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; }
+.comment-content { margin-top: 6px; font-size: 12px; line-height: 1.6; white-space: pre-wrap; }
 .comment-attachments { margin-top: 6px; }
 .attach-link { margin-right: 8px; font-size: 12px; }
 .replies { margin-top: 8px; }

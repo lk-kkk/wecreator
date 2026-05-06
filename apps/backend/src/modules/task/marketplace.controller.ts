@@ -26,6 +26,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import { RecommendationService } from './recommendation.service';
+import { CompanyNotificationService } from '../notification/company-notification.service';
 
 // ── DTOs ──────────────────────────────────────────────
 
@@ -68,6 +69,7 @@ export class MarketplaceController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly recommendSvc: RecommendationService,
+    private readonly companyNotify: CompanyNotificationService,
   ) {}
 
   /**
@@ -359,6 +361,23 @@ export class MarketplaceController {
       },
     });
 
+    // 发送报名通知给任务创建者
+    try {
+      const workerName = worker.realName || worker.nickname || `零工#${user.userId}`;
+      const expectPayText = dto.expectPay ? `，期望报酬￥${dto.expectPay.toLocaleString()}` : '';
+      await this.companyNotify.create({
+        companyId: Number(role.task.companyId),
+        userId: Number(role.task.createdBy),
+        type: 'task_application',
+        title: `${workerName} 报名了「${role.task.title}」的${role.roleName}岗位`,
+        content: `报名简介：${dto.intro.slice(0, 80)}${dto.intro.length > 80 ? '...' : ''}${expectPayText}`,
+        refType: 'task_application',
+        refId: taskId,
+      });
+    } catch (e: any) {
+      this.logger.warn(`报名通知发送失败: ${e?.message}`);
+    }
+
     return { message: '申请成功，请等待企业审核' };
   }
 }
@@ -406,43 +425,70 @@ export class TaskApplicationController {
           select: {
             id: true, realName: true, avatarUrl: true, city: true,
             avgRating: true, completedCount: true, level: true, bio: true,
+            skillTags: true, isVerified: true,
           },
         },
         taskRole: {
-          select: { id: true, roleName: true, headcount: true, budget: true },
+          select: {
+            id: true, roleName: true, headcount: true, budget: true,
+            _count: { select: { assignments: { where: { status: { in: ['invited', 'accepted'] } } } } },
+          },
         },
       },
       orderBy: { createdAt: 'desc' },
     });
 
+    // 查询角色列表 + 已占名额，用于前端角色筛选 & 名额判断
+    const taskRoles = await this.prisma.taskRole.findMany({
+      where: { taskId: BigInt(taskId) },
+      select: {
+        id: true, roleName: true, headcount: true, budget: true,
+        _count: { select: { assignments: { where: { status: { in: ['invited', 'accepted'] } } } } },
+      },
+    });
+
     return {
       total: applications.length,
-      list: applications.map(a => ({
-        applicationId: Number(a.id),
-        status: a.status,
-        intro: a.intro,
-        expectPay: a.expectPay ? Number(a.expectPay) : null,
-        availableAt: a.availableAt,
-        rejectReason: a.rejectReason,
-        reviewedAt: a.reviewedAt,
-        createdAt: a.createdAt,
-        worker: {
+      // 角色列表（供筛选下拉 + 名额计算）
+      roles: taskRoles.map(r => ({
+        taskRoleId: Number(r.id),
+        roleName: r.roleName,
+        headcount: r.headcount,
+        budget: Number(r.budget),
+        activeCount: r._count.assignments,
+      })),
+      // 扁平化申请列表 —— 字段名与前端组件对齐
+      list: applications.map(a => {
+        const activeCount = (a.taskRole as any)._count?.assignments ?? 0;
+        return {
+          applicationId: Number(a.id),
+          status: a.status,
+          // 报名信息
+          introduction: a.intro,
+          expectPay: a.expectPay ? Number(a.expectPay) : null,
+          availableAt: a.availableAt,
+          rejectReason: a.rejectReason,
+          reviewedAt: a.reviewedAt,
+          createdAt: a.createdAt,
+          // 零工信息（扁平化）
           workerId: Number(a.worker.id),
-          realName: a.worker.realName,
+          workerName: a.worker.realName || `零工#${Number(a.worker.id)}`,
           avatarUrl: a.worker.avatarUrl,
           city: a.worker.city,
           avgRating: Number(a.worker.avgRating),
           completedCount: a.worker.completedCount,
           level: a.worker.level,
           bio: a.worker.bio,
-        },
-        role: {
+          skills: Array.isArray(a.worker.skillTags) ? (a.worker.skillTags as string[]) : [],
+          verified: a.worker.isVerified,
+          // 角色信息（扁平化）
           roleId: Number(a.taskRole.id),
           roleName: a.taskRole.roleName,
-          headcount: a.taskRole.headcount,
-          budget: Number(a.taskRole.budget),
-        },
-      })),
+          roleHeadcount: a.taskRole.headcount,
+          roleBudget: Number(a.taskRole.budget),
+          slotFull: activeCount >= a.taskRole.headcount,
+        };
+      }),
     };
   }
 
@@ -488,7 +534,7 @@ export class TaskApplicationController {
         throw new BadRequestException('该角色已招满，无法确认');
       }
 
-      // V3.4 事务：更新申请 + 创建 accepted 分配 + 自动流转任务状态
+      // V3.4 事务：更新申请 + 创建 accepted 分配 + 自动流转任务状态 + 兑现零工库关系
       await this.prisma.$transaction(async (tx) => {
         // 更新申请状态
         await tx.taskApplication.update({
@@ -510,6 +556,32 @@ export class TaskApplicationController {
             acceptedAt: new Date(),
           },
         });
+
+        // 兼容兼底：确保零工在企业零工库（正常路径下已在池中，但以防数据港入/迁移后不一致）
+        const existingPool = await tx.companyWorkerPool.findFirst({
+          where: { companyId: BigInt(user.companyId!), workerId: application.workerId },
+          select: { id: true, inviteStatus: true },
+        });
+        if (!existingPool) {
+          const w = await tx.worker.findUnique({
+            where: { id: application.workerId },
+            select: { realName: true, nickname: true, isVerified: true },
+          });
+          await tx.companyWorkerPool.create({
+            data: {
+              companyId: BigInt(user.companyId!),
+              workerId: application.workerId,
+              preName: w?.realName || w?.nickname || `零工${application.workerId}`,
+              prePhone: `apply:${application.workerId}`,
+              inviteStatus: w?.isVerified ? 'verified' : 'registered',
+            },
+          });
+        } else if (existingPool.inviteStatus === 'pending') {
+          await tx.companyWorkerPool.update({
+            where: { id: existingPool.id },
+            data: { inviteStatus: 'registered' },
+          });
+        }
 
         // 任务状态自动流转：published → in_progress
         if (task.status === 'published') {

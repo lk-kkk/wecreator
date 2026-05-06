@@ -514,7 +514,7 @@ onMounted(() => {
 }
 
 .security-title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--color-primary);
   display: flex;
@@ -544,7 +544,7 @@ onMounted(() => {
 
 .sec-check {
   color: var(--color-success);
-  font-size: 13px;
+  font-size: 12px;
   margin-top: 1px;
   flex-shrink: 0;
 }
@@ -594,14 +594,14 @@ onMounted(() => {
 
 /* 金额 */
 .tx-amount {
-  font-size: 14px;
+  font-size: 12px;
 }
 
 /* 充值弹窗 */
 .recharge-modal-body { padding: 4px 0; }
 
 .quick-label {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--color-text-secondary);
   margin-bottom: 10px;
 }
@@ -620,7 +620,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--color-text-secondary);
   cursor: pointer;
@@ -648,7 +648,7 @@ onMounted(() => {
 }
 
 .custom-label {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--color-text-secondary);
   white-space: nowrap;
 }
@@ -674,7 +674,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font-size: 14px;
+  font-size: 12px;
   color: var(--color-text-secondary);
   margin-bottom: 12px;
 }

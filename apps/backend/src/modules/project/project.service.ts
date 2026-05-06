@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsString, IsOptional, IsNumber, IsEnum, IsDateString, MaxLength, IsIn,
+  IsString, IsOptional, IsNumber, IsEnum, IsDateString, MaxLength, IsIn, IsArray, ArrayMaxSize,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PrismaService } from '../../prisma';
@@ -43,12 +43,18 @@ export class CreateMilestoneDto {
   @ApiProperty() @IsString() @MaxLength(50) name: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(200) description?: string;
   @ApiProperty() @IsDateString() plannedDate: string;
+  @ApiPropertyOptional({ description: '关联任务 ID 列表（从任务广场选择）', type: [Number] })
+  @IsOptional() @IsArray() @ArrayMaxSize(50) @IsNumber({}, { each: true })
+  taskIds?: number[];
 }
 
 export class UpdateMilestoneDto {
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(50) name?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(200) description?: string;
   @ApiPropertyOptional() @IsOptional() @IsDateString() plannedDate?: string;
+  @ApiPropertyOptional({ description: '关联任务 ID 列表（传入则全量覆盖）', type: [Number] })
+  @IsOptional() @IsArray() @ArrayMaxSize(50) @IsNumber({}, { each: true })
+  taskIds?: number[];
 }
 
 export class ProjectQueryDto {
@@ -136,6 +142,8 @@ export class ProjectService {
         milestones: { orderBy: { sortOrder: 'asc' }, include: { attachments: true } },
         tasks: {
           select: { id: true, title: true, status: true, taskMode: true, totalBudget: true,
+            milestoneId: true,
+            milestone: { select: { id: true, name: true } },
             taskRoles: { select: { id: true, roleName: true, headcount: true } } },
           orderBy: { createdAt: 'desc' },
         },
@@ -270,6 +278,23 @@ export class ProjectService {
       },
     });
 
+    // 关联任务：批量更新 taskIds 的 projectId 和 milestoneId
+    if (dto.taskIds && dto.taskIds.length > 0) {
+      // 校验任务归属公司
+      const tasks = await this.prisma.task.findMany({
+        where: { id: { in: dto.taskIds.map(id => BigInt(id)) }, companyId: BigInt(companyId) },
+        select: { id: true },
+      });
+      if (tasks.length !== dto.taskIds.length) {
+        throw new BadRequestException('部分任务不存在或不属于当前公司');
+      }
+      // 批量更新
+      await this.prisma.task.updateMany({
+        where: { id: { in: dto.taskIds.map(id => BigInt(id)) } },
+        data: { projectId: BigInt(projectId), milestoneId: m.id },
+      });
+    }
+
     // V3.7 Phase 6 埋点
     await this.analytics.track({
       event: 'milestone_create',
@@ -278,7 +303,7 @@ export class ProjectService {
       companyId,
       refType: 'milestone',
       refId: Number(m.id),
-      props: { projectId },
+      props: { projectId, taskCount: dto.taskIds?.length || 0 },
     });
 
     return { milestoneId: Number(m.id) };
@@ -300,6 +325,36 @@ export class ProjectService {
         ...dto.plannedDate && { plannedDate: new Date(dto.plannedDate) },
       },
     });
+
+    // 关联任务全量覆盖（只有传了 taskIds 才处理，传空数组表示清空）
+    if (dto.taskIds !== undefined) {
+      // 校验任务归属公司
+      if (dto.taskIds.length > 0) {
+        const tasks = await this.prisma.task.findMany({
+          where: { id: { in: dto.taskIds.map(id => BigInt(id)) }, companyId: BigInt(companyId) },
+          select: { id: true },
+        });
+        if (tasks.length !== dto.taskIds.length) {
+          throw new BadRequestException('部分任务不存在或不属于当前公司');
+        }
+      }
+
+      await this.prisma.$transaction(async (tx) => {
+        // 解绑旧关联：当前里程碑所有任务清空 milestoneId
+        await tx.task.updateMany({
+          where: { milestoneId: BigInt(milestoneId) },
+          data: { milestoneId: null },
+        });
+        // 重新绑定新选中的任务
+        if (dto.taskIds!.length > 0) {
+          await tx.task.updateMany({
+            where: { id: { in: dto.taskIds!.map(id => BigInt(id)) } },
+            data: { projectId: BigInt(projectId), milestoneId: BigInt(milestoneId) },
+          });
+        }
+      });
+    }
+
     return { milestoneId: Number(updated.id) };
   }
 
@@ -312,8 +367,18 @@ export class ProjectService {
     if (!m) throw new NotFoundException('里程碑不存在');
     if (m.status !== 'pending') throw new BadRequestException('仅待完成状态的里程碑可删除');
 
-    await this.prisma.milestoneAttachment.deleteMany({ where: { milestoneId: BigInt(milestoneId) } });
-    await this.prisma.milestone.delete({ where: { id: BigInt(milestoneId) } });
+    await this.prisma.$transaction(async (tx) => {
+      // 解除任务关联
+      await tx.task.updateMany({
+        where: { milestoneId: BigInt(milestoneId) },
+        data: { milestoneId: null },
+      });
+      // 删除附件
+      await tx.milestoneAttachment.deleteMany({ where: { milestoneId: BigInt(milestoneId) } });
+      // 删除里程碑
+      await tx.milestone.delete({ where: { id: BigInt(milestoneId) } });
+    });
+
     return { deleted: true };
   }
 
@@ -394,6 +459,38 @@ export class ProjectService {
   }
 
   // ─── Helpers ───
+
+  /**
+   * 删除项目（仅允许删除规划中/已归档状态的项目）
+   */
+  async deleteProject(companyId: number, projectId: number) {
+    const project = await this.checkOwnership(companyId, projectId);
+    const deletableStatuses = ['planning', 'archived'];
+    if (!deletableStatuses.includes(project.status)) {
+      throw new ForbiddenException(
+        '只能删除规划中或已归档状态的项目',
+      );
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      // 解除关联任务的项目引用
+      await tx.task.updateMany({
+        where: { projectId: BigInt(projectId) },
+        data: { projectId: null, milestoneId: null },
+      });
+      // 删除里程碑及其附件
+      const milestones = await tx.milestone.findMany({ where: { projectId: BigInt(projectId) } });
+      for (const ms of milestones) {
+        await tx.milestoneAttachment.deleteMany({ where: { milestoneId: ms.id } });
+      }
+      await tx.milestone.deleteMany({ where: { projectId: BigInt(projectId) } });
+      // 删除项目
+      await tx.project.delete({ where: { id: BigInt(projectId) } });
+    });
+
+    return { message: '项目已删除' };
+  }
+
   private async checkOwnership(companyId: number, projectId: number) {
     const p = await this.prisma.project.findFirst({
       where: { id: BigInt(projectId), companyId: BigInt(companyId) },
@@ -460,6 +557,8 @@ export class ProjectService {
       tasks: p.tasks?.map((t: any) => ({
         id: Number(t.id), title: t.title, status: t.status, taskMode: t.taskMode,
         totalBudget: t.totalBudget ? Number(t.totalBudget) : 0,
+        milestoneId: t.milestoneId ? Number(t.milestoneId) : null,
+        milestoneName: t.milestone?.name ?? null,
         roles: t.taskRoles?.map((r: any) => ({ id: Number(r.id), roleName: r.roleName, headcount: r.headcount })),
       })),
     };

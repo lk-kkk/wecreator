@@ -50,7 +50,7 @@
           </a-dropdown>
         </template>
 
-        <p style="color:#666;font-size:13px;margin:0 0 10px;line-height:1.5">{{ a.description }}</p>
+        <p style="color:#666;font-size:12px;margin:0 0 10px;line-height:1.5">{{ a.description }}</p>
 
         <div class="model-info">
           <template v-if="a.preset">
@@ -121,7 +121,7 @@
         <div ref="chatListRef" class="chat-messages">
           <div v-if="!chatMessages.length" class="chat-empty">
             <div style="font-size:36px;margin-bottom:8px">💬</div>
-            <div style="color:#999;font-size:13px">发送一条消息开始测试智能体</div>
+            <div style="color:#999;font-size:12px">发送一条消息开始测试智能体</div>
             <div style="color:#bbb;font-size:12px;margin-top:4px">{{ chatAgent?.description }}</div>
           </div>
           <div v-for="(msg, i) in chatMessages" :key="i" class="chat-msg" :class="msg.role">
@@ -305,7 +305,7 @@ onMounted(fetchData)
 .agent-card { border-radius: 8px; }
 .agent-header { display: flex; align-items: center; gap: 10px; }
 .agent-title-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.agent-name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.agent-name { font-weight: 600; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .agent-tags { display: flex; gap: 4px; }
 .model-info { display: flex; align-items: center; gap: 6px; background: #f5f7fa; border-radius: 4px; padding: 6px 8px; flex-wrap: wrap; }
 .model-name { font-size: 12px; color: #333; font-weight: 500; }
@@ -324,7 +324,7 @@ onMounted(fetchData)
 .chat-msg-bubble { max-width: 80%; }
 .chat-msg.user .chat-msg-bubble { background: #1677ff; color: #fff; border-radius: 12px 12px 2px 12px; padding: 10px 14px; }
 .chat-msg.assistant .chat-msg-bubble { background: #fff; border: 1px solid #e8e8e8; border-radius: 12px 12px 12px 2px; padding: 10px 14px; }
-.chat-msg-content { font-size: 14px; line-height: 1.6; word-break: break-word; }
+.chat-msg-content { font-size: 12px; line-height: 1.6; word-break: break-word; }
 .chat-msg-content :deep(pre.code-block) { background: #f6f6f6; border-radius: 6px; padding: 8px 10px; font-size: 12px; overflow-x: auto; margin: 6px 0; }
 .chat-msg.user .chat-msg-content :deep(pre.code-block) { background: rgba(255,255,255,0.15); }
 .chat-msg-content :deep(code.inline-code) { background: rgba(0,0,0,0.06); padding: 1px 4px; border-radius: 3px; font-size: 12px; }

@@ -1,182 +1,477 @@
 @use '../../styles/variables' as *;
 @use '../../styles/mixins' as *;
 
+// ══════════════════════════════════════════════════
+// 消息页 — 微信原生风格
+// ══════════════════════════════════════════════════
+
 .page {
   @include flex-column;
   @include page-base;
 }
 
-.top-bar {
+/* ═══════ 顶部 Tab 切换 ═══════ */
+.msg-tabs {
+  display: flex;
   background: $color-primary;
-  padding: $space-md;
+  padding: 0 $page-padding;
 }
 
-.page-title {
-  font-size: $font-lg;
-  font-weight: $weight-bold;
-  color: $color-text-white;
-  display: block;
-}
-
-/* ──── 会话列表 ──── */
-.conv-item {
+.msg-tab {
+  flex: 1;
   display: flex;
   align-items: center;
-  padding: $space-md $page-padding;
-  background: $color-bg-card;
-  @include divider($color-border-light);
-  gap: 20rpx;
-  transition: $transition-fast;
-  &:active { background: $color-bg-hover; }
+  justify-content: center;
+  padding: 20rpx 0;
+  position: relative;
+  gap: 8rpx;
+  &:active { opacity: 0.8; }
 }
 
-.conv-avatar {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: $radius-round;
-  background: $color-primary-bg;
-  @include flex-center;
-  flex-shrink: 0;
+.msg-tab-active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 30%; right: 30%;
+  height: 4rpx;
+  background: #fff;
+  border-radius: 2rpx;
 }
 
-.avatar-text {
+.msg-tab-text {
   font-size: $font-base;
-  color: $color-primary;
-  font-weight: $weight-bold;
-}
-
-.conv-info {
-  flex: 1;
-  overflow: hidden;
-}
-
-.conv-title {
-  font-size: $font-base;
+  color: rgba(255, 255, 255, 0.6);
   font-weight: $weight-semibold;
-  color: $color-text-primary;
-  display: block;
-  margin-bottom: 6rpx;
 }
+.msg-tab-active .msg-tab-text { color: #fff; }
 
-.conv-last-msg {
-  font-size: $font-sm;
-  color: $color-text-placeholder;
-  @include text-ellipsis;
-  display: block;
-}
-
-.conv-time {
-  font-size: $font-xs;
-  color: $color-text-disabled;
-  flex-shrink: 0;
-}
-
-.empty {
-  flex: 1;
+.tab-badge {
+  min-width: 28rpx; height: 28rpx;
+  padding: 0 6rpx; border-radius: 14rpx;
+  background: #ff4d4f;
   @include flex-center;
 }
-
-.empty-text {
-  font-size: $font-base;
-  color: $color-text-disabled;
+.tab-badge-text {
+  font-size: 18rpx; color: #fff;
+  font-weight: $weight-bold; line-height: 1;
 }
 
-/* ──── 聊天界面 ──── */
-.chat-page { background: #EDEDF2; }
+/* ═══════ 通知列表 ═══════ */
+.notif-scroll { flex: 1; }
 
-.chat-header {
-  display: flex;
-  align-items: center;
-  padding: 20rpx $page-padding;
-  background: $color-primary;
-  gap: $space-sm;
+.notif-read-all {
+  text-align: right;
+  padding: $space-sm $page-padding;
 }
-
-.back-btn {
-  font-size: 36rpx;
-  color: rgba(255, 255, 255, 0.8);
-  padding: 0 $space-xs;
-  transition: $transition-fast;
+.notif-read-all-text {
+  font-size: $font-sm; color: $color-primary;
   &:active { opacity: 0.7; }
 }
 
-.chat-title {
-  font-size: $font-md;
-  font-weight: $weight-semibold;
-  color: $color-text-white;
+.notif-item {
+  display: flex; align-items: center;
+  padding: $space-md $page-padding;
+  background: #fff;
+  @include divider($color-border-light);
+  gap: 20rpx;
+  position: relative;
+  &:active { background: $color-bg-hover; }
+}
+.notif-unread { background: #F7F9FF; }
+
+.notif-icon-wrap {
+  width: 80rpx; height: 80rpx;
+  border-radius: $radius-md;
+  background: $color-bg-page;
+  @include flex-center;
+  flex-shrink: 0;
+}
+.notif-icon-emoji { font-size: 36rpx; }
+
+.notif-body { flex: 1; overflow: hidden; }
+
+.notif-header {
+  display: flex; justify-content: space-between;
+  align-items: center; margin-bottom: 6rpx;
+}
+.notif-title {
+  font-size: $font-base; font-weight: $weight-semibold;
+  color: $color-text-primary;
+  @include text-ellipsis;
+  flex: 1;
+}
+.notif-time { font-size: $font-xs; color: $color-text-disabled; flex-shrink: 0; margin-left: 12rpx; }
+
+.notif-content {
+  font-size: $font-sm; color: $color-text-secondary;
+  @include text-ellipsis(2);
+  line-height: $line-height-normal;
+  display: block;
 }
 
-.msg-scroll {
+.notif-red-dot {
+  width: 16rpx; height: 16rpx;
+  border-radius: 8rpx;
+  background: #ff4d4f;
+  position: absolute;
+  top: $space-md; right: $page-padding;
+}
+
+/* ── 通知卡片容器 ── */
+.notif-card {
+  background: #fff;
+  @include divider($color-border-light);
+}
+
+/* 展开箭头 */
+.notif-expand-icon {
+  @include flex-center;
+  width: 40rpx; flex-shrink: 0;
+}
+.expand-arrow {
+  font-size: 32rpx; color: $color-text-disabled;
+  transform: rotate(90deg);
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+.expand-arrow-up {
+  transform: rotate(-90deg);
+}
+
+/* ── 任务简要信息卡片 ── */
+.notif-task-card {
+  margin: 0 $page-padding 20rpx;
+  padding: 24rpx;
+  background: #F7F8FA;
+  border-radius: $radius-md;
+  border-left: 6rpx solid $color-primary;
+  &:active { background: #EBEDF0; }
+}
+
+.task-card-header {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+}
+.task-card-title {
+  font-size: $font-md; font-weight: $weight-semibold;
+  color: $color-text-primary;
   flex: 1;
-  padding: $space-sm 20rpx;
+  @include text-ellipsis;
+}
+.task-card-status {
+  padding: 4rpx 16rpx;
+  border-radius: $radius-xl;
+  background: $color-primary-bg;
+  flex-shrink: 0; margin-left: 12rpx;
+}
+.task-card-status-text {
+  font-size: $font-xs; color: $color-primary;
+  font-weight: $weight-medium;
+}
+
+.task-card-info {
+  display: flex; flex-direction: column;
+  gap: 16rpx;
+}
+
+.task-info-row {
+  display: flex; align-items: center;
+  gap: 10rpx;
+}
+.task-info-icon { font-size: 24rpx; flex-shrink: 0; }
+.task-info-label {
+  font-size: $font-sm; color: $color-text-secondary;
+  width: 120rpx; flex-shrink: 0;
+}
+.task-info-value {
+  font-size: $font-sm; color: $color-text-primary;
+  font-weight: $weight-medium;
+  flex: 1;
+}
+.task-info-price {
+  color: $color-price;
+  font-weight: $weight-bold;
+  font-size: $font-base;
+}
+
+.task-card-footer {
+  margin-top: 20rpx; padding-top: 16rpx;
+  border-top: 1rpx solid $color-border-light;
+  display: flex; justify-content: flex-end;
+}
+.task-card-link {
+  font-size: $font-sm; color: $color-primary;
+  font-weight: $weight-medium;
+  &:active { opacity: 0.7; }
+}
+
+/* ═══════ 会话列表（微信风格） ═══════ */
+.conv-scroll { flex: 1; }
+
+.conv-item {
+  display: flex; align-items: center;
+  padding: 24rpx $page-padding;
+  background: #fff;
+  @include divider($color-border-light);
+  gap: 20rpx;
+  &:active { background: #ECECEC; }
+}
+
+.conv-avatar {
+  width: 96rpx; height: 96rpx;
+  border-radius: 12rpx;          // 微信方圆角头像
+  background: $color-primary;
+  @include flex-center;
+  flex-shrink: 0;
+}
+.conv-avatar-text {
+  font-size: $font-md; color: #fff; font-weight: $weight-bold;
+}
+
+.conv-body { flex: 1; overflow: hidden; }
+
+.conv-top {
+  display: flex; justify-content: space-between;
+  align-items: center; margin-bottom: 8rpx;
+}
+.conv-name {
+  font-size: $font-md; font-weight: $weight-medium;
+  color: $color-text-primary;
+  @include text-ellipsis;
+}
+.conv-time {
+  font-size: $font-xs; color: $color-text-disabled;
+  flex-shrink: 0; margin-left: 12rpx;
+}
+
+.conv-bottom {
+  display: flex; justify-content: space-between;
+  align-items: center;
+}
+.conv-snippet {
+  font-size: $font-sm; color: $color-text-placeholder;
+  @include text-ellipsis;
+  flex: 1;
+}
+
+.conv-badge {
+  min-width: 36rpx; height: 36rpx;
+  padding: 0 10rpx; border-radius: 18rpx;
+  background: #ff4d4f;
+  @include flex-center;
+  flex-shrink: 0; margin-left: 12rpx;
+}
+.conv-badge-text {
+  font-size: 20rpx; color: #fff;
+  font-weight: $weight-bold; line-height: 1;
+}
+
+/* ═══════ 空状态 / 加载 ═══════ */
+.empty {
+  flex: 1; @include flex-center;
+  padding-top: 200rpx;
+}
+.empty-text {
+  font-size: $font-base; color: $color-text-disabled;
+}
+
+/* ══════════════════════════════════════════════════
+ *  微信风格聊天界面
+ * ══════════════════════════════════════════════════ */
+
+.wechat-chat {
+  display: flex; flex-direction: column;
+  height: 100vh;
+  background: #EDEDF2;       // 微信经典聊天背景色
+}
+
+/* ── 导航栏 ── */
+.wc-navbar {
+  display: flex; align-items: center;
+  height: 88rpx;
+  padding: 0 20rpx;
+  background: #EDEDED;
+  border-bottom: 1rpx solid #D6D6D6;
+  position: relative;
+}
+
+.wc-navbar-back {
+  width: 60rpx; height: 88rpx;
+  @include flex-center;
+  &:active { opacity: 0.6; }
+}
+.wc-navbar-arrow {
+  font-size: 48rpx; color: #181818;
+  font-weight: $weight-bold;
+  line-height: 1;
+}
+
+.wc-navbar-title {
+  flex: 1; text-align: center;
+  font-size: $font-md; font-weight: $weight-semibold;
+  color: #181818;
+}
+
+.wc-navbar-right { width: 60rpx; }
+
+/* ── 消息列表区 ── */
+.wc-msg-list {
+  flex: 1;
+  padding: 16rpx 0;
   overflow: hidden;
 }
 
-.msg-row {
-  @include flex-column;
-  margin-bottom: 20rpx;
-  &.self { align-items: flex-end; }
-  &.other { align-items: flex-start; }
+.wc-loading {
+  text-align: center; padding: 40rpx 0;
+}
+.wc-loading-text {
+  font-size: $font-sm; color: #B2B2B2;
 }
 
-.bubble {
-  max-width: 70vw;
-  padding: $space-sm 22rpx;
-  border-radius: $radius-md;
-  margin-bottom: $space-xxs;
+/* ── 时间胶囊 ── */
+.wc-time-capsule {
+  display: flex; justify-content: center;
+  padding: 16rpx 0 20rpx;
+}
+.wc-time-text {
+  font-size: 22rpx; color: #BCBCBC;
+  background: rgba(206, 206, 206, 0.3);
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
 }
 
-.bubble-self {
+/* ── 消息行 ── */
+.wc-msg-row {
+  display: flex;
+  align-items: flex-start;
+  padding: 8rpx 24rpx;
+  margin-bottom: 4rpx;
+}
+.wc-msg-self {
+  flex-direction: row-reverse;
+}
+.wc-msg-other {
+  flex-direction: row;
+}
+
+/* ── 头像 ── */
+.wc-avatar {
+  width: 76rpx; height: 76rpx;
+  border-radius: 10rpx;        // 微信方圆角
+  @include flex-center;
+  flex-shrink: 0;
+}
+.wc-avatar-other {
   background: $color-primary;
-  border-bottom-right-radius: $radius-xs;
+  margin-right: 16rpx;
+}
+.wc-avatar-self {
+  background: #67C23A;
+  margin-left: 16rpx;
+}
+.wc-avatar-text {
+  font-size: 24rpx; color: #fff;
+  font-weight: $weight-bold;
 }
 
-.bubble-other {
-  background: $color-bg-card;
-  border-bottom-left-radius: $radius-xs;
+/* ── 气泡 ── */
+.wc-bubble {
+  position: relative;
+  max-width: 65vw;
+  padding: 18rpx 24rpx;
+  border-radius: 8rpx;
+  word-break: break-all;
 }
 
-.bubble-text {
+// 微信绿色气泡（自己）
+.wc-bubble-green {
+  background: #95EC69;
+}
+
+// 白色气泡（对方）
+.wc-bubble-white {
+  background: #FFFFFF;
+}
+
+// 气泡尖角
+.wc-arrow {
+  position: absolute;
+  top: 22rpx;
+  width: 0; height: 0;
+  border-style: solid;
+}
+.wc-arrow-left {
+  left: -12rpx;
+  border-width: 10rpx 12rpx 10rpx 0;
+  border-color: transparent #FFFFFF transparent transparent;
+}
+.wc-arrow-right {
+  right: -12rpx;
+  border-width: 10rpx 0 10rpx 12rpx;
+  border-color: transparent transparent transparent #95EC69;
+}
+
+.wc-bubble-text {
   font-size: $font-base;
   line-height: $line-height-loose;
+  color: #181818;
+}
+// 绿色气泡和白色气泡文字都用深色
+.wc-text-dark { color: #181818; }
+
+/* ── 底部输入栏 ── */
+.wc-input-bar {
+  display: flex; align-items: center;
+  padding: 14rpx 20rpx;
+  background: #F6F6F6;
+  border-top: 1rpx solid #E0E0E0;
+  @include safe-bottom(14rpx);
+  gap: 16rpx;
 }
 
-.bubble-self .bubble-text { color: $color-text-white; }
-.bubble-other .bubble-text { color: $color-text-regular; }
-
-.msg-time {
-  font-size: 20rpx;
-  color: $color-text-disabled;
-}
-
-.input-bar {
-  display: flex;
-  align-items: center;
-  padding: $space-sm 20rpx;
-  background: $color-bg-card;
-  border-top: 1rpx solid $color-border;
-  gap: $space-sm;
-}
-
-.msg-input {
+.wc-input-wrap {
   flex: 1;
-  background: $color-bg-page;
-  border-radius: $radius-xl;
-  padding: 14rpx $space-md;
-  font-size: $font-base;
-  color: $color-text-regular;
+  background: #FFFFFF;
+  border-radius: 8rpx;
+  border: 1rpx solid #E0E0E0;
+  padding: 0;
 }
 
-.send-btn {
-  background: $color-primary;
-  padding: $space-sm 28rpx;
-  border-radius: $radius-xl;
-  transition: $transition-fast;
-  &:active { opacity: 0.85; transform: scale(0.98); }
-}
-
-.send-text {
+.wc-input {
+  width: 100%;
+  height: 72rpx;
+  padding: 0 20rpx;
   font-size: $font-base;
-  color: $color-text-white;
+  color: #181818;
+  line-height: 72rpx;
+}
+.wc-input-placeholder { color: #B2B2B2; }
+
+// 发送按钮（有文字时显示）
+.wc-send-btn {
+  height: 64rpx;
+  padding: 0 28rpx;
+  background: #07C160;       // 微信绿
+  border-radius: 8rpx;
+  @include flex-center;
+  flex-shrink: 0;
+  &:active { background: #06AD56; }
+}
+.wc-send-text {
+  font-size: $font-sm; color: #fff;
   font-weight: $weight-semibold;
+}
+
+// + 号按钮（无文字时显示）
+.wc-plus-btn {
+  width: 64rpx; height: 64rpx;
+  border-radius: 50%;
+  @include flex-center;
+  flex-shrink: 0;
+  &:active { opacity: 0.7; }
+}
+.wc-plus-icon {
+  font-size: 48rpx; color: #181818;
+  line-height: 1; font-weight: $weight-normal;
 }

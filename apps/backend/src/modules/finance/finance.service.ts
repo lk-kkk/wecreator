@@ -218,4 +218,68 @@ export class FinanceService {
       amount: Number(tx.amount),
     };
   }
+
+  // ================================================================
+  // V3.9: 任务付款（pending_payment → completed）
+  // ================================================================
+  async payForTask(companyId: number, taskId: number) {
+    // 1. 查找任务
+    const task = await this.prisma.task.findFirst({
+      where: { id: BigInt(taskId), companyId: BigInt(companyId) },
+    });
+    if (!task) throw new BadRequestException('任务不存在');
+    if (task.status !== 'pending_payment') {
+      throw new BadRequestException('任务当前状态不支持付款操作');
+    }
+
+    const amount = Number(task.lockedAmount) > 0 ? Number(task.lockedAmount) : Number(task.totalBudget);
+    const transactionNo = `ST${Date.now()}${randomBytes(4).toString('hex')}`;
+
+    await this.prisma.$transaction(async (prisma) => {
+      // 2. 创建结算流水
+      await prisma.transaction.create({
+        data: {
+          transactionNo,
+          type: 'settlement',
+          direction: 'out',
+          amount,
+          companyId: BigInt(companyId),
+          taskId: BigInt(taskId),
+          status: 'completed',
+          completedAt: new Date(),
+          remark: `任务结算: ${task.title}`,
+        },
+      });
+
+      // 3. 解锁资金
+      const company = await prisma.company.findUnique({
+        where: { id: BigInt(companyId) },
+      });
+      if (!company) throw new BadRequestException('企业不存在');
+
+      const lockedAmount = Number(task.lockedAmount);
+      const result = await prisma.company.updateMany({
+        where: { id: BigInt(companyId), version: company.version },
+        data: {
+          balance: { decrement: amount },
+          lockedBalance: { decrement: lockedAmount },
+          version: { increment: 1 },
+        },
+      });
+      if (result.count === 0) throw new BadRequestException('并发冲突，请重试');
+
+      // 4. 任务状态 → completed
+      await prisma.task.update({
+        where: { id: BigInt(taskId) },
+        data: {
+          status: 'completed',
+          completedAt: new Date(),
+          lockedAmount: 0,
+        },
+      });
+    });
+
+    this.logger.log(`任务付款完成: task=${taskId}, amount=${amount}, txNo=${transactionNo}`);
+    return { message: '付款成功，任务已完成', transactionNo, amount, status: 'completed' };
+  }
 }

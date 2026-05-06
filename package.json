@@ -9,7 +9,8 @@
     "dev": "concurrently \"pnpm dev:be\" \"pnpm dev:pc\"",
     "test": "pnpm --filter backend test",
     "docker:up": "docker-compose -f docker/docker-compose.yml up -d",
-    "docker:down": "docker-compose -f docker/docker-compose.yml down"
+    "docker:down": "docker-compose -f docker/docker-compose.yml down",
+    "db:seed": "pnpm --filter backend db:seed"
   },
   "devDependencies": {
     "concurrently": "^8.2.0"
