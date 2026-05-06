@@ -1,7 +1,7 @@
 /**
- * WeCreator PC Admin — Global Styles (Material Design 3)
- * 设计令牌已迁移至 styles/theme-material.css
- * 本文件仅保留：Reset + Ant Design 基础组件覆盖层
+ * WeCreator PC Admin — Global Styles V2 (Apple Design)
+ * 设计令牌已迁移至 styles/theme-apple.css（两套明暗主题）
+ * 本文件仅保留：Reset + Ant Design 组件覆盖层
  */
 
 /* ==================== Reset ==================== */
@@ -13,7 +13,7 @@ html, body {
   margin: 0;
   padding: 0;
   font-family: var(--font-family-base);
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1.5;
   color: var(--color-text-primary);
   background: var(--color-bg-page);

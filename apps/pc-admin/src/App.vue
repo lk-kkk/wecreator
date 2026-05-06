@@ -7,7 +7,8 @@
 <script setup lang="ts">
 /**
  * WeCreator PC Admin — App Root
- * Material Design 3 主题
+ * 统一亮色主题（已移除一键换肤）
+ * 参照 uipic.png：纯白背景 + 蓝色渐变主色
  */
 import { computed } from 'vue'
 import { theme as antdTheme } from 'ant-design-vue'
@@ -17,196 +18,196 @@ import { useTheme } from '@/composables/useTheme'
 // 触发主题初始化（强制 light）
 useTheme()
 
-// ========== Material Design 3 Ant Design Tokens ==========
-const materialToken = {
-  // M3 色彩系统
-  colorPrimary:         '#1B6EF3',
-  colorSuccess:         '#1E8E3E',
-  colorWarning:         '#E37400',
-  colorError:           '#BA1A1A',
-  colorInfo:            '#1B6EF3',
+// ========== Ant Design Vue Tokens ==========
+const lightToken = {
+  // 品牌色 —— 现代蓝
+  colorPrimary:         '#3D7EFF',
+  colorSuccess:         '#12B76A',
+  colorWarning:         '#F79009',
+  colorError:           '#F04438',
+  colorInfo:            '#3D7EFF',
 
   // 基础色
-  colorTextBase:        '#1B1B1F',
-  colorBgBase:          '#FDFBFF',
-  colorBgLayout:        '#FDFBFF',
-  colorBorder:          '#C4C6D0',
-  colorBorderSecondary: '#E1E2EC',
+  colorTextBase:        '#1D2939',
+  colorBgBase:          '#FFFFFF',
+  colorBgLayout:        '#FFFFFF',
+  colorBorder:          '#EAECF0',
+  colorBorderSecondary: '#F2F4F7',
 
   // 反色
   colorTextLightSolid:  '#FFFFFF',
 
-  // M3 Shape Scale 圆角
-  borderRadius:          12,
-  borderRadiusLG:        16,
-  borderRadiusSM:        8,
+  // 圆角
+  borderRadius:          10,
+  borderRadiusLG:        14,
+  borderRadiusSM:        6,
   borderRadiusXS:        4,
 
   // 字号 & 高度
   fontSize:              14,
-  controlHeight:         40,
-  controlHeightLG:       48,
-  controlHeightSM:       32,
+  controlHeight:         36,
+  controlHeightLG:       44,
+  controlHeightSM:       28,
   fontFamily:
-    "'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif",
+    "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif",
 
-  // M3 Elevation 阴影
-  boxShadow:           '0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15)',
-  boxShadowSecondary:  '0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px 2px rgba(0, 0, 0, 0.15)',
-  boxShadowTertiary:   '0 4px 8px 3px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.3)',
+  // 阴影（轻柔）
+  boxShadow:           '0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04)',
+  boxShadowSecondary:  '0 4px 8px -2px rgba(16, 24, 40, 0.06), 0 2px 4px -2px rgba(16, 24, 40, 0.04)',
+  boxShadowTertiary:   '0 1px 2px rgba(16, 24, 40, 0.05)',
 
-  // M3 Motion
+  // 动画
   motionDurationFast:  '0.15s',
   motionDurationMid:   '0.25s',
   motionDurationSlow:  '0.35s',
 }
 
-const materialComponents = {
+const lightComponents = {
   Layout: {
-    headerBg:     '#FDFBFF',
-    headerHeight: 64,
-    siderBg:      '#F0EDF1',
-    bodyBg:       '#FDFBFF',
-    triggerBg:    '#F0EDF1',
-    triggerColor: '#44474F',
+    headerBg:     '#FFFFFF',
+    headerHeight: 56,
+    siderBg:      '#FFFFFF',
+    bodyBg:       '#FFFFFF',
+    triggerBg:    '#FFFFFF',
+    triggerColor: '#667085',
   },
   Menu: {
-    itemHeight:          48,
-    itemBorderRadius:    100,
+    itemHeight:          40,
+    itemBorderRadius:     8,
     itemBg:              'transparent',
     subMenuItemBg:       'transparent',
-    itemSelectedBg:      '#DAE2F9',
-    itemSelectedColor:   '#131C2B',
-    itemHoverBg:         'rgba(27, 27, 31, 0.08)',
-    itemHoverColor:      '#1B1B1F',
-    itemColor:           '#44474F',
-    iconSize:             24,
-    itemPaddingInline:   16,
-    collapsedIconSize:   24,
+    itemSelectedBg:      '#EEF2F8',
+    itemSelectedColor:   '#2B6BE5',
+    itemHoverBg:         '#F5F7FA',
+    itemHoverColor:      '#1D2939',
+    itemColor:           '#475467',
+    iconSize:             16,
+    itemPaddingInline:   14,
+    collapsedIconSize:   18,
   },
   Button: {
-    borderRadius:             100,
+    borderRadius:             10,
     fontWeight:               500,
-    controlHeight:            40,
-    controlHeightLG:          48,
-    controlHeightSM:          32,
+    controlHeight:            36,
+    controlHeightLG:          44,
+    controlHeightSM:          28,
     primaryColor:             '#FFFFFF',
     colorTextLightSolid:      '#FFFFFF',
-    defaultColor:             '#1B6EF3',
-    defaultBg:                'transparent',
-    defaultBorderColor:       '#74777F',
-    defaultHoverBg:           'rgba(27, 110, 243, 0.08)',
-    defaultHoverColor:        '#1B6EF3',
-    defaultHoverBorderColor:  '#74777F',
-    textHoverBg:              'rgba(27, 110, 243, 0.08)',
-    paddingInline:            24,
-    paddingInlineLG:          24,
-    paddingInlineSM:          16,
-    primaryShadow:            'none',
+    defaultColor:             '#1D2939',
+    defaultBg:                '#FFFFFF',
+    defaultBorderColor:       '#EAECF0',
+    defaultHoverBg:           '#F5F7FA',
+    defaultHoverColor:        '#3D7EFF',
+    defaultHoverBorderColor:  '#C5D7FD',
+    textHoverBg:              '#F5F7FA',
+    paddingInline:            16,
+    paddingInlineLG:          20,
+    paddingInlineSM:          12,
+    primaryShadow:            '0 2px 4px rgba(43, 107, 229, 0.20)',
   },
   Table: {
-    headerBg:          '#F0EDF1',
-    headerColor:       '#44474F',
-    rowHoverBg:        'rgba(27, 27, 31, 0.08)',
-    borderColor:       '#C4C6D0',
-    cellPaddingBlock:  16,
+    headerBg:          '#FAFBFC',
+    headerColor:       '#475467',
+    rowHoverBg:        '#FAFBFC',
+    borderColor:       '#F2F4F7',
+    cellPaddingBlock:  14,
     cellPaddingInline: 16,
-    headerSplitColor:  '#C4C6D0',
+    headerSplitColor:  '#F2F4F7',
   },
   Card: {
-    borderRadiusLG:        12,
+    borderRadiusLG:        14,
     paddingLG:             24,
-    headerBg:              '#F6F3F7',
-    colorBorderSecondary:  '#C4C6D0',
+    headerBg:              '#FFFFFF',
+    colorBorderSecondary:  '#EAECF0',
   },
   Modal: {
-    borderRadiusLG:  28,
-    contentBg:       '#EAE7EC',
-    headerBg:        'transparent',
-    titleColor:      '#1B1B1F',
-    titleFontSize:   24,
+    borderRadiusLG:  20,
+    contentBg:       '#FFFFFF',
+    headerBg:        '#FFFFFF',
+    titleColor:      '#1D2939',
+    titleFontSize:   18,
   },
   Tabs: {
-    inkBarColor:      '#1B6EF3',
-    itemSelectedColor:'#1B6EF3',
-    itemHoverColor:   '#1B6EF3',
-    itemColor:        '#44474F',
-    horizontalItemPadding: '16px 24px',
+    inkBarColor:      '#3D7EFF',
+    itemSelectedColor:'#3D7EFF',
+    itemHoverColor:   '#2B6BE5',
+    itemColor:        '#475467',
+    horizontalItemPadding: '12px 16px',
   },
   Steps: {
-    colorPrimary: '#1B6EF3',
+    colorPrimary: '#3D7EFF',
   },
   Input: {
-    borderRadius:      4,
-    controlHeight:     40,
-    colorBgContainer:  '#E4E1E6',
-    colorBorder:       '#74777F',
-    activeBorderColor: '#1B6EF3',
-    hoverBorderColor:  '#1B1B1F',
-    activeShadow:      'none',
+    borderRadius:      10,
+    controlHeight:     36,
+    colorBgContainer:  '#FFFFFF',
+    colorBorder:       '#EAECF0',
+    activeBorderColor: '#3D7EFF',
+    hoverBorderColor:  '#C5D7FD',
+    activeShadow:      '0 0 0 4px rgba(78, 140, 255, 0.18)',
   },
   Select: {
-    borderRadius:     4,
-    controlHeight:    40,
-    colorBgContainer: '#E4E1E6',
-    optionSelectedBg: '#DAE2F9',
-    optionActiveBg:   'rgba(27, 27, 31, 0.08)',
+    borderRadius:     10,
+    controlHeight:    36,
+    colorBgContainer: '#FFFFFF',
+    optionSelectedBg: '#EEF2F8',
+    optionActiveBg:   '#F5F7FA',
   },
   DatePicker: {
-    borderRadius:     4,
-    controlHeight:    40,
-    colorBgContainer: '#E4E1E6',
+    borderRadius:     10,
+    controlHeight:    36,
+    colorBgContainer: '#FFFFFF',
   },
   Checkbox: {
-    borderRadiusSM: 2,
-    colorPrimary:   '#1B6EF3',
+    borderRadiusSM: 4,
+    colorPrimary:   '#3D7EFF',
   },
   Radio: {
-    colorPrimary:    '#1B6EF3',
-    buttonBg:        'transparent',
-    buttonCheckedBg: '#1B6EF3',
+    colorPrimary:    '#3D7EFF',
+    buttonBg:        '#FFFFFF',
+    buttonCheckedBg: '#3D7EFF',
   },
   Switch: {
-    colorPrimary: '#1B6EF3',
+    colorPrimary: '#3D7EFF',
   },
   Tag: {
-    borderRadiusSM: 8,
+    borderRadiusSM: 6,
   },
   Badge: {
-    colorBgContainer: '#FDFBFF',
+    colorBgContainer: '#FFFFFF',
   },
   Dropdown: {
-    borderRadiusLG:  4,
-    controlPaddingHorizontal: 16,
-    colorBgElevated: '#F0EDF1',
-    boxShadowSecondary: '0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px 2px rgba(0, 0, 0, 0.15)',
+    borderRadiusLG:  10,
+    controlPaddingHorizontal: 12,
+    colorBgElevated: '#FFFFFF',
+    boxShadowSecondary: '0 12px 16px -4px rgba(16, 24, 40, 0.08), 0 4px 6px -2px rgba(16, 24, 40, 0.04)',
   },
   Popover: {
     borderRadiusLG:  12,
-    colorBgElevated: '#F0EDF1',
-    boxShadowSecondary: '0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px 2px rgba(0, 0, 0, 0.15)',
+    colorBgElevated: '#FFFFFF',
+    boxShadowSecondary: '0 12px 16px -4px rgba(16, 24, 40, 0.08), 0 4px 6px -2px rgba(16, 24, 40, 0.04)',
   },
   Tooltip: {
-    borderRadius:  4,
-    colorBgSpotlight: '#303034',
+    borderRadius:  8,
+    colorBgSpotlight: 'rgba(29, 41, 57, 0.95)',
   },
   Notification: {
     borderRadiusLG:  12,
   },
   Message: {
-    borderRadiusLG:  4,
+    borderRadiusLG:  10,
   },
   Alert: {
-    borderRadiusLG:  12,
+    borderRadiusLG:  10,
   },
   Progress: {
-    defaultColor: '#1B6EF3',
+    defaultColor: '#3D7EFF',
   },
 }
 
 const antTheme = computed(() => ({
-  token: materialToken,
-  components: materialComponents,
+  token: lightToken,
+  components: lightComponents,
   algorithm: antdTheme.defaultAlgorithm,
 }))
 </script>
